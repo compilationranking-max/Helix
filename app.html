@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Helix</title>
+
+    <link rel="stylesheet" href="app.css">
+</head>
+
+<body>
+
+    <div class="helix-app">
+
+        <!-- ==========================================
+             LEFT NAVIGATION
+             ========================================== -->
+
+        <aside class="sidebar">
+
+            <div class="sidebar-header">
+
+                <img
+                    src="images/helix-logo.png"
+                    alt="Helix Logo"
+                    class="sidebar-logo"
+                >
+
+                <span class="sidebar-title">HELIX</span>
+
+            </div>
+
+
+            <nav class="navigation">
+
+                <button class="nav-item active" id="nav-home">
+                    <span class="nav-icon">⌂</span>
+                    <span>Home</span>
+                </button>
+
+                <button class="nav-item" id="nav-console">
+                    <span class="nav-icon">◈</span>
+                    <span>Direct Console</span>
+                </button>
+
+                <button class="nav-item" id="nav-reels">
+                    <span class="nav-icon">▶</span>
+                    <span>Reels</span>
+                </button>
+
+                <button class="nav-item" id="nav-profile">
+                    <span class="nav-icon">◎</span>
+                    <span>Profile</span>
+                </button>
+
+            </nav>
+
+
+            <div class="sidebar-bottom">
+
+                <button class="broadcast-btn" id="broadcast-btn">
+                    <span>＋</span>
+                    <span>Broadcast Post</span>
+                </button>
+
+
+                <button class="logout-btn" id="logout-btn">
+                    <span>↪</span>
+                    <span>Logout</span>
+                </button>
+
+            </div>
+
+        </aside>
+
+
+        <!-- ==========================================
+             MIDDLE SECTION
+             ========================================== -->
+
+        <main class="main-panel">
+
+            <!-- Top bar -->
+
+            <header class="topbar">
+
+                <div>
+
+                    <p class="system-label">
+                        DIRECT CONSOLE
+                    </p>
+
+                    <h1 class="page-title">
+                        Messages
+                    </h1>
+
+                </div>
+
+
+                <div class="system-status">
+
+                    <span class="status-dot"></span>
+
+                    <span>SYSTEM ONLINE</span>
+
+                </div>
+
+            </header>
+
+
+            <!-- Search -->
+
+            <div class="search-container">
+
+                <input
+                    type="text"
+                    id="chat-search"
+                    placeholder="Search conversations..."
+                    autocomplete="off"
+                >
+
+            </div>
+
+
+            <!-- Main messaging area -->
+
+            <section class="messaging-area">
+
+
+                <!-- ==================================
+                     CONVERSATION LIST
+                     ================================== -->
+
+                <div class="conversation-panel">
+
+                    <div class="section-header">
+
+                        <span>CONNECTIONS</span>
+
+                        <span class="connection-count">
+                            4 ONLINE
+                        </span>
+
+                    </div>
+
+
+                    <div class="conversation-list">
+
+
+                        <!-- Conversation 1 -->
+
+                        <button class="conversation active">
+
+                            <div class="avatar">
+                                AX
+                            </div>
+
+                            <div class="conversation-info">
+
+                                <div class="conversation-top">
+
+                                    <strong>Alex</strong>
+
+                                    <span class="ping">
+                                        14ms
+                                    </span>
+
+                                </div>
+
+                                <p>
+                                    Check the build?
+                                </p>
+
+                            </div>
+
+                            <div class="conversation-meta">
+
+                                <span class="online-dot"></span>
+
+                                <span class="unread">
+                                    2
+                                </span>
+
+                            </div>
+
+                        </button>
+
+
+                        <!-- Conversation 2 -->
+
+                        <button class="conversation">
+
+                            <div class="avatar">
+                                RN
+                            </div>
+
+                            <div class="conversation-info">
+
+                                <div class="conversation-top">
+
+                                    <strong>Rahul</strong>
+
+                                    <span class="ping">
+                                        8ms
+                                    </span>
+
+                                </div>
+
+                                <p>
+                                    Are you coming?
+                                </p>
+
+                            </div>
+
+                            <div class="conversation-meta">
+
+                                <span class="online-dot"></span>
+
+                            </div>
+
+                        </button>
+
+
+                        <!-- Conversation 3 -->
+
+                        <button class="conversation">
+
+                            <div class="avatar">
+                                SM
+                            </div>
+
+                            <div class="conversation-info">
+
+                                <div class="conversation-top">
+
+                                    <strong>Sam</strong>
+
+                                    <span class="ping">
+                                        21ms
+                                    </span>
+
+                                </div>
+
+                                <p>
+                                    New project idea
+                                </p>
+
+                            </div>
+
+                            <div class="conversation-meta">
+
+                                <span class="online-dot"></span>
+
+                            </div>
+
+                        </button>
+
+
+                        <!-- Conversation 4 -->
+
+                        <button class="conversation">
+
+                            <div class="avatar">
+                                VK
+                            </div>
+
+                            <div class="conversation-info">
+
+                                <div class="conversation-top">
+
+                                    <strong>Vikram</strong>
+
+                                    <span class="ping offline">
+                                        OFFLINE
+                                    </span>
+
+                                </div>
+
+                                <p>
+                                    Last seen yesterday
+                                </p>
+
+                            </div>
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <!-- ==================================
+                     ACTIVE CHAT
+                     ================================== -->
+
+                <div class="chat-panel">
+
+
+                    <header class="chat-header">
+
+                        <div class="chat-user">
+
+                            <div class="avatar large">
+                                AX
+                            </div>
+
+                            <div>
+
+                                <h2>Alex</h2>
+
+                                <p>
+                                    <span class="online-dot"></span>
+                                    Online · 14ms
+                                </p>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="chat-actions">
+
+                            <button
+                                class="icon-button"
+                                title="More options"
+                            >
+                                ⋮
+                            </button>
+
+                        </div>
+
+                    </header>
+
+
+                    <!-- Quick Macros -->
+
+                    <div class="quick-macros">
+
+                        <button
+                            class="macro-btn"
+                            data-message="⚡ On my way"
+                        >
+                            ⚡ On my way
+                        </button>
+
+                        <button
+                            class="macro-btn"
+                            data-message="💻 Check build"
+                        >
+                            💻 Check build
+                        </button>
+
+                        <button
+                            class="macro-btn"
+                            data-message="☕ Coffee?"
+                        >
+                            ☕ Coffee?
+                        </button>
+
+                    </div>
+
+
+                    <!-- Messages -->
+
+                    <div class="messages" id="messages">
+
+
+                        <div class="message received">
+
+                            <div class="message-bubble">
+
+                                <p>
+                                    Yo, you checking the new Helix build?
+                                </p>
+
+                                <span class="message-time">
+                                    12:41
+                                </span>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="message sent">
+
+                            <div class="message-bubble">
+
+                                <p>
+                                    Yeah. The new console looks insane.
+                                </p>
+
+                                <span class="message-time">
+                                    12:42
+                                </span>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="message received">
+
+                            <div class="message-bubble">
+
+                                <p>
+                                    Nice 🔥
+                                </p>
+
+                                <span class="message-time">
+                                    12:42
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- Typing indicator -->
+
+                    <div
+                        class="typing-indicator"
+                        id="typing-indicator"
+                    >
+                        Alex is typing...
+                    </div>
+
+
+                    <!-- Message input -->
+
+                    <form class="message-input-area" id="message-form">
+
+                        <input
+                            type="text"
+                            id="message-input"
+                            placeholder="Transmit a message..."
+                            autocomplete="off"
+                        >
+
+                        <button
+                            type="submit"
+                            class="send-button"
+                            aria-label="Send message"
+                        >
+                            →
+                        </button>
+
+                    </form>
+
+                </div>
+
+            </section>
+
+        </main>
+
+
+        <!-- ==========================================
+             RIGHT DETAIL PANEL
+             ========================================== -->
+
+        <aside class="details-panel">
+
+
+            <div class="details-header">
+
+                <span>CONNECTION DETAILS</span>
+
+            </div>
+
+
+            <div class="profile-card">
+
+                <div class="profile-avatar">
+                    AX
+                </div>
+
+                <h2>Alex</h2>
+
+                <p class="username">
+                    @alex
+                </p>
+
+                <div class="online-status">
+
+                    <span class="online-dot"></span>
+
+                    ONLINE
+
+                </div>
+
+            </div>
+
+
+            <!-- Status -->
+
+            <div class="detail-section">
+
+                <span class="detail-label">
+                    STATUS
+                </span>
+
+                <p class="status-quote">
+                    "Building something insane."
+                </p>
+
+            </div>
+
+
+            <!-- Connection -->
+
+            <div class="detail-section">
+
+                <span class="detail-label">
+                    CONNECTION
+                </span>
+
+
+                <div class="metric">
+
+                    <span>Ping</span>
+
+                    <strong>
+                        14ms
+                    </strong>
+
+                </div>
+
+
+                <div class="metric">
+
+                    <span>Connection</span>
+
+                    <strong class="stable">
+                        Stable
+                    </strong>
+
+                </div>
+
+
+                <div class="metric">
+
+                    <span>Protocol</span>
+
+                    <strong>
+                        HELIX-WS
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <!-- Controls -->
+
+            <div class="detail-section">
+
+                <span class="detail-label">
+                    CONTROLS
+                </span>
+
+
+                <div class="control-buttons">
+
+                    <button
+                        class="control-btn"
+                        id="unpin-btn"
+                    >
+                        Unpin
+                    </button>
+
+
+                    <button
+                        class="control-btn"
+                        id="mute-btn"
+                    >
+                        Mute
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <!-- Footer -->
+
+            <div class="details-footer">
+
+                <p>
+                    HELIX NETWORK
+                </p>
+
+                <span>
+                    CONNECTION SECURE
+                </span>
+
+            </div>
+
+        </aside>
+
+    </div>
+
+
+    <!-- ==========================================
+         JAVASCRIPT
+         ========================================== -->
+
+    <script src="app.js"></script>
+
+</body>
+</html>

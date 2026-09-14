@@ -203,14 +203,14 @@ loginBtn.addEventListener("click", () => {
     }
 
 
-    // Successful login
-    showMessage("Login successful!", "success");
+// Successful login
+showMessage("Login successful!", "success");
 
-    localStorage.setItem("helixLoggedIn", username);
+localStorage.setItem("helixLoggedIn", username);
 
+// Open the Helix app
+setTimeout(() => {
+    window.location.href = "app.html";
+}, 500);
 
-    // Temporary success screen
-    setTimeout(() => {
-        alert(`Welcome to Helix, ${username}!`);
-    }, 500);
 });
