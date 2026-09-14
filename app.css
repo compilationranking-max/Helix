@@ -1556,6 +1556,73 @@ body::before {
     letter-spacing: 0.1px;
 }
 
+.profile-photo-section {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 22px 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.profile-photo-preview {
+    width: 68px;
+    height: 68px;
+    display: grid;
+    flex-shrink: 0;
+    place-items: center;
+    border: 1px solid rgba(0, 229, 255, 0.24);
+    border-radius: 18px;
+    background: linear-gradient(135deg, #152d41, #1b1550);
+    background-position: center;
+    background-size: cover;
+    color: var(--cyan-soft);
+    font-size: 16px;
+    font-weight: 800;
+    box-shadow: 0 0 25px rgba(0, 229, 255, 0.08);
+}
+
+.profile-photo-preview.has-photo {
+    border-color: rgba(0, 229, 255, 0.55);
+}
+
+.profile-photo-preview.has-photo span {
+    display: none;
+}
+
+.profile-photo-copy {
+    min-width: 0;
+}
+
+.profile-photo-copy p {
+    margin: 0 0 11px;
+    color: #8195a6;
+    font-size: 10px;
+}
+
+.profile-upload-button {
+    display: inline-flex;
+    padding: 9px 12px;
+    border: 1px solid rgba(0, 229, 255, 0.24);
+    border-radius: 8px;
+    background: rgba(0, 229, 255, 0.06);
+    color: var(--cyan-soft);
+    font-size: 10px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.profile-upload-button:hover {
+    border-color: var(--border-bright);
+    background: rgba(0, 229, 255, 0.12);
+}
+
+.profile-photo-message {
+    min-height: 14px;
+    margin-top: 7px !important;
+    margin-bottom: 0 !important;
+    color: var(--online) !important;
+}
+
 .profile-status {
     padding-top: 7px;
     color: var(--online);

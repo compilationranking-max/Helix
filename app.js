@@ -673,6 +673,8 @@ function updateProfileView() {
     const profileUsername = document.getElementById("profile-account-username");
     const profileEmail = document.getElementById("profile-account-email");
     const profilePhone = document.getElementById("profile-account-phone");
+    const profilePhotoPreview = document.getElementById("profile-photo-preview");
+    const profilePhotoInitials = document.getElementById("profile-photo-initials");
 
     if (profileUsername) {
         profileUsername.textContent = loggedInUser || "Not available";
@@ -684,6 +686,16 @@ function updateProfileView() {
 
     if (profilePhone) {
         profilePhone.textContent = formatPhone(localStorage.getItem("helixPhone"));
+    }
+
+    if (profilePhotoPreview) {
+        const photo = localStorage.getItem(`helixProfilePhoto:${loggedInUser}`);
+        profilePhotoPreview.style.backgroundImage = photo ? `url("${photo}")` : "";
+        profilePhotoPreview.classList.toggle("has-photo", Boolean(photo));
+    }
+
+    if (profilePhotoInitials) {
+        profilePhotoInitials.textContent = (loggedInUser || "User").slice(0, 2).toUpperCase();
     }
 }
 
@@ -791,6 +803,35 @@ accountModalForm?.addEventListener("submit", (event) => {
 
 document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") closeAccountModal();
+});
+
+const profilePhotoInput = document.getElementById("profile-photo-input");
+const profilePhotoMessage = document.getElementById("profile-photo-message");
+
+profilePhotoInput?.addEventListener("change", () => {
+    const file = profilePhotoInput.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+        profilePhotoMessage.textContent = "Select a supported image file.";
+        profilePhotoInput.value = "";
+        return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+        profilePhotoMessage.textContent = "Photo must be smaller than 5 MB.";
+        profilePhotoInput.value = "";
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.addEventListener("load", () => {
+        localStorage.setItem(`helixProfilePhoto:${loggedInUser}`, reader.result);
+        updateProfileView();
+        profilePhotoMessage.textContent = "Profile photo updated.";
+        profilePhotoInput.value = "";
+    });
+    reader.readAsDataURL(file);
 });
 
 const navItems =
