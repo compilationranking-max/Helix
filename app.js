@@ -298,6 +298,358 @@ if (searchInput) {
 // NAVIGATION
 // =========================================================
 
+const reelData = [
+    {
+        id: "signal-in-bloom",
+        video: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
+        creator: "Mira Chen",
+        username: "@mirachen",
+        avatar: "MC",
+        caption: "A quiet signal in the middle of the noise. Find your frequency.",
+        hashtags: ["#helix", "#slowmotion"],
+        audio: "Original audio · Mira Chen",
+        likes: 1842,
+        comments: [
+            { username: "noah.k", avatar: "NK", text: "The color shift is unreal.", time: "8m" },
+            { username: "rhea", avatar: "RH", text: "This feels like a transmission from tomorrow.", time: "21m" }
+        ]
+    },
+    {
+        id: "after-hours-build",
+        video: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.webm",
+        creator: "Jules Park",
+        username: "@julespark",
+        avatar: "JP",
+        caption: "After-hours build log. Small details, big atmosphere.",
+        hashtags: ["#buildinpublic", "#nightshift"],
+        audio: "Night Drive · Helix Radio",
+        likes: 927,
+        comments: [
+            { username: "sana", avatar: "SA", text: "The whole interface is so clean.", time: "4m" }
+        ]
+    },
+    {
+        id: "orbit-notes",
+        video: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
+        creator: "Theo Vale",
+        username: "@theovale",
+        avatar: "TV",
+        caption: "Orbit notes from a Sunday walk. Keep looking up.",
+        hashtags: ["#fieldnotes", "#outside"],
+        audio: "Soft Focus · Theo Vale",
+        likes: 2411,
+        comments: []
+    }
+];
+
+const reelState = reelData.map((reel) => ({
+    ...reel,
+    liked: false,
+    saved: false,
+    following: false,
+    muted: true,
+    comments: [...reel.comments]
+}));
+
+let reelsInitialized = false;
+let activeReelIndex = 0;
+let commentReelIndex = 0;
+let shareReelIndex = 0;
+
+function formatCount(count) {
+    return count >= 1000
+        ? `${(count / 1000).toFixed(count >= 10000 ? 0 : 1).replace(".0", "")}K`
+        : String(count);
+}
+
+function renderReels() {
+    const feed = document.getElementById("reels-feed");
+
+    if (!feed) return;
+
+    feed.innerHTML = reelState.map((reel, index) => `
+        <article class="reel-card" data-reel-index="${index}">
+            <video class="reel-video" src="${escapeHTML(reel.video)}" muted playsinline loop preload="metadata"></video>
+            <span class="reel-loading">Loading media...</span>
+            <div class="reel-play-indicator">▶</div>
+            <div class="reel-progress" aria-hidden="true"><span></span></div>
+
+            <div class="reel-info">
+                <div class="reel-creator">
+                    <span class="reel-avatar">${escapeHTML(reel.avatar)}</span>
+                    <strong>${escapeHTML(reel.username)}</strong>
+                </div>
+                <p class="reel-caption">${escapeHTML(reel.caption)} ${reel.hashtags.map((tag) => `<span class="hashtag">${escapeHTML(tag)}</span>`).join(" ")}</p>
+                <p class="reel-audio"><span>♫</span>${escapeHTML(reel.audio)}</p>
+            </div>
+
+            <div class="reel-actions">
+                <button class="reel-action${reel.liked ? " liked" : ""}" type="button" data-action="like" aria-label="Like Reel"><span class="reel-action-icon">♥</span><small>${formatCount(reel.likes)}</small></button>
+                <button class="reel-action" type="button" data-action="comment" aria-label="Open comments"><span class="reel-action-icon">◌</span><small>${formatCount(reel.comments.length)}</small></button>
+                <button class="reel-action" type="button" data-action="share" aria-label="Share Reel"><span class="reel-action-icon">↗</span><small>Share</small></button>
+                <button class="reel-action" type="button" data-action="repost" aria-label="Repost Reel"><span class="reel-action-icon">⟳</span><small>Repost</small></button>
+            </div>
+        </article>
+    `).join("");
+
+    feed.querySelectorAll(".reel-card").forEach((card) => bindReelCard(card));
+    setupReelObserver(feed);
+}
+
+function bindReelCard(card) {
+    const index = Number(card.dataset.reelIndex);
+    const video = card.querySelector(".reel-video");
+    const progress = card.querySelector(".reel-progress span");
+    const loading = card.querySelector(".reel-loading");
+    const playIndicator = card.querySelector(".reel-play-indicator");
+
+    video.addEventListener("loadeddata", () => {
+        loading.hidden = true;
+    });
+
+    video.addEventListener("error", () => {
+        loading.hidden = false;
+        loading.textContent = "Media unavailable · replace sample URL";
+        loading.classList.add("error");
+    });
+
+    video.addEventListener("timeupdate", () => {
+        progress.style.width = video.duration ? `${(video.currentTime / video.duration) * 100}%` : "0%";
+    });
+
+    video.addEventListener("play", () => {
+        playIndicator.textContent = "❚❚";
+        playIndicator.classList.remove("visible");
+    });
+
+    video.addEventListener("pause", () => {
+        playIndicator.textContent = "▶";
+        playIndicator.classList.add("visible");
+    });
+
+    video.addEventListener("click", () => toggleVideo(video));
+    video.addEventListener("dblclick", () => {
+        if (!reelState[index].liked) toggleLike(index, card);
+    });
+
+    card.querySelectorAll("[data-action]").forEach((button) => {
+        button.addEventListener("click", () => {
+            const action = button.dataset.action;
+
+            if (action === "like") toggleLike(index, card);
+            if (action === "comment") openComments(index);
+            if (action === "share") openShare(index);
+            if (action === "repost") showReelFeedback(card, "Reposted to your Helix feed");
+        });
+    });
+}
+
+function toggleVideo(video) {
+    if (video.paused) {
+        pauseAllVideos(video);
+        video.play().catch(() => {});
+    } else {
+        video.pause();
+    }
+}
+
+function pauseAllVideos(exceptVideo) {
+    document.querySelectorAll(".reel-video").forEach((video) => {
+        if (video !== exceptVideo) video.pause();
+    });
+}
+
+function activateReel(card) {
+    const index = Number(card.dataset.reelIndex);
+    const video = card.querySelector(".reel-video");
+
+    activeReelIndex = index;
+    pauseAllVideos(video);
+    video.currentTime = 0;
+    video.play().catch(() => {
+        card.querySelector(".reel-play-indicator").classList.add("visible");
+    });
+}
+
+function setupReelObserver(feed) {
+    if (!window.IntersectionObserver) {
+        activateReel(feed.querySelector(".reel-card"));
+        return;
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+            if (entry.isIntersecting && entry.intersectionRatio >= 0.7) {
+                activateReel(entry.target);
+            }
+        });
+    }, { root: feed, threshold: [0.7] });
+
+    feed.querySelectorAll(".reel-card").forEach((card) => observer.observe(card));
+}
+
+function toggleLike(index, card) {
+    const reel = reelState[index];
+    reel.liked = !reel.liked;
+    reel.likes += reel.liked ? 1 : -1;
+
+    const button = card.querySelector('[data-action="like"]');
+    button.classList.toggle("liked", reel.liked);
+    button.querySelector("small").textContent = formatCount(reel.likes);
+}
+
+function showReelFeedback(card, message) {
+    const feedback = document.createElement("span");
+    feedback.className = "reel-loading";
+    feedback.textContent = message;
+    card.appendChild(feedback);
+    setTimeout(() => feedback.remove(), 1800);
+}
+
+function renderComments(index) {
+    const list = document.getElementById("comments-list");
+    const comments = reelState[index].comments;
+
+    list.innerHTML = "";
+
+    if (!comments.length) {
+        const empty = document.createElement("p");
+        empty.className = "comment-empty";
+        empty.textContent = "No comments yet. Start the thread.";
+        list.appendChild(empty);
+        return;
+    }
+
+    comments.forEach((comment) => {
+        const item = document.createElement("article");
+        item.className = "comment-item";
+        item.innerHTML = `
+            <span class="reel-avatar"></span>
+            <div class="comment-body">
+                <div class="comment-meta"><strong></strong><time></time></div>
+                <p></p>
+            </div>
+        `;
+        item.querySelector(".reel-avatar").textContent = comment.avatar;
+        item.querySelector("strong").textContent = comment.username;
+        item.querySelector("time").textContent = comment.time;
+        item.querySelector("p").textContent = comment.text;
+        list.appendChild(item);
+    });
+}
+
+function openComments(index) {
+    commentReelIndex = index;
+    renderComments(index);
+    document.getElementById("comments-overlay").hidden = false;
+    document.getElementById("comment-input").focus();
+}
+
+function openShare(index) {
+    shareReelIndex = index;
+    document.getElementById("share-feedback").textContent = "";
+    document.getElementById("share-overlay").hidden = false;
+}
+
+function closeOverlay(id) {
+    document.getElementById(id).hidden = true;
+}
+
+function showShareFeedback(message) {
+    document.getElementById("share-feedback").textContent = message;
+}
+
+async function copyReelLink() {
+    const link = `${window.location.href.split("#")[0]}#reel=${reelState[shareReelIndex].id}`;
+
+    try {
+        if (!navigator.clipboard) throw new Error("Clipboard unavailable");
+        await navigator.clipboard.writeText(link);
+        showShareFeedback("Link copied");
+    } catch (error) {
+        showShareFeedback("Clipboard unavailable in this browser");
+    }
+}
+
+function initializeReels() {
+    if (reelsInitialized) return;
+
+    renderReels();
+    reelsInitialized = true;
+
+    document.getElementById("comment-form")?.addEventListener("submit", (event) => {
+        event.preventDefault();
+        const input = document.getElementById("comment-input");
+        const text = input.value.trim();
+
+        if (!text) return;
+
+        reelState[commentReelIndex].comments.push({
+            username: `@${loggedInUser || "you"}`,
+            avatar: (loggedInUser || "You").slice(0, 2).toUpperCase(),
+            text,
+            time: "now"
+        });
+        input.value = "";
+        renderComments(commentReelIndex);
+
+        const card = document.querySelector(`[data-reel-index="${commentReelIndex}"]`);
+        card.querySelector('[data-action="comment"] small').textContent = formatCount(reelState[commentReelIndex].comments.length);
+    });
+
+    document.querySelectorAll("[data-close-overlay]").forEach((button) => {
+        button.addEventListener("click", () => closeOverlay(button.dataset.closeOverlay));
+    });
+
+    document.querySelectorAll(".reel-overlay").forEach((overlay) => {
+        overlay.addEventListener("click", (event) => {
+            if (event.target === overlay) closeOverlay(overlay.id);
+        });
+    });
+
+    document.getElementById("copy-link-button")?.addEventListener("click", copyReelLink);
+    document.getElementById("share-helix-button")?.addEventListener("click", () => showShareFeedback("Ready to share with your Helix connections"));
+    document.getElementById("share-external-button")?.addEventListener("click", async () => {
+        const link = `${window.location.href.split("#")[0]}#reel=${reelState[shareReelIndex].id}`;
+
+        if (!navigator.share) {
+            showShareFeedback("External sharing is not supported here");
+            return;
+        }
+
+        try {
+            await navigator.share({ title: "Helix Reel", url: link });
+        } catch (error) {
+            if (error.name !== "AbortError") showShareFeedback("External share was unavailable");
+        }
+    });
+
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+            closeOverlay("comments-overlay");
+            closeOverlay("share-overlay");
+        }
+    });
+}
+
+function setReelsVisibility(showReels) {
+    const reelsView = document.getElementById("reels-view");
+    const mainViews = document.querySelectorAll(".topbar, .search-container, .messaging-area");
+    const detailsPanel = document.querySelector(".details-panel");
+
+    reelsView.hidden = !showReels;
+    mainViews.forEach((view) => { view.hidden = showReels; });
+    detailsPanel.hidden = showReels;
+
+    if (showReels) {
+        initializeReels();
+        const activeCard = document.querySelector(`[data-reel-index="${activeReelIndex}"]`);
+        if (activeCard) activateReel(activeCard);
+    } else {
+        pauseAllVideos();
+    }
+}
+
 const navItems =
     document.querySelectorAll(".nav-item");
 
@@ -317,6 +669,8 @@ navItems.forEach((item) => {
 
 
 function handleNavigation(id) {
+
+    setReelsVisibility(id === "nav-reels");
 
     switch (id) {
 

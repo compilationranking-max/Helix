@@ -116,7 +116,7 @@
                 <input
                     type="text"
                     id="chat-search"
-                    placeholder="Only search in Direct Messages..."
+                    placeholder="Search"
                     autocomplete="off"
                 >
 
@@ -454,6 +454,31 @@
 
             </section>
 
+
+            <!-- ==================================
+                 REELS VIEW
+                 ================================== -->
+
+            <section class="reels-view" id="reels-view" hidden>
+
+                <div class="reels-toolbar">
+
+                    <div>
+                        <p class="system-label">HELIX / DISCOVER</p>
+                        <h2>Reels</h2>
+                    </div>
+
+                    <div class="reels-toolbar-meta">
+                        <span class="status-dot"></span>
+                        <span>LIVE FEED</span>
+                    </div>
+
+                </div>
+
+                <div class="reels-feed" id="reels-feed"></div>
+
+            </section>
+
         </main>
 
 
@@ -599,6 +624,57 @@
             </div>
 
         </aside>
+
+
+        <div class="reel-overlay" id="comments-overlay" hidden>
+
+            <section class="reel-drawer" role="dialog" aria-modal="true" aria-labelledby="comments-title">
+
+                <header class="reel-drawer-header">
+                    <div>
+                        <p class="system-label">THREAD</p>
+                        <h2 id="comments-title">Comments</h2>
+                    </div>
+
+                    <button class="overlay-close" type="button" data-close-overlay="comments-overlay" aria-label="Close comments">×</button>
+                </header>
+
+                <div class="comments-list" id="comments-list"></div>
+
+                <form class="comment-form" id="comment-form">
+                    <input type="text" id="comment-input" placeholder="Add a comment..." autocomplete="off" maxlength="240">
+                    <button class="send-button" type="submit" aria-label="Post comment">↑</button>
+                </form>
+
+            </section>
+
+        </div>
+
+
+        <div class="reel-overlay" id="share-overlay" hidden>
+
+            <section class="share-sheet" role="dialog" aria-modal="true" aria-labelledby="share-title">
+
+                <header class="reel-drawer-header">
+                    <div>
+                        <p class="system-label">TRANSMIT</p>
+                        <h2 id="share-title">Share Reel</h2>
+                    </div>
+
+                    <button class="overlay-close" type="button" data-close-overlay="share-overlay" aria-label="Close share menu">×</button>
+                </header>
+
+                <div class="share-options">
+                    <button class="share-option" type="button" id="copy-link-button"><span>⌁</span><span><strong>Copy link</strong><small>Save this Reel to your clipboard</small></span></button>
+                    <button class="share-option" type="button" id="share-helix-button"><span>◈</span><span><strong>Share to Helix</strong><small>Send it to your connections</small></span></button>
+                    <button class="share-option" type="button" id="share-external-button"><span>↗</span><span><strong>Share externally</strong><small>Use your device share menu</small></span></button>
+                </div>
+
+                <p class="share-feedback" id="share-feedback" role="status"></p>
+
+            </section>
+
+        </div>
 
     </div>
 

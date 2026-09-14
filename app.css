@@ -1463,3 +1463,520 @@ body::before {
         min-height: 350px;
     }
 }
+
+
+/* =========================================================
+   REELS
+   ========================================================= */
+
+[hidden] {
+    display: none !important;
+}
+
+.reels-view {
+    min-height: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background:
+        radial-gradient(circle at 50% 25%, rgba(0, 180, 255, 0.06), transparent 38%),
+        #05070d;
+}
+
+.reels-toolbar {
+    min-height: 72px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px 25px;
+    border-bottom: 1px solid var(--border);
+}
+
+.reels-toolbar h2 {
+    color: white;
+    font-size: 21px;
+    letter-spacing: 0.2px;
+}
+
+.reels-toolbar-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #7690a4;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 1.4px;
+}
+
+.reels-feed {
+    min-height: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 22px;
+    overflow-y: auto;
+    padding: 22px 24px 34px;
+    scroll-snap-type: y mandatory;
+    scroll-behavior: smooth;
+}
+
+.reels-feed::-webkit-scrollbar {
+    width: 6px;
+}
+
+.reels-feed::-webkit-scrollbar-thumb {
+    background: rgba(120, 140, 160, 0.22);
+    border-radius: 99px;
+}
+
+.reel-card {
+    position: relative;
+    width: min(100%, 650px);
+    min-height: min(720px, calc(100vh - 155px));
+    flex: 0 0 min(720px, calc(100vh - 155px));
+    overflow: hidden;
+    border: 1px solid rgba(120, 170, 200, 0.18);
+    border-radius: 20px;
+    background: #0b1019;
+    scroll-snap-align: center;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35), 0 0 30px rgba(0, 205, 255, 0.04);
+    isolation: isolate;
+}
+
+.reel-video {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+    background: #0a0f17;
+}
+
+.reel-card::after {
+    content: "";
+    position: absolute;
+    inset: 35% 0 0;
+    z-index: 1;
+    pointer-events: none;
+    background: linear-gradient(transparent, rgba(3, 5, 10, 0.92) 90%);
+}
+
+.reel-loading {
+    position: absolute;
+    top: 18px;
+    left: 18px;
+    z-index: 3;
+    padding: 7px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.13);
+    border-radius: 99px;
+    background: rgba(4, 8, 14, 0.68);
+    color: #c4d8e4;
+    font-size: 9px;
+    letter-spacing: 0.8px;
+}
+
+.reel-loading.error {
+    color: #ff91a6;
+}
+
+.reel-progress {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 4;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.reel-progress span {
+    display: block;
+    width: 0;
+    height: 100%;
+    background: var(--cyan);
+    box-shadow: 0 0 12px rgba(0, 229, 255, 0.8);
+}
+
+.reel-play-indicator {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    z-index: 5;
+    width: 58px;
+    height: 58px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    background: rgba(3, 7, 12, 0.62);
+    color: white;
+    font-size: 21px;
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.82);
+    pointer-events: none;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.reel-play-indicator.visible {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.reel-info {
+    position: absolute;
+    right: 76px;
+    bottom: 25px;
+    left: 22px;
+    z-index: 2;
+}
+
+.reel-creator {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 13px;
+}
+
+.reel-avatar {
+    width: 36px;
+    height: 36px;
+    display: grid;
+    flex: 0 0 auto;
+    place-items: center;
+    border: 1px solid rgba(0, 229, 255, 0.35);
+    border-radius: 50%;
+    background: linear-gradient(135deg, #17374b, #35205b);
+    color: var(--cyan-soft);
+    font-size: 10px;
+    font-weight: 800;
+}
+
+.reel-creator strong {
+    color: white;
+    font-size: 12px;
+}
+
+.follow-button {
+    margin-left: 4px;
+    padding: 6px 9px;
+    border: 1px solid rgba(0, 229, 255, 0.32);
+    border-radius: 7px;
+    background: rgba(0, 229, 255, 0.08);
+    color: var(--cyan-soft);
+    font-size: 9px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.follow-button.following {
+    border-color: rgba(0, 255, 157, 0.25);
+    background: rgba(0, 255, 157, 0.08);
+    color: var(--online);
+}
+
+.reel-caption {
+    color: #eefaff;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.reel-caption .hashtag {
+    color: var(--cyan-soft);
+}
+
+.reel-audio {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-top: 12px;
+    color: #a3b7c6;
+    font-size: 10px;
+}
+
+.reel-actions {
+    position: absolute;
+    right: 15px;
+    bottom: 23px;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.reel-action {
+    width: 43px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    border: 0;
+    background: transparent;
+    color: white;
+    cursor: pointer;
+}
+
+.reel-action-icon {
+    width: 36px;
+    height: 36px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 50%;
+    background: rgba(5, 9, 15, 0.62);
+    font-size: 17px;
+    transition: transform 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+}
+
+.reel-action:hover .reel-action-icon {
+    border-color: rgba(0, 229, 255, 0.5);
+    color: var(--cyan);
+    transform: translateY(-2px);
+}
+
+.reel-action small {
+    color: #d9e7ed;
+    font-size: 9px;
+    font-weight: 700;
+}
+
+.reel-action.liked .reel-action-icon {
+    border-color: rgba(255, 85, 119, 0.55);
+    color: #ff6e8b;
+    animation: reelLike 0.3s ease;
+}
+
+.reel-action.saved .reel-action-icon {
+    color: var(--cyan);
+}
+
+@keyframes reelLike {
+    50% { transform: scale(1.25); }
+}
+
+.reel-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    display: grid;
+    place-items: end center;
+    background: rgba(1, 3, 7, 0.62);
+    backdrop-filter: blur(7px);
+}
+
+.reel-drawer,
+.share-sheet {
+    width: min(100%, 540px);
+    max-height: min(78vh, 680px);
+    display: flex;
+    flex-direction: column;
+    border: 1px solid rgba(0, 229, 255, 0.18);
+    border-bottom: 0;
+    border-radius: 20px 20px 0 0;
+    background: #0b111b;
+    box-shadow: 0 -20px 70px rgba(0, 0, 0, 0.45);
+    animation: drawerUp 0.22s ease-out;
+}
+
+@keyframes drawerUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.reel-drawer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--border);
+}
+
+.reel-drawer-header h2 {
+    color: white;
+    font-size: 18px;
+}
+
+.overlay-close {
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    background: transparent;
+    color: #b6c9d5;
+    font-size: 22px;
+    cursor: pointer;
+}
+
+.comments-list {
+    min-height: 140px;
+    overflow-y: auto;
+    padding: 7px 20px;
+}
+
+.comment-item {
+    display: flex;
+    gap: 10px;
+    padding: 14px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.comment-item .reel-avatar {
+    width: 30px;
+    height: 30px;
+    font-size: 8px;
+}
+
+.comment-body {
+    min-width: 0;
+    flex: 1;
+}
+
+.comment-meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.comment-meta strong {
+    color: #eafaff;
+    font-size: 11px;
+}
+
+.comment-meta time {
+    color: #667c8c;
+    font-size: 9px;
+}
+
+.comment-body p {
+    margin-top: 5px;
+    color: #b7cbd6;
+    font-size: 11px;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+}
+
+.comment-empty,
+.share-feedback {
+    padding: 28px 20px;
+    color: #728899;
+    font-size: 11px;
+    text-align: center;
+}
+
+.comment-form {
+    display: flex;
+    gap: 8px;
+    padding: 13px 16px 16px;
+    border-top: 1px solid var(--border);
+}
+
+.comment-form input {
+    min-width: 0;
+    flex: 1;
+    padding: 11px 12px;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    outline: none;
+    background: rgba(2, 5, 10, 0.72);
+    color: white;
+    font-size: 11px;
+}
+
+.comment-form input:focus {
+    border-color: var(--border-bright);
+}
+
+.comment-form .send-button {
+    width: 42px;
+}
+
+.share-sheet {
+    padding-bottom: 3px;
+}
+
+.share-options {
+    display: grid;
+    gap: 8px;
+    padding: 18px 20px 0;
+}
+
+.share-option {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    padding: 13px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.025);
+    color: white;
+    text-align: left;
+    cursor: pointer;
+}
+
+.share-option:hover {
+    border-color: var(--border-bright);
+    background: rgba(0, 229, 255, 0.05);
+}
+
+.share-option > span:first-child {
+    width: 31px;
+    height: 31px;
+    display: grid;
+    flex: 0 0 auto;
+    place-items: center;
+    border-radius: 8px;
+    background: rgba(0, 229, 255, 0.1);
+    color: var(--cyan);
+    font-size: 17px;
+}
+
+.share-option > span:last-child {
+    display: grid;
+    gap: 3px;
+}
+
+.share-option strong {
+    font-size: 11px;
+}
+
+.share-option small {
+    color: #728899;
+    font-size: 9px;
+}
+
+.share-feedback {
+    min-height: 56px;
+    padding-top: 16px;
+    padding-bottom: 12px;
+    color: var(--online);
+}
+
+@media (max-width: 650px) {
+    .reels-toolbar {
+        min-height: 65px;
+        padding: 12px 16px;
+    }
+
+    .reels-feed {
+        gap: 14px;
+        padding: 14px 10px 22px;
+    }
+
+    .reel-card {
+        width: 100%;
+        min-height: calc(100vh - 170px);
+        flex-basis: calc(100vh - 170px);
+        border-radius: 15px;
+    }
+
+    .reel-info {
+        right: 65px;
+        bottom: 20px;
+        left: 16px;
+    }
+
+    .reel-actions {
+        right: 9px;
+        bottom: 18px;
+    }
+}
