@@ -1623,6 +1623,23 @@ body::before {
     color: var(--cyan-soft);
 }
 
+.profile-primary-button {
+    padding: 10px 14px;
+    border: 1px solid rgba(0, 229, 255, 0.4);
+    border-radius: 8px;
+    background: linear-gradient(110deg, rgba(0, 229, 255, 0.2), rgba(83, 76, 255, 0.2));
+    color: var(--cyan-soft);
+    font-size: 10px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.profile-danger-button {
+    border-color: rgba(255, 85, 119, 0.5);
+    background: rgba(255, 85, 119, 0.13);
+    color: #ff91a6;
+}
+
 .profile-account-actions {
     display: flex;
     flex-wrap: wrap;
@@ -1647,6 +1664,98 @@ body::before {
     color: var(--online);
     font-size: 10px;
     line-height: 1.5;
+}
+
+.helix-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+}
+
+.helix-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(1, 4, 10, 0.78);
+    backdrop-filter: blur(8px);
+}
+
+.helix-modal-panel {
+    position: relative;
+    width: min(100%, 430px);
+    padding: 28px;
+    border: 1px solid rgba(0, 229, 255, 0.28);
+    border-radius: 12px;
+    background: linear-gradient(145deg, rgba(15, 24, 39, 0.98), rgba(7, 11, 22, 0.98));
+    box-shadow: 0 0 0 1px rgba(118, 92, 255, 0.08), 0 24px 80px rgba(0, 0, 0, 0.5), 0 0 34px rgba(0, 210, 255, 0.1);
+}
+
+.helix-modal-close {
+    position: absolute;
+    top: 12px;
+    right: 14px;
+    border: 0;
+    background: transparent;
+    color: #7890a2;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.helix-modal-panel h2 {
+    margin: 8px 0 9px;
+    color: white;
+    font-size: 21px;
+}
+
+.helix-modal-description,
+.helix-confirmation-copy {
+    margin-bottom: 22px;
+    color: #8ca3b5;
+    font-size: 11px;
+    line-height: 1.6;
+}
+
+.helix-modal-label {
+    display: block;
+    margin: 13px 0 7px;
+    color: #7891a4;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 1px;
+}
+
+.helix-modal-input {
+    width: 100%;
+    padding: 12px 13px;
+    border: 1px solid rgba(87, 110, 140, 0.3);
+    border-radius: 7px;
+    outline: none;
+    background: rgba(0, 0, 0, 0.22);
+    color: white;
+    font: inherit;
+    font-size: 12px;
+}
+
+.helix-modal-input:focus {
+    border-color: var(--cyan);
+    box-shadow: 0 0 18px rgba(0, 229, 255, 0.09);
+}
+
+.helix-modal-error {
+    min-height: 18px;
+    margin-top: 10px;
+    color: #ff91a6;
+    font-size: 10px;
+}
+
+.helix-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 9px;
+    margin-top: 12px;
 }
 
 

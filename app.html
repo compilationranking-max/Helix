@@ -529,6 +529,7 @@
                                     <span class="account-label">EMAIL / GMAIL</span>
                                     <strong id="profile-account-email">Not linked</strong>
                                 </div>
+                                <button class="profile-secondary-button" type="button" id="link-email-btn">Link</button>
                             </div>
 
                             <div class="account-row">
@@ -536,15 +537,16 @@
                                     <span class="account-label">PHONE NUMBER</span>
                                     <strong id="profile-account-phone">Not linked</strong>
                                 </div>
+                                <button class="profile-secondary-button" type="button" id="add-phone-btn">Add</button>
                             </div>
 
                             <div class="account-row account-password-row">
                                 <div>
                                     <span class="account-label">PASSWORD</span>
-                                    <strong>Password protected</strong>
+                                    <strong>••••••••</strong>
                                 </div>
 
-                                <button class="profile-secondary-button" type="button">Change Password</button>
+                                <button class="profile-secondary-button" type="button" id="change-password-btn">Change Password</button>
                             </div>
 
                         </div>
@@ -562,6 +564,24 @@
                 </div>
 
             </section>
+
+            <div class="helix-modal" id="account-modal" hidden>
+                <div class="helix-modal-backdrop" data-modal-close></div>
+                <section class="helix-modal-panel" role="dialog" aria-modal="true" aria-labelledby="account-modal-title">
+                    <button class="helix-modal-close" type="button" aria-label="Close dialog" data-modal-close>×</button>
+                    <p class="system-label">HELIX / IDENTITY</p>
+                    <h2 id="account-modal-title">Link account</h2>
+                    <p class="helix-modal-description" id="account-modal-description"></p>
+                    <form id="account-modal-form">
+                        <div id="account-modal-fields"></div>
+                        <p class="helix-modal-error" id="account-modal-error" role="alert"></p>
+                        <div class="helix-modal-actions">
+                            <button class="profile-secondary-button" type="button" data-modal-close>Cancel</button>
+                            <button class="profile-primary-button" type="submit" id="account-modal-submit">Confirm</button>
+                        </div>
+                    </form>
+                </section>
+            </div>
 
         </main>
 

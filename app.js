@@ -683,22 +683,115 @@ function updateProfileView() {
     }
 
     if (profilePhone) {
-        profilePhone.textContent = localStorage.getItem("helixPhone") || "Not linked";
+        profilePhone.textContent = formatPhone(localStorage.getItem("helixPhone"));
     }
+}
+
+function formatPhone(phone) {
+    if (!phone) return "Not linked";
+
+    const digits = phone.replace(/\D/g, "");
+    if (digits.length < 4) return "••••";
+
+    return `${"•".repeat(Math.max(0, digits.length - 4))}${digits.slice(-4)}`;
 }
 
 const logoutAllSessionsButton = document.getElementById("logout-all-sessions-btn");
 const profileActionMessage = document.getElementById("profile-action-message");
 
-if (logoutAllSessionsButton && profileActionMessage) {
-    logoutAllSessionsButton.addEventListener("click", () => {
-        const confirmed = window.confirm("This frontend prototype can only end the current session. Continue?");
+const accountModal = document.getElementById("account-modal");
+const accountModalForm = document.getElementById("account-modal-form");
+const accountModalTitle = document.getElementById("account-modal-title");
+const accountModalDescription = document.getElementById("account-modal-description");
+const accountModalFields = document.getElementById("account-modal-fields");
+const accountModalError = document.getElementById("account-modal-error");
+const accountModalSubmit = document.getElementById("account-modal-submit");
+let activeAccountAction = "";
 
-        if (!confirmed) return;
+function openAccountModal(action) {
+    if (!accountModal) return;
 
-        profileActionMessage.textContent = "Prototype action complete for this session. Other devices are not affected.";
-    });
+    activeAccountAction = action;
+    accountModalError.textContent = "";
+    accountModalFields.innerHTML = action === "email"
+        ? `<label class="helix-modal-label" for="account-modal-email">Gmail address</label><input class="helix-modal-input" id="account-modal-email" type="email" autocomplete="email" placeholder="you@gmail.com" required>`
+        : action === "phone"
+            ? `<label class="helix-modal-label" for="account-modal-phone">Phone number</label><input class="helix-modal-input" id="account-modal-phone" type="tel" autocomplete="tel" placeholder="+1 555 010 2048" required>`
+            : action === "password"
+                ? `<label class="helix-modal-label" for="account-modal-current-password">Current password</label><input class="helix-modal-input" id="account-modal-current-password" type="password" autocomplete="current-password" required><label class="helix-modal-label" for="account-modal-new-password">New password</label><input class="helix-modal-input" id="account-modal-new-password" type="password" autocomplete="new-password" minlength="6" required>`
+                : `<p class="helix-confirmation-copy">This will end every active Helix session for this account.</p>`;
+
+    accountModalTitle.textContent = action === "email" ? "Link Gmail"
+        : action === "phone" ? "Add phone"
+            : action === "password" ? "Change password" : "End all sessions";
+    accountModalDescription.textContent = action === "sessions"
+        ? "Confirm network-wide session termination."
+        : "Update your encrypted identity record.";
+    accountModalSubmit.textContent = action === "sessions" ? "Log out everywhere" : "Save changes";
+    accountModalSubmit.classList.toggle("profile-danger-button", action === "sessions");
+    accountModal.hidden = false;
+
+    const firstInput = accountModalFields.querySelector("input");
+    if (firstInput) firstInput.focus();
 }
+
+function closeAccountModal() {
+    if (accountModal) accountModal.hidden = true;
+    activeAccountAction = "";
+}
+
+document.querySelectorAll("[data-modal-close]").forEach((element) => {
+    element.addEventListener("click", closeAccountModal);
+});
+
+document.getElementById("link-email-btn")?.addEventListener("click", () => openAccountModal("email"));
+document.getElementById("add-phone-btn")?.addEventListener("click", () => openAccountModal("phone"));
+document.getElementById("change-password-btn")?.addEventListener("click", () => openAccountModal("password"));
+logoutAllSessionsButton?.addEventListener("click", () => openAccountModal("sessions"));
+
+accountModalForm?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    accountModalError.textContent = "";
+
+    if (activeAccountAction === "email") {
+        localStorage.setItem("helixEmail", document.getElementById("account-modal-email").value.trim());
+    } else if (activeAccountAction === "phone") {
+        const phone = document.getElementById("account-modal-phone").value.trim();
+        if (phone.replace(/\D/g, "").length < 7) {
+            accountModalError.textContent = "Enter a valid phone number.";
+            return;
+        }
+        localStorage.setItem("helixPhone", phone);
+    } else if (activeAccountAction === "password") {
+        const currentPassword = document.getElementById("account-modal-current-password").value;
+        const newPassword = document.getElementById("account-modal-new-password").value;
+        const users = JSON.parse(localStorage.getItem("helixUsers")) || {};
+        const user = users[loggedInUser];
+
+        if (!user || user.password !== currentPassword) {
+            accountModalError.textContent = "Current password is incorrect.";
+            return;
+        }
+        if (newPassword.length < 6) {
+            accountModalError.textContent = "New password must be at least 6 characters.";
+            return;
+        }
+        user.password = newPassword;
+        localStorage.setItem("helixUsers", JSON.stringify(users));
+    } else if (activeAccountAction === "sessions") {
+        localStorage.removeItem("helixLoggedIn");
+        window.location.href = "index.html";
+        return;
+    }
+
+    updateProfileView();
+    if (profileActionMessage) profileActionMessage.textContent = "Account record updated.";
+    closeAccountModal();
+});
+
+document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closeAccountModal();
+});
 
 const navItems =
     document.querySelectorAll(".nav-item");
