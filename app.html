@@ -83,7 +83,10 @@
 
             <!-- Top bar -->
 
-            <header class="topbar">
+            <section class="home-view" id="home-view" data-main-section="home" hidden></section>
+
+
+            <header class="topbar" data-main-section="direct-messages">
 
                 <div>
 
@@ -111,7 +114,7 @@
 
             <!-- Search -->
 
-            <div class="search-container">
+            <div class="search-container" data-main-section="direct-messages">
 
                 <input
                     type="text"
@@ -125,7 +128,7 @@
 
             <!-- Main messaging area -->
 
-            <section class="messaging-area">
+            <section class="messaging-area" data-main-section="direct-messages">
 
 
                 <!-- ==================================
@@ -459,7 +462,7 @@
                  REELS VIEW
                  ================================== -->
 
-            <section class="reels-view" id="reels-view" hidden>
+            <section class="reels-view" id="reels-view" data-main-section="reels" hidden>
 
                 <div class="reels-toolbar">
 
@@ -476,6 +479,87 @@
                 </div>
 
                 <div class="reels-feed" id="reels-feed"></div>
+
+            </section>
+
+
+            <!-- ==================================
+                 PROFILE VIEW
+                 ================================== -->
+
+            <section class="profile-view" id="profile-view" data-main-section="profile" hidden>
+
+                <div class="profile-layout">
+
+                    <aside class="profile-settings-sidebar">
+
+                        <p class="profile-settings-label">SETTINGS</p>
+
+                        <button class="profile-settings-item active" type="button">
+                            <span>◎</span>
+                            <span>Account Info</span>
+                        </button>
+
+                    </aside>
+
+
+                    <div class="profile-content">
+
+                        <header class="profile-content-header">
+                            <div>
+                                <p class="system-label">HELIX / SETTINGS</p>
+                                <h1>Account Information</h1>
+                            </div>
+
+                            <span class="profile-status">ACCOUNT ACTIVE</span>
+                        </header>
+
+
+                        <div class="account-details">
+
+                            <div class="account-row">
+                                <div>
+                                    <span class="account-label">USERNAME</span>
+                                    <strong id="profile-account-username">Not available</strong>
+                                </div>
+                            </div>
+
+                            <div class="account-row">
+                                <div>
+                                    <span class="account-label">EMAIL / GMAIL</span>
+                                    <strong id="profile-account-email">Not linked</strong>
+                                </div>
+                            </div>
+
+                            <div class="account-row">
+                                <div>
+                                    <span class="account-label">PHONE NUMBER</span>
+                                    <strong id="profile-account-phone">Not linked</strong>
+                                </div>
+                            </div>
+
+                            <div class="account-row account-password-row">
+                                <div>
+                                    <span class="account-label">PASSWORD</span>
+                                    <strong>Password protected</strong>
+                                </div>
+
+                                <button class="profile-secondary-button" type="button">Change Password</button>
+                            </div>
+
+                        </div>
+
+
+                        <div class="profile-account-actions">
+                            <button class="profile-logout-button" type="button" id="profile-logout-btn">Logout</button>
+                            <button class="profile-secondary-button" type="button" id="logout-all-sessions-btn">Log out of all sessions</button>
+                        </div>
+
+                        <p class="profile-action-message" id="profile-action-message" role="status"></p>
+
+                    </div>
+
+                </div>
 
             </section>
 

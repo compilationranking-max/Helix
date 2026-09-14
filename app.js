@@ -31,15 +31,21 @@ function updateLoggedInUser() {
 // LOGOUT
 // =========================================================
 
+function logoutCurrentSession() {
+    localStorage.removeItem("helixLoggedIn");
+    window.location.href = "index.html";
+}
+
 const logoutButton = document.getElementById("logout-btn");
 
 if (logoutButton) {
-    logoutButton.addEventListener("click", () => {
+    logoutButton.addEventListener("click", logoutCurrentSession);
+}
 
-        localStorage.removeItem("helixLoggedIn");
+const profileLogoutButton = document.getElementById("profile-logout-btn");
 
-        window.location.href = "index.html";
-    });
+if (profileLogoutButton) {
+    profileLogoutButton.addEventListener("click", logoutCurrentSession);
 }
 
 
@@ -632,14 +638,23 @@ function initializeReels() {
     });
 }
 
-function setReelsVisibility(showReels) {
-    const reelsView = document.getElementById("reels-view");
-    const mainViews = document.querySelectorAll(".topbar, .search-container, .messaging-area");
+function setNavigationSection(id) {
+    const section = id === "nav-home"
+        ? "home"
+        : id === "nav-console"
+            ? "direct-messages"
+            : id === "nav-reels"
+                ? "reels"
+                : "profile";
+    const mainSections = document.querySelectorAll("[data-main-section]");
     const detailsPanel = document.querySelector(".details-panel");
+    const showReels = section === "reels";
 
-    reelsView.hidden = !showReels;
-    mainViews.forEach((view) => { view.hidden = showReels; });
-    detailsPanel.hidden = showReels;
+    mainSections.forEach((mainSection) => {
+        mainSection.hidden = mainSection.dataset.mainSection !== section;
+    });
+
+    detailsPanel.hidden = section !== "direct-messages";
 
     if (showReels) {
         initializeReels();
@@ -648,6 +663,41 @@ function setReelsVisibility(showReels) {
     } else {
         pauseAllVideos();
     }
+
+    if (section === "profile") {
+        updateProfileView();
+    }
+}
+
+function updateProfileView() {
+    const profileUsername = document.getElementById("profile-account-username");
+    const profileEmail = document.getElementById("profile-account-email");
+    const profilePhone = document.getElementById("profile-account-phone");
+
+    if (profileUsername) {
+        profileUsername.textContent = loggedInUser || "Not available";
+    }
+
+    if (profileEmail) {
+        profileEmail.textContent = localStorage.getItem("helixEmail") || "Not linked";
+    }
+
+    if (profilePhone) {
+        profilePhone.textContent = localStorage.getItem("helixPhone") || "Not linked";
+    }
+}
+
+const logoutAllSessionsButton = document.getElementById("logout-all-sessions-btn");
+const profileActionMessage = document.getElementById("profile-action-message");
+
+if (logoutAllSessionsButton && profileActionMessage) {
+    logoutAllSessionsButton.addEventListener("click", () => {
+        const confirmed = window.confirm("This frontend prototype can only end the current session. Continue?");
+
+        if (!confirmed) return;
+
+        profileActionMessage.textContent = "Prototype action complete for this session. Other devices are not affected.";
+    });
 }
 
 const navItems =
@@ -670,7 +720,7 @@ navItems.forEach((item) => {
 
 function handleNavigation(id) {
 
-    setReelsVisibility(id === "nav-reels");
+    setNavigationSection(id);
 
     switch (id) {
 
@@ -767,6 +817,8 @@ if (muteButton) {
 // =========================================================
 
 updateLoggedInUser();
+
+handleNavigation("nav-home");
 
 
 // Scroll messages to bottom on startup
