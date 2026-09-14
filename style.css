@@ -1,0 +1,525 @@
+/* =========================================================
+   HELIX — FUTURISTIC AUTH UI
+   ========================================================= */
+
+/* ---------- RESET ---------- */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    min-height: 100vh;
+    font-family: "Segoe UI", Arial, Helvetica, sans-serif;
+    color: #ffffff;
+    background:
+        radial-gradient(circle at 50% 15%, rgba(91, 51, 220, 0.22), transparent 32%),
+        radial-gradient(circle at 15% 80%, rgba(0, 140, 255, 0.10), transparent 30%),
+        radial-gradient(circle at 85% 75%, rgba(170, 40, 255, 0.09), transparent 30%),
+        #070811;
+    overflow-x: hidden;
+}
+
+/* ---------- FUTURISTIC BACKGROUND ---------- */
+
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.35;
+
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+
+    background-size: 45px 45px;
+
+    mask-image: linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 0.9),
+        rgba(0, 0, 0, 0.15)
+    );
+}
+
+/* ---------- MAIN AREA ---------- */
+
+.auth-container {
+    position: relative;
+    min-height: 100vh;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    padding: 40px 20px;
+}
+
+/* Ambient glow behind card */
+
+.auth-container::before {
+    content: "";
+    position: absolute;
+
+    width: 520px;
+    height: 520px;
+
+    border-radius: 50%;
+
+    background: radial-gradient(
+        circle,
+        rgba(101, 70, 255, 0.16),
+        transparent 70%
+    );
+
+    filter: blur(20px);
+    animation: ambientGlow 7s ease-in-out infinite alternate;
+}
+
+/* ---------- CARD ---------- */
+
+.auth-card {
+    position: relative;
+    z-index: 2;
+
+    width: 100%;
+    max-width: 440px;
+
+    padding: 42px 38px 36px;
+
+    border: 1px solid rgba(150, 130, 255, 0.18);
+    border-radius: 26px;
+
+    background: rgba(13, 14, 26, 0.72);
+
+    backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px);
+
+    box-shadow:
+        0 30px 90px rgba(0, 0, 0, 0.55),
+        0 0 60px rgba(95, 70, 255, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+
+    animation: cardEnter 0.8s cubic-bezier(.2,.8,.2,1);
+}
+
+/* Glowing border effect */
+
+.auth-card::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+
+    border-radius: 26px;
+
+    padding: 1px;
+
+    background: linear-gradient(
+        135deg,
+        rgba(155, 85, 255, 0.45),
+        transparent 35%,
+        transparent 65%,
+        rgba(0, 170, 255, 0.35)
+    );
+
+    -webkit-mask:
+        linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
+
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+
+    pointer-events: none;
+}
+
+/* ---------- LOGO ---------- */
+
+.helix-logo {
+    width: 92px;
+    height: 92px;
+
+    object-fit: contain;
+
+    display: block;
+    margin: 0 auto 18px;
+
+    filter:
+        drop-shadow(0 0 10px rgba(113, 75, 255, 0.35))
+        drop-shadow(0 0 30px rgba(0, 153, 255, 0.15));
+
+    animation: logoFloat 4s ease-in-out infinite;
+}
+
+/* ---------- APP NAME ---------- */
+
+.app-name {
+    text-align: center;
+
+    font-size: 43px;
+    line-height: 1;
+
+    font-weight: 800;
+    letter-spacing: 7px;
+
+    margin-left: 7px;
+    margin-bottom: 12px;
+
+    text-transform: uppercase;
+
+    background: linear-gradient(
+        100deg,
+        #ffffff 5%,
+        #c8b9ff 45%,
+        #72bfff 95%
+    );
+
+    -webkit-background-clip: text;
+    background-clip: text;
+
+    -webkit-text-fill-color: transparent;
+
+    text-shadow:
+        0 0 25px rgba(125, 95, 255, 0.18);
+}
+
+/* ---------- TAGLINE ---------- */
+
+.tagline {
+    text-align: center;
+
+    color: #85899d;
+
+    font-size: 13px;
+    font-weight: 500;
+
+    letter-spacing: 2px;
+    text-transform: uppercase;
+
+    margin-bottom: 34px;
+}
+
+/* ---------- FORM ---------- */
+
+.auth-form {
+    animation: formEnter 0.35s ease;
+}
+
+.auth-form h2 {
+    font-size: 22px;
+    font-weight: 700;
+
+    margin-bottom: 25px;
+
+    color: #f5f5ff;
+
+    letter-spacing: 0.5px;
+}
+
+/* ---------- INPUT GROUP ---------- */
+
+.input-group {
+    margin-bottom: 19px;
+}
+
+.input-group label {
+    display: block;
+
+    margin-bottom: 8px;
+
+    color: #9da1b5;
+
+    font-size: 12px;
+    font-weight: 600;
+
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+}
+
+/* ---------- INPUTS ---------- */
+
+.input-group input {
+    width: 100%;
+
+    padding: 15px 16px;
+
+    border: 1px solid rgba(146, 145, 177, 0.19);
+    border-radius: 12px;
+
+    outline: none;
+
+    background: rgba(4, 5, 13, 0.72);
+
+    color: #ffffff;
+
+    font-size: 15px;
+
+    transition:
+        border-color 0.25s ease,
+        box-shadow 0.25s ease,
+        background 0.25s ease,
+        transform 0.25s ease;
+}
+
+.input-group input::placeholder {
+    color: #54586c;
+}
+
+.input-group input:hover {
+    border-color: rgba(135, 112, 255, 0.32);
+}
+
+.input-group input:focus {
+    border-color: rgba(128, 99, 255, 0.85);
+
+    background: rgba(8, 9, 20, 0.9);
+
+    box-shadow:
+        0 0 0 3px rgba(111, 81, 255, 0.10),
+        0 0 25px rgba(92, 74, 255, 0.10);
+
+    transform: translateY(-1px);
+}
+
+/* ---------- MAIN BUTTON ---------- */
+
+.auth-form > button {
+    position: relative;
+    overflow: hidden;
+
+    width: 100%;
+
+    margin-top: 10px;
+    padding: 15px;
+
+    border: 0;
+    border-radius: 12px;
+
+    color: #ffffff;
+
+    background: linear-gradient(
+        100deg,
+        #703dff,
+        #5755ff,
+        #208cff
+    );
+
+    font-size: 14px;
+    font-weight: 750;
+
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+
+    cursor: pointer;
+
+    box-shadow:
+        0 10px 30px rgba(82, 72, 255, 0.20);
+
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        filter 0.2s ease;
+}
+
+.auth-form > button::before {
+    content: "";
+
+    position: absolute;
+    top: 0;
+    left: -120%;
+
+    width: 70%;
+    height: 100%;
+
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255,255,255,0.25),
+        transparent
+    );
+
+    transform: skewX(-20deg);
+
+    transition: left 0.6s ease;
+}
+
+.auth-form > button:hover::before {
+    left: 140%;
+}
+
+.auth-form > button:hover {
+    transform: translateY(-2px);
+
+    filter: brightness(1.08);
+
+    box-shadow:
+        0 14px 35px rgba(75, 75, 255, 0.28),
+        0 0 25px rgba(92, 82, 255, 0.13);
+}
+
+.auth-form > button:active {
+    transform: translateY(0);
+}
+
+/* ---------- SWITCH TEXT ---------- */
+
+.switch-text {
+    margin-top: 23px;
+
+    text-align: center;
+
+    color: #72768b;
+
+    font-size: 13px;
+}
+
+/* ---------- SWITCH BUTTON ---------- */
+
+.switch-btn {
+    margin-left: 4px;
+
+    padding: 0;
+
+    border: none;
+    background: transparent;
+
+    color: #9b82ff;
+
+    font-size: 13px;
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition:
+        color 0.2s ease,
+        text-shadow 0.2s ease;
+}
+
+.switch-btn:hover {
+    color: #c0adff;
+
+    text-shadow:
+        0 0 12px rgba(141, 108, 255, 0.5);
+}
+
+/* ---------- MESSAGE ---------- */
+
+.auth-message {
+    min-height: 20px;
+
+    margin-top: 18px;
+
+    text-align: center;
+
+    font-size: 13px;
+    font-weight: 600;
+
+    letter-spacing: 0.2px;
+}
+
+/* ---------- HIDDEN ---------- */
+
+.hidden {
+    display: none;
+}
+
+/* ---------- ANIMATIONS ---------- */
+
+@keyframes cardEnter {
+    from {
+        opacity: 0;
+        transform: translateY(25px) scale(0.97);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes formEnter {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes logoFloat {
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-7px);
+    }
+}
+
+@keyframes ambientGlow {
+    from {
+        transform: scale(0.9);
+        opacity: 0.55;
+    }
+
+    to {
+        transform: scale(1.1);
+        opacity: 1;
+    }
+}
+
+/* ---------- MOBILE ---------- */
+
+@media (max-width: 520px) {
+
+    .auth-container {
+        padding: 20px 14px;
+    }
+
+    .auth-card {
+        padding: 34px 22px 29px;
+        border-radius: 22px;
+    }
+
+    .auth-card::before {
+        border-radius: 22px;
+    }
+
+    .helix-logo {
+        width: 78px;
+        height: 78px;
+    }
+
+    .app-name {
+        font-size: 34px;
+        letter-spacing: 5px;
+    }
+
+    .tagline {
+        font-size: 11px;
+        letter-spacing: 1.5px;
+        margin-bottom: 29px;
+    }
+}
+
+/* ---------- REDUCED MOTION ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}

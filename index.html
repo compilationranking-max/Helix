@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Helix</title>
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <main class="auth-container">
+
+        <section class="auth-card">
+
+            <!-- App Name -->
+            <img src="images/helix-logo.png" alt="Helix Logo" class="helix-logo">
+            <h1 class="app-name">Helix</h1>
+            <p class="tagline">Welcome to Helix</p>
+
+            <!-- Login Form -->
+            <div class="auth-form" id="login-form">
+
+                <h2>Login</h2>
+
+                <div class="input-group">
+                    <label for="login-username">Username</label>
+                    <input
+                        type="text"
+                        id="login-username"
+                        placeholder="Enter your username"
+                        autocomplete="username"
+                    >
+                </div>
+
+                <div class="input-group">
+                    <label for="login-password">Password</label>
+                    <input
+                        type="password"
+                        id="login-password"
+                        placeholder="Enter your password"
+                        autocomplete="current-password"
+                    >
+                </div>
+
+                <button type="button" id="login-btn">Login</button>
+
+                <p class="switch-text">
+                    Don't have an account?
+                    <button type="button" class="switch-btn" id="show-signup">
+                        Sign Up
+                    </button>
+                </p>
+
+            </div>
+
+            <!-- Sign Up Form -->
+            <div class="auth-form hidden" id="signup-form">
+
+                <h2>Sign Up</h2>
+
+                <div class="input-group">
+                    <label for="signup-username">Username</label>
+                    <input
+                        type="text"
+                        id="signup-username"
+                        placeholder="Choose a username"
+                        autocomplete="username"
+                    >
+                </div>
+
+                <div class="input-group">
+                    <label for="signup-password">Password</label>
+                    <input
+                        type="password"
+                        id="signup-password"
+                        placeholder="Create a password"
+                        autocomplete="new-password"
+                    >
+                </div>
+
+                <div class="input-group">
+                    <label for="signup-confirm-password">Confirm Password</label>
+                    <input
+                        type="password"
+                        id="signup-confirm-password"
+                        placeholder="Confirm your password"
+                        autocomplete="new-password"
+                    >
+                </div>
+
+                <button type="button" id="signup-btn">Create Account</button>
+
+                <p class="switch-text">
+                    Already have an account?
+                    <button type="button" class="switch-btn" id="show-login">
+                        Login
+                    </button>
+                </p>
+
+            </div>
+
+            <!-- Message Area -->
+            <p id="auth-message" class="auth-message"></p>
+
+        </section>
+
+    </main>
+
+    <!-- JavaScript -->
+    <script src="script.js"></script>
+
+</body>
+</html>
