@@ -83,7 +83,59 @@
 
             <!-- Top bar -->
 
-            <section class="home-view" id="home-view" data-main-section="home" hidden></section>
+            <section class="home-view" id="home-view" data-main-section="home">
+
+                <header class="home-header">
+                    <div class="home-brand">
+                        <img src="images/helixtext-logo.png" alt="Helix" class="home-text-logo">
+                        <div>
+                            <h1 class="page-title">Home</h1>
+                        </div>
+                    </div>
+
+                    <div class="home-header-actions">
+                        <label class="home-search" for="home-search">
+                            <span aria-hidden="true">⌕</span>
+                            <input type="search" id="home-search" placeholder="Search the community" autocomplete="off">
+                        </label>
+                        <button class="home-icon-button notification-button" type="button" aria-label="Notifications" title="Notifications">♢<span class="notification-count">3</span></button>
+                        <button class="home-profile-shortcut" type="button" id="home-profile-shortcut" aria-label="Open profile"><span class="home-avatar" data-avatar>US</span><span class="home-profile-name" data-user>User</span><span aria-hidden="true">⌄</span></button>
+                    </div>
+                </header>
+
+                <div class="home-scroll-area">
+                    <section class="welcome-banner">
+                        <div class="welcome-copy"><p class="eyebrow">GOOD MORNING, <span data-user>USER</span></p><h2>Stay in the loop.</h2><p>See what is happening across your campus and share a signal with your community.</p></div>
+                        <div class="welcome-status"><span class="status-dot"></span><div><strong>NETWORK ONLINE</strong><span>1,248 people active now</span></div></div>
+                    </section>
+
+                    <div class="home-grid">
+                        <div class="home-feed-column">
+                            <section class="broadcast-composer" aria-labelledby="broadcast-heading">
+                                <div class="composer-heading"><span class="home-avatar" data-avatar>US</span><div><p class="eyebrow">BROADCAST POST</p><h2 id="broadcast-heading">What is on your mind?</h2></div></div>
+                                <form id="broadcast-form"><textarea id="broadcast-input" rows="3" placeholder="Share an update with your campus..." maxlength="280"></textarea><div class="composer-footer"><span class="character-count" id="character-count">0 / 280</span><button class="post-button" type="submit"><span>↗</span> Post / Broadcast</button></div></form>
+                            </section>
+
+                            <div class="feed-heading"><div><p class="eyebrow">CAMPUS / COMMUNITY</p><h2>Latest signals</h2></div><button class="feed-filter" type="button" id="feed-filter">Latest <span>⌄</span></button></div>
+                            <div class="community-feed" id="community-feed">
+                                <article class="community-post" data-post-id="design-studio" data-searchable="design studio open tonight portfolio reviews"><div class="post-avatar avatar-lavender">MC</div><div class="post-content"><div class="post-meta"><div><strong>Maya Chen</strong><span>@mayachen · 12m</span></div><button class="post-menu" type="button" aria-label="Post options">•••</button></div><p>Design studio is open tonight until 10pm. I am bringing extra sketchbooks and would love a few more eyes on portfolio work.</p><div class="post-actions"><button type="button" data-post-action="like">♡ <span>24</span></button><button type="button" data-post-action="comment">◌ <span>8</span></button><button type="button" data-post-action="share">↗ <span>Share</span></button><button type="button" data-post-action="save">☆ <span>Save</span></button></div></div></article>
+                                <article class="community-post" data-post-id="water-bottle" data-searchable="lost found blue water bottle library"><div class="post-avatar avatar-mint">JR</div><div class="post-content"><div class="post-meta"><div><strong>Jordan Rivera</strong><span>@jordanr · 34m</span></div><button class="post-menu" type="button" aria-label="Post options">•••</button></div><p>Found a blue water bottle near the north library entrance. It has a small astronomy sticker on the side. Message me if it is yours.</p><div class="post-actions"><button type="button" data-post-action="like">♡ <span>17</span></button><button type="button" data-post-action="comment">◌ <span>3</span></button><button type="button" data-post-action="share">↗ <span>Share</span></button><button type="button" data-post-action="save">☆ <span>Save</span></button></div></div></article>
+                                <article class="community-post" data-post-id="robotics" data-searchable="robotics club build session engineering hall"><div class="post-avatar avatar-peach">TA</div><div class="post-content"><div class="post-meta"><div><strong>Theo Adams</strong><span>@theoadams · 1h</span></div><button class="post-menu" type="button" aria-label="Post options">•••</button></div><p>Robotics club build session starts at 6pm in Engineering Hall. New members are welcome, even if you have never touched a soldering iron.</p><div class="post-actions"><button type="button" data-post-action="like">♡ <span>31</span></button><button type="button" data-post-action="comment">◌ <span>11</span></button><button type="button" data-post-action="share">↗ <span>Share</span></button><button type="button" data-post-action="save">☆ <span>Save</span></button></div></div></article>
+                                <p class="feed-empty-state" id="feed-empty-state" hidden>No posts match your search yet. Try another signal.</p>
+                            </div>
+                        </div>
+
+                        <aside class="home-quick-rail">
+                            <section class="quick-panel" aria-labelledby="announcements-heading"><div class="quick-panel-heading"><p class="eyebrow">BULLETIN</p><span class="quick-panel-dot"></span></div><h3 id="announcements-heading">Announcements</h3><div class="announcement-item"><strong>Spring showcase</strong><span>Submissions close Friday at 5pm.</span></div><div class="announcement-item"><strong>Library hours extended</strong><span>Open until midnight this week.</span></div></section>
+                            <section class="quick-panel" aria-labelledby="active-heading"><div class="quick-panel-heading"><p class="eyebrow">LIVE NOW</p><span class="quick-panel-dot"></span></div><h3 id="active-heading">Active users</h3><div class="active-users"><span class="active-user avatar-lavender">MC</span><span class="active-user avatar-mint">JR</span><span class="active-user avatar-peach">TA</span><span class="active-user avatar-blue">SK</span><span class="active-user-count">+12</span></div><p class="quick-panel-note">People are sharing signals right now.</p></section>
+                            <section class="quick-panel" aria-labelledby="conversations-heading"><div class="quick-panel-heading"><p class="eyebrow">QUICK ACCESS</p><button class="quick-see-all" type="button" id="quick-see-all">See all</button></div><h3 id="conversations-heading">Recent conversations</h3><button class="quick-conversation" type="button" data-conversation="Alex"><span class="active-user avatar-blue">AX</span><span><strong>Alex</strong><small>Check the build?</small></span><em>2</em></button><button class="quick-conversation" type="button" data-conversation="Rahul"><span class="active-user avatar-mint">RN</span><span><strong>Rahul</strong><small>Are you coming?</small></span></button></section>
+                        </aside>
+
+                    </div>
+                </div>
+
+                <div class="helix-modal" id="comments-modal" hidden><div class="helix-modal-backdrop" data-comments-close></div><section class="helix-modal-panel comments-panel" role="dialog" aria-modal="true" aria-labelledby="comments-title"><button class="helix-modal-close" type="button" aria-label="Close comments" data-comments-close>×</button><p class="system-label">COMMUNITY THREAD</p><h2 id="comments-title">Comments</h2><div class="comments-list" id="comments-list"></div><form class="comment-form" id="comment-form"><input id="comment-input" placeholder="Add a thoughtful reply..." autocomplete="off"><button class="profile-primary-button" type="submit">Reply</button></form></section></div>
+            </section>
 
 
             <header class="topbar" data-main-section="direct-messages">
