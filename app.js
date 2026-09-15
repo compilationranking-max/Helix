@@ -157,23 +157,18 @@ document.getElementById("new-chat-button")?.addEventListener("click", () => {
     localStorage.removeItem(aiStorageKey);
 });
 
-document.getElementById("sidebar-new-chat-button")?.addEventListener("click", () => {
-    localStorage.removeItem(aiStorageKey);
-});
-
-const homeView = document.getElementById("home-view");
+const aiView = document.getElementById("ai-view");
 const closeAISidebarButton = document.getElementById("close-ai-sidebar-button");
 const openAISidebarButton = document.getElementById("open-ai-sidebar-button");
 
 function setAISidebarOpen(isOpen) {
-    homeView?.classList.toggle("sidebar-closed", !isOpen);
+    aiView?.classList.toggle("sidebar-closed", !isOpen);
     if (openAISidebarButton) openAISidebarButton.hidden = isOpen;
     if (closeAISidebarButton) closeAISidebarButton.setAttribute("aria-expanded", String(isOpen));
 }
 
 closeAISidebarButton?.addEventListener("click", () => setAISidebarOpen(false));
 openAISidebarButton?.addEventListener("click", () => setAISidebarOpen(true));
-
 
 // =========================================================
 // QUICK MACROS
@@ -690,11 +685,12 @@ function setNavigationSection(id) {
         ? "home"
         : id === "nav-console"
             ? "direct-messages"
+            : id === "nav-ai"
+                ? "helix-ai"
             : id === "nav-reels"
                 ? "reels"
                 : "profile";
     const mainSections = document.querySelectorAll("[data-main-section]");
-    const detailsPanel = document.querySelector(".details-panel");
     const appShell = document.querySelector(".helix-app");
     const showReels = section === "reels";
 
@@ -704,7 +700,7 @@ function setNavigationSection(id) {
         mainSection.hidden = mainSection.dataset.mainSection !== section;
     });
 
-    detailsPanel.hidden = section !== "direct-messages";
+    if (section === "helix-ai") setAISidebarOpen(true);
 
     if (showReels) {
         initializeReels();
@@ -914,6 +910,10 @@ function handleNavigation(id) {
 
         case "nav-console":
             console.log("Direct Console selected");
+            break;
+
+        case "nav-ai":
+            console.log("Helix AI selected");
             break;
 
         case "nav-reels":
