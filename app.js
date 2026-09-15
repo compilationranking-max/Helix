@@ -134,107 +134,33 @@ if (messageForm && messageInput) {
 
 const aiForm = document.getElementById("ai-form");
 const aiInput = document.getElementById("ai-input");
-const aiMessages = document.getElementById("ai-messages");
-const aiWelcome = document.getElementById("ai-welcome");
-const aiTyping = document.getElementById("ai-typing");
 const aiStorageKey = `helixAIConversation:${loggedInUser || "User"}`;
-let aiConversation = JSON.parse(localStorage.getItem(aiStorageKey) || "[]");
-let aiReplyTimer;
+localStorage.removeItem(aiStorageKey);
 
-function saveAIConversation() {
-    localStorage.setItem(aiStorageKey, JSON.stringify(aiConversation));
-}
-
-function renderAIMessage(message) {
-    const element = document.createElement("div");
-    element.className = `ai-message ${message.role}`;
-    element.innerHTML = `
-        <div class="ai-message-avatar">${message.role === "user" ? "YOU" : "HX"}</div>
-        <div class="ai-message-bubble">
-            ${escapeHTML(message.text)}
-            <span class="ai-message-time">${escapeHTML(message.time)}</span>
-        </div>
-    `;
-    aiMessages.appendChild(element);
-}
-
-function renderAIConversation() {
-    if (!aiMessages) return;
-
-    aiMessages.querySelectorAll(".ai-message").forEach((message) => message.remove());
-    aiWelcome.hidden = aiConversation.length > 0;
-    aiConversation.forEach(renderAIMessage);
-    aiMessages.scrollTop = aiMessages.scrollHeight;
-}
-
-function addAIMessage(text, role) {
-    const message = { text, role, time: getCurrentTime() };
-    aiConversation.push(message);
-    saveAIConversation();
-    aiWelcome.hidden = true;
-    renderAIMessage(message);
-    aiMessages.scrollTop = aiMessages.scrollHeight;
-}
-
-function sendAIMessage(text) {
-    const message = text.trim();
-    if (!message || !aiInput || aiTyping.hidden === false) return;
-
-    addAIMessage(message, "user");
-    aiInput.value = "";
-    aiInput.style.height = "auto";
-    aiTyping.hidden = false;
-    aiMessages.scrollTop = aiMessages.scrollHeight;
-
-    aiReplyTimer = setTimeout(() => {
-        addAIMessage("Helix AI is ready. Connect an AI model to enable real responses.", "assistant");
-        aiTyping.hidden = true;
-    }, 1200);
-}
-
-function resetAIConversation() {
-    clearTimeout(aiReplyTimer);
-    aiConversation = [];
+document.getElementById("clear-ai-button")?.addEventListener("click", () => {
     localStorage.removeItem(aiStorageKey);
-    aiTyping.hidden = true;
-    renderAIConversation();
+});
+
+document.getElementById("new-chat-button")?.addEventListener("click", () => {
+    localStorage.removeItem(aiStorageKey);
+});
+
+document.getElementById("sidebar-new-chat-button")?.addEventListener("click", () => {
+    localStorage.removeItem(aiStorageKey);
+});
+
+const homeView = document.getElementById("home-view");
+const closeAISidebarButton = document.getElementById("close-ai-sidebar-button");
+const openAISidebarButton = document.getElementById("open-ai-sidebar-button");
+
+function setAISidebarOpen(isOpen) {
+    homeView?.classList.toggle("sidebar-closed", !isOpen);
+    if (openAISidebarButton) openAISidebarButton.hidden = isOpen;
+    if (closeAISidebarButton) closeAISidebarButton.setAttribute("aria-expanded", String(isOpen));
 }
 
-if (aiForm && aiInput && aiMessages) {
-    renderAIConversation();
-
-    aiForm.addEventListener("submit", (event) => {
-        event.preventDefault();
-        sendAIMessage(aiInput.value);
-    });
-
-    aiInput.addEventListener("keydown", (event) => {
-        if (event.key === "Enter" && !event.shiftKey) {
-            event.preventDefault();
-            aiForm.requestSubmit();
-        }
-    });
-
-    aiInput.addEventListener("input", () => {
-        aiInput.style.height = "auto";
-        aiInput.style.height = `${Math.min(aiInput.scrollHeight, 130)}px`;
-    });
-
-    document.querySelectorAll("[data-ai-prompt]").forEach((button) => {
-        button.addEventListener("click", () => sendAIMessage(button.dataset.aiPrompt));
-    });
-
-    document.getElementById("new-chat-button")?.addEventListener("click", () => {
-        if (aiConversation.length && !window.confirm("Start a new Helix AI chat? Your current conversation will be cleared.")) return;
-        resetAIConversation();
-        aiInput.focus();
-    });
-
-    document.getElementById("clear-ai-button")?.addEventListener("click", () => {
-        if (!window.confirm("Clear all stored Helix AI chat data?")) return;
-        resetAIConversation();
-    });
-}
+closeAISidebarButton?.addEventListener("click", () => setAISidebarOpen(false));
+openAISidebarButton?.addEventListener("click", () => setAISidebarOpen(true));
 
 
 // =========================================================

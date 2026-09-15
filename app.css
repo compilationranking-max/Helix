@@ -373,8 +373,8 @@ body::before {
     min-height: 0;
     flex: 1;
 
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 238px;
 
     overflow: hidden;
 }
@@ -391,6 +391,131 @@ body::before {
     gap: 20px;
     padding: 25px 38px 22px;
     border-bottom: 1px solid var(--border);
+}
+
+.ai-main {
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.home-view.sidebar-closed {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.ai-sidebar {
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 22px 14px;
+    border-left: 1px solid var(--border);
+    background: rgba(4, 8, 15, 0.72);
+}
+
+.ai-sidebar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 5px 17px;
+    border-bottom: 1px solid var(--border);
+}
+
+.ai-sidebar-label {
+    color: #71879a;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+}
+
+.ai-sidebar-close,
+.ai-open-sidebar-button {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--muted-light);
+    background: rgba(255, 255, 255, 0.025);
+    font-size: 19px;
+    line-height: 1;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.ai-sidebar-close:hover,
+.ai-open-sidebar-button:hover {
+    color: white;
+    border-color: var(--border-bright);
+    background: rgba(0, 229, 255, 0.1);
+}
+
+.ai-open-sidebar-button {
+    display: none;
+    color: var(--cyan);
+    font-size: 15px;
+}
+
+.ai-open-sidebar-button:not([hidden]) {
+    display: grid;
+}
+
+.ai-sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-top: 17px;
+}
+
+.ai-sidebar-item {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    width: 100%;
+    padding: 11px 10px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    color: var(--muted-light);
+    background: transparent;
+    font-size: 11px;
+    text-align: left;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.ai-sidebar-item span:first-child {
+    width: 18px;
+    color: var(--cyan);
+    font-size: 17px;
+    text-align: center;
+}
+
+.ai-sidebar-item:hover {
+    color: white;
+    border-color: rgba(0, 229, 255, 0.13);
+    background: rgba(0, 229, 255, 0.06);
+}
+
+.ai-sidebar-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: auto;
+    padding: 16px 7px 0;
+    border-top: 1px solid var(--border);
+    color: #536879;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+}
+
+.ai-sidebar-status .status-dot {
+    width: 6px;
+    height: 6px;
+    background: #697b8c;
+    box-shadow: none;
 }
 
 .ai-brand-lockup {
@@ -557,6 +682,18 @@ body::before {
     background: rgba(0, 229, 255, 0.07);
 }
 
+.ai-suggestion:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.ai-suggestion:disabled:hover {
+    transform: none;
+    border-color: var(--border);
+    color: var(--muted-light);
+    background: rgba(10, 16, 28, 0.6);
+}
+
 .ai-message {
     display: flex;
     gap: 12px;
@@ -655,6 +792,11 @@ body::before {
     box-shadow: 0 10px 35px rgba(0, 0, 0, 0.22), 0 0 25px rgba(0, 229, 255, 0.04);
 }
 
+.ai-composer:has(:disabled) {
+    border-color: rgba(87, 110, 140, 0.2);
+    opacity: 0.78;
+}
+
 .ai-composer:focus-within {
     border-color: rgba(0, 229, 255, 0.5);
     box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.05), 0 10px 35px rgba(0, 0, 0, 0.22);
@@ -678,6 +820,11 @@ body::before {
 
 .ai-composer textarea::placeholder { color: #536879; }
 
+.ai-composer textarea:disabled {
+    color: #76899a;
+    cursor: not-allowed;
+}
+
 .ai-attach-button,
 .ai-send-button {
     width: 34px;
@@ -685,6 +832,14 @@ body::before {
     flex: 0 0 34px;
     border-radius: 9px;
     font-size: 20px;
+}
+
+.ai-attach-button:disabled,
+.ai-send-button:disabled {
+    color: #536879;
+    border-color: rgba(87, 110, 140, 0.16);
+    background: rgba(87, 110, 140, 0.1);
+    cursor: not-allowed;
 }
 
 .ai-send-button {
@@ -2764,5 +2919,26 @@ body::before {
         align-items: flex-start;
         flex-direction: column;
         padding: 17px 0;
+    }
+}
+
+@media (max-width: 900px) {
+    .home-view {
+        position: relative;
+        display: block;
+    }
+
+    .ai-sidebar {
+        position: absolute;
+        z-index: 4;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        width: min(270px, 82vw);
+        box-shadow: -18px 0 40px rgba(0, 0, 0, 0.35);
+    }
+
+    .home-view.sidebar-closed .ai-sidebar {
+        display: none;
     }
 }
