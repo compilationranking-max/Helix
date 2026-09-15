@@ -83,7 +83,73 @@
 
             <!-- Top bar -->
 
-            <section class="home-view" id="home-view" data-main-section="home" hidden></section>
+            <section class="home-view" id="home-view" data-main-section="home">
+
+                <header class="ai-header">
+                    <div class="ai-brand-lockup">
+                        <span class="ai-orbit-mark" aria-hidden="true">✦</span>
+                        <div>
+                            <p class="system-label">HELIX / INTELLIGENCE</p>
+                            <h1>Helix AI</h1>
+                            <p class="ai-subtitle">How can I help you today?</p>
+                        </div>
+                    </div>
+
+                    <div class="ai-header-actions">
+                        <button class="ai-quiet-button" id="clear-ai-button" type="button">Clear data</button>
+                        <button class="ai-new-chat-button" id="new-chat-button" type="button">
+                            <span aria-hidden="true">＋</span>
+                            <span>New chat</span>
+                        </button>
+                    </div>
+                </header>
+
+                <div class="ai-chat-shell">
+                    <div class="ai-messages" id="ai-messages" aria-live="polite">
+                        <div class="ai-welcome" id="ai-welcome">
+                            <div class="ai-welcome-glyph" aria-hidden="true">HX</div>
+                            <h2>A clear signal for every thought.</h2>
+                            <p>Ask Helix to explore, create, or solve something with you.</p>
+
+                            <div class="ai-suggestions" aria-label="Suggested prompts">
+                                <button class="ai-suggestion" type="button" data-ai-prompt="Help me understand something">
+                                    <span>◌</span>
+                                    <span>Help me understand something</span>
+                                </button>
+                                <button class="ai-suggestion" type="button" data-ai-prompt="Write something for me">
+                                    <span>↗</span>
+                                    <span>Write something for me</span>
+                                </button>
+                                <button class="ai-suggestion" type="button" data-ai-prompt="Help me with code">
+                                    <span>&lt;/&gt;</span>
+                                    <span>Help me with code</span>
+                                </button>
+                                <button class="ai-suggestion" type="button" data-ai-prompt="Give me some ideas">
+                                    <span>✧</span>
+                                    <span>Give me some ideas</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ai-composer-wrap">
+                        <div class="ai-typing" id="ai-typing" hidden>
+                            <span class="ai-typing-dot"></span>
+                            <span class="ai-typing-dot"></span>
+                            <span class="ai-typing-dot"></span>
+                            <span>Helix is thinking</span>
+                        </div>
+
+                        <form class="ai-composer" id="ai-form">
+                            <button class="ai-attach-button" type="button" aria-label="Attach a file" title="Attachments coming soon">＋</button>
+                            <textarea id="ai-input" rows="1" placeholder="Message Helix AI..." aria-label="Message Helix AI"></textarea>
+                            <button class="ai-send-button" type="submit" aria-label="Send message">→</button>
+                        </form>
+                        <p class="ai-composer-note">Helix AI demo mode · Responses are generated locally</p>
+                    </div>
+                </div>
+
+            </section>
 
 
             <header class="topbar" data-main-section="direct-messages">
