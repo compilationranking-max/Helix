@@ -20,9 +20,21 @@ if (!loggedInUser) {
 
 function updateLoggedInUser() {
     const usernameElements = document.querySelectorAll("[data-user]");
+    const avatarElements = document.querySelectorAll("[data-avatar]");
+    const username = loggedInUser || "User";
+    const photo = localStorage.getItem(`helixProfilePhoto:${loggedInUser}`);
 
     usernameElements.forEach((element) => {
-        element.textContent = loggedInUser || "User";
+        element.textContent = username;
+    });
+
+    avatarElements.forEach((element) => {
+        element.textContent = username.slice(0, 2).toUpperCase();
+        if (photo) {
+            element.style.backgroundImage = `url("${photo}")`;
+            element.style.backgroundSize = "cover";
+            element.style.color = "transparent";
+        }
     });
 }
 
@@ -683,7 +695,10 @@ function setNavigationSection(id) {
                 : "profile";
     const mainSections = document.querySelectorAll("[data-main-section]");
     const detailsPanel = document.querySelector(".details-panel");
+    const appShell = document.querySelector(".helix-app");
     const showReels = section === "reels";
+
+    appShell?.classList.toggle("home-active", section === "home");
 
     mainSections.forEach((mainSection) => {
         mainSection.hidden = mainSection.dataset.mainSection !== section;
@@ -925,18 +940,133 @@ const broadcastButton =
 if (broadcastButton) {
 
     broadcastButton.addEventListener("click", () => {
-
-        const post = prompt(
-            "Broadcast a message to your Helix network:"
-        );
-
-        if (!post || !post.trim()) return;
-
-        console.log("Broadcast:", post.trim());
-
-        alert("Broadcast created!");
+        setNavigationSection("nav-home");
+        document.querySelectorAll(".nav-item").forEach((item) => item.classList.toggle("active", item.id === "nav-home"));
+        document.getElementById("broadcast-input")?.focus();
     });
 }
+
+const broadcastForm = document.getElementById("broadcast-form");
+const broadcastInput = document.getElementById("broadcast-input");
+const characterCount = document.getElementById("character-count");
+const communityFeed = document.getElementById("community-feed");
+const commentsModal = document.getElementById("comments-modal");
+const commentsList = document.getElementById("comments-list");
+const commentForm = document.getElementById("comment-form");
+const commentInput = document.getElementById("comment-input");
+let activeCommentPost = null;
+const postComments = {
+    "design-studio": [{ author: "Jordan Rivera", text: "I can take a look after 7!" }],
+    "water-bottle": [{ author: "Maya Chen", text: "Hope it finds its owner soon." }],
+    robotics: []
+};
+
+broadcastInput?.addEventListener("input", () => {
+    if (characterCount) characterCount.textContent = `${broadcastInput.value.length} / 280`;
+});
+
+broadcastForm?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const text = broadcastInput.value.trim();
+    if (!text || !communityFeed) return;
+
+    const username = loggedInUser || "User";
+    const post = document.createElement("article");
+    post.className = "community-post";
+    post.dataset.searchable = text.toLowerCase();
+    post.dataset.postId = `post-${Date.now()}`;
+    postComments[post.dataset.postId] = [];
+    post.innerHTML = `<div class="post-avatar avatar-lavender">${escapeHTML(username.slice(0, 2).toUpperCase())}</div><div class="post-content"><div class="post-meta"><div><strong>${escapeHTML(username)}</strong><span>@${escapeHTML(username.toLowerCase())} · now</span></div><button class="post-menu" type="button" aria-label="Post options">•••</button></div><p>${escapeHTML(text)}</p><div class="post-actions"><button type="button" data-post-action="like">♡ <span>0</span></button><button type="button" data-post-action="comment">◌ <span>0</span></button><button type="button" data-post-action="share">↗ <span>Share</span></button><button type="button" data-post-action="save">☆ <span>Save</span></button></div></div>`;
+    communityFeed.prepend(post);
+    broadcastInput.value = "";
+    if (characterCount) characterCount.textContent = "0 / 280";
+});
+
+document.getElementById("home-search")?.addEventListener("input", (event) => {
+    const query = event.target.value.toLowerCase().trim();
+    communityFeed?.querySelectorAll(".community-post").forEach((post) => {
+        post.hidden = query && !post.dataset.searchable.includes(query);
+    });
+    const visiblePosts = communityFeed?.querySelectorAll(".community-post:not([hidden])").length || 0;
+    const emptyState = document.getElementById("feed-empty-state");
+    if (emptyState) emptyState.hidden = visiblePosts > 0;
+});
+
+function renderComments(post) {
+    if (!commentsList) return;
+    const comments = postComments[post.dataset.postId] || [];
+    commentsList.innerHTML = comments.length
+        ? comments.map((comment) => `<div class="comment-item"><span class="comment-avatar">${escapeHTML(comment.author.slice(0, 2).toUpperCase())}</span><div><strong>${escapeHTML(comment.author)}</strong><p>${escapeHTML(comment.text)}</p></div></div>`).join("")
+        : `<p class="comments-empty">No comments yet. Start the conversation.</p>`;
+}
+
+function openComments(post) {
+    activeCommentPost = post;
+    renderComments(post);
+    commentsModal.hidden = false;
+    commentInput?.focus();
+}
+
+function closeComments() {
+    if (commentsModal) commentsModal.hidden = true;
+    activeCommentPost = null;
+}
+
+communityFeed?.addEventListener("click", async (event) => {
+    const actionButton = event.target.closest("[data-post-action]");
+    if (!actionButton) return;
+    const post = actionButton.closest(".community-post");
+    const action = actionButton.dataset.postAction;
+    const count = actionButton.querySelector("span");
+
+    if (action === "like") {
+        const liked = actionButton.classList.toggle("active");
+        const currentCount = Number(count.textContent) || 0;
+        count.textContent = String(currentCount + (liked ? 1 : -1));
+        actionButton.firstChild.textContent = liked ? "♥ " : "♡ ";
+    }
+    if (action === "save") {
+        const saved = actionButton.classList.toggle("active");
+        actionButton.firstChild.textContent = saved ? "★ " : "☆ ";
+        count.textContent = saved ? "Saved" : "Save";
+    }
+    if (action === "comment") openComments(post);
+    if (action === "share") {
+        const shareText = post.querySelector(".post-content > p")?.textContent || "Helix post";
+        try {
+            await navigator.clipboard.writeText(shareText);
+            count.textContent = "Copied";
+        } catch (error) {
+            count.textContent = "Ready";
+        }
+    }
+});
+
+document.querySelectorAll("[data-comments-close]").forEach((element) => element.addEventListener("click", closeComments));
+commentForm?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const text = commentInput?.value.trim();
+    if (!text || !activeCommentPost) return;
+    const key = activeCommentPost.dataset.postId;
+    postComments[key] = postComments[key] || [];
+    postComments[key].push({ author: loggedInUser || "User", text });
+    const commentButton = activeCommentPost.querySelector('[data-post-action="comment"] span');
+    if (commentButton) commentButton.textContent = String(postComments[key].length);
+    commentInput.value = "";
+    renderComments(activeCommentPost);
+});
+
+document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closeComments();
+});
+
+document.querySelectorAll(".quick-conversation").forEach((button) => {
+    button.addEventListener("click", () => document.getElementById("nav-console")?.click());
+});
+
+document.getElementById("home-profile-shortcut")?.addEventListener("click", () => {
+    document.getElementById("nav-profile")?.click();
+});
 
 
 // =========================================================
