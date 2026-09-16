@@ -1,0 +1,26 @@
+{
+  "name": "helix",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/compilationranking-max/Helix.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/compilationranking-max/Helix/issues"
+  },
+  "homepage": "https://github.com/compilationranking-max/Helix#readme",
+  "dependencies": {
+    "@google/genai": "^2.22.0",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1"
+  }
+}

@@ -146,6 +146,37 @@ if (messageForm && messageInput) {
 
 const aiForm = document.getElementById("ai-form");
 const aiInput = document.getElementById("ai-input");
+console.log("HELIX AI HANDLER LOADED");
+aiForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const message = aiInput.value.trim();
+
+    if (!message) return;
+
+    aiInput.value = "";
+
+    try {
+        const response = await fetch("/api/ask", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ message })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || "Request failed");
+        }
+
+        console.log("Helix AI:", data.reply);
+    } catch (error) {
+        console.error("Helix AI error:", error);
+    }
+});
 const aiStorageKey = `helixAIConversation:${loggedInUser || "User"}`;
 localStorage.removeItem(aiStorageKey);
 
