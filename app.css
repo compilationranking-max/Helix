@@ -737,7 +737,7 @@ body::before {
 }
 
 .ai-composer-wrap {
-    padding: 12px 0 20px;
+    padding: 12px 0 32px;
 }
 
 .ai-typing {
@@ -1715,7 +1715,7 @@ body::before {
     }
 
     .ai-composer-wrap {
-        padding-bottom: 13px;
+        padding-bottom: 20px;
     }
 
     .conversation-panel {
