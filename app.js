@@ -177,8 +177,87 @@ aiForm?.addEventListener("submit", async (event) => {
         console.error("Helix AI error:", error);
     }
 });
+const aiMessages = document.getElementById("ai-messages");
+const aiTyping = document.getElementById("ai-typing");
+const aiSendButton = document.getElementById("ai-send-button");
 const aiStorageKey = `helixAIConversation:${loggedInUser || "User"}`;
 localStorage.removeItem(aiStorageKey);
+
+function addAIMessage(text, type) {
+    if (!aiMessages) return;
+
+    const message = document.createElement("article");
+    message.className = `ai-message ${type}`;
+
+    const avatar = document.createElement("span");
+    avatar.className = "ai-message-avatar";
+    avatar.textContent = type === "user" ? "YOU" : "HX";
+
+    const bubble = document.createElement("div");
+    bubble.className = "ai-message-bubble";
+    bubble.textContent = text;
+
+    const time = document.createElement("time");
+    time.className = "ai-message-time";
+    time.textContent = getCurrentTime();
+    bubble.appendChild(time);
+
+    message.append(avatar, bubble);
+    aiMessages.appendChild(message);
+    aiMessages.scrollTop = aiMessages.scrollHeight;
+}
+
+function setAIProcessing(isProcessing) {
+    if (aiTyping) aiTyping.hidden = !isProcessing;
+    if (aiSendButton) aiSendButton.disabled = isProcessing;
+    if (aiInput) aiInput.disabled = isProcessing;
+}
+
+async function sendAIMessage() {
+    const message = aiInput?.value.trim();
+
+    if (!message || !aiInput || !aiForm || aiSendButton?.disabled) return;
+
+    addAIMessage(message, "user");
+    aiInput.value = "";
+    document.getElementById("ai-welcome")?.setAttribute("hidden", "true");
+    setAIProcessing(true);
+
+    try {
+        const response = await fetch("http://localhost:3000/api/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message })
+        });
+
+        if (!response.ok) throw new Error("The AI service returned an error.");
+
+        const data = await response.json();
+
+        if (typeof data.reply !== "string" || !data.reply.trim()) {
+            throw new Error("The AI returned an empty response.");
+        }
+
+        addAIMessage(data.reply, "assistant");
+    } catch (error) {
+        addAIMessage("Helix AI is unavailable right now. Please try again in a moment.", "assistant");
+    } finally {
+        setAIProcessing(false);
+        aiInput.focus();
+    }
+}
+
+aiForm?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    sendAIMessage();
+});
+
+aiInput?.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        aiForm?.requestSubmit();
+    }
+});
 
 document.getElementById("clear-ai-button")?.addEventListener("click", () => {
     localStorage.removeItem(aiStorageKey);
@@ -186,6 +265,12 @@ document.getElementById("clear-ai-button")?.addEventListener("click", () => {
 
 document.getElementById("new-chat-button")?.addEventListener("click", () => {
     localStorage.removeItem(aiStorageKey);
+});
+
+document.getElementById("sidebar-new-chat-button")?.addEventListener("click", () => {
+    if (aiMessages) aiMessages.replaceChildren();
+    document.getElementById("ai-welcome")?.removeAttribute("hidden");
+    aiInput?.focus();
 });
 
 const aiView = document.getElementById("ai-view");

@@ -100,6 +100,27 @@
     <button class="ai-attach-button" type="button" aria-label="Add to prompt">＋</button>
     <input id="ai-input" type="text" placeholder="Ask Helix" aria-label="Ask Helix" autocomplete="off">
 </form>
+                        <div class="ai-chat-content">
+                            <div class="ai-welcome" id="ai-welcome">
+                                <h1>Where should we start?</h1>
+                            </div>
+
+                            <div class="ai-messages" id="ai-messages" aria-live="polite"></div>
+
+                            <div class="ai-composer-wrap">
+                                <div class="ai-typing" id="ai-typing" role="status" hidden>
+                                    <span>Helix AI is thinking</span>
+                                    <span class="ai-typing-dot"></span>
+                                    <span class="ai-typing-dot"></span>
+                                    <span class="ai-typing-dot"></span>
+                                </div>
+
+                                <form class="ai-composer" id="ai-form">
+                                    <button class="ai-attach-button" type="button" aria-label="Add to prompt">＋</button>
+                                    <textarea id="ai-input" placeholder="Ask Helix" aria-label="Ask Helix" rows="1"></textarea>
+                                    <button class="ai-send-button" id="ai-send-button" type="submit" aria-label="Send message">→</button>
+                                </form>
+                            </div>
                         </div>
                     </div>
                 </div>

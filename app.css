@@ -626,8 +626,22 @@ body::before {
     overflow: hidden;
 }
 
+.ai-chat-content {
+    width: min(100%, 720px);
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
 .ai-messages {
-    display: none;
+    min-height: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    padding: 24px 0 8px;
+    scrollbar-width: thin;
 }
 
 .ai-welcome {
@@ -636,6 +650,10 @@ body::before {
     width: min(100%, 720px);
     text-align: center;
     animation: ai-rise-in 0.45s ease both;
+}
+
+.ai-welcome[hidden] {
+    display: none;
 }
 
 .ai-welcome::before {
@@ -765,20 +783,25 @@ body::before {
     box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.05), 0 14px 42px rgba(0, 0, 0, 0.28), 0 0 34px rgba(59, 83, 255, 0.16);
 }
 
-.ai-composer input {
+.ai-composer input,
+.ai-composer textarea {
     min-width: 0;
     flex: 1;
-    height: 42px;
-    padding: 0 4px;
+    min-height: 42px;
+    max-height: 120px;
+    padding: 10px 4px;
     border: none;
     outline: none;
     color: white;
     background: transparent;
     font: inherit;
     font-size: 15px;
+    line-height: 1.4;
+    resize: none;
 }
 
-.ai-composer input::placeholder { color: #91a0b5; }
+.ai-composer input::placeholder,
+.ai-composer textarea::placeholder { color: #91a0b5; }
 
 .ai-attach-button {
     width: 38px;
@@ -799,6 +822,26 @@ body::before {
 .ai-attach-button:hover {
     color: white;
     background: rgba(0, 229, 255, 0.1);
+}
+
+.ai-send-button {
+    width: 38px;
+    height: 38px;
+    flex: 0 0 38px;
+    border-radius: 50%;
+    color: var(--cyan);
+    font-size: 21px;
+}
+
+.ai-send-button:hover:not(:disabled) {
+    color: white;
+    border-color: var(--border-bright);
+    background: rgba(0, 229, 255, 0.1);
+}
+
+.ai-send-button:disabled {
+    cursor: wait;
+    opacity: 0.45;
 }
 
 @keyframes ai-rise-in {
