@@ -23,10 +23,15 @@ function updateLoggedInUser() {
     const avatarElements = document.querySelectorAll("[data-avatar]");
     const username = loggedInUser || "User";
     const photo = localStorage.getItem(`helixProfilePhoto:${loggedInUser}`);
+    const welcomeMessage = document.getElementById("ai-welcome-message");
 
     usernameElements.forEach((element) => {
         element.textContent = username;
     });
+
+    if (welcomeMessage) {
+        welcomeMessage.textContent = `Welcome back ${username}!`;
+    }
 
     avatarElements.forEach((element) => {
         element.textContent = username.slice(0, 2).toUpperCase();
@@ -150,9 +155,50 @@ const aiMessages = document.getElementById("ai-messages");
 const aiTyping = document.getElementById("ai-typing");
 const aiSendButton = document.getElementById("ai-send-button");
 const aiStorageKey = `helixAIConversation:${loggedInUser || "User"}`;
-localStorage.removeItem(aiStorageKey);
+const AI_HISTORY_LIMIT = 20;
+let aiConversation = loadAIConversation();
 
-function addAIMessage(text, type) {
+function loadAIConversation() {
+    try {
+        const savedConversation = JSON.parse(localStorage.getItem(aiStorageKey) || "[]");
+
+        if (!Array.isArray(savedConversation)) return [];
+
+        return savedConversation
+            .filter((message) => (
+                message &&
+                (message.role === "user" || message.role === "assistant") &&
+                typeof message.content === "string" &&
+                message.content.trim()
+            ))
+            .slice(-AI_HISTORY_LIMIT);
+    } catch (error) {
+        localStorage.removeItem(aiStorageKey);
+        return [];
+    }
+}
+
+function saveAIConversation() {
+    aiConversation = aiConversation.slice(-AI_HISTORY_LIMIT);
+    localStorage.setItem(aiStorageKey, JSON.stringify(aiConversation));
+}
+
+function clearAIConversation() {
+    aiConversation = [];
+    localStorage.removeItem(aiStorageKey);
+    aiMessages?.replaceChildren();
+    document.getElementById("ai-welcome")?.removeAttribute("hidden");
+    updateAIChatState();
+}
+
+function updateAIChatState() {
+    const aiChatContent = document.querySelector(".ai-chat-content");
+
+    aiChatContent?.classList.toggle("empty-chat", aiConversation.length === 0);
+    aiChatContent?.classList.toggle("active-chat", aiConversation.length > 0);
+}
+
+function renderAIMessage(text, type, time) {
     if (!aiMessages) return;
 
     const message = document.createElement("article");
@@ -166,14 +212,48 @@ function addAIMessage(text, type) {
     bubble.className = "ai-message-bubble";
     bubble.textContent = text;
 
-    const time = document.createElement("time");
-    time.className = "ai-message-time";
-    time.textContent = getCurrentTime();
-    bubble.appendChild(time);
+    const timeElement = document.createElement("time");
+    timeElement.className = "ai-message-time";
+    timeElement.textContent = time || getCurrentTime();
+    bubble.appendChild(timeElement);
 
     message.append(avatar, bubble);
     aiMessages.appendChild(message);
     aiMessages.scrollTop = aiMessages.scrollHeight;
+}
+
+function renderAIConversation() {
+    if (!aiMessages) return;
+
+    aiMessages.replaceChildren();
+    aiConversation.forEach((message) => {
+        renderAIMessage(
+            message.content,
+            message.role === "user" ? "user" : "assistant",
+            message.time
+        );
+    });
+
+    document.getElementById("ai-welcome")?.toggleAttribute("hidden", aiConversation.length > 0);
+    aiMessages.scrollTop = aiMessages.scrollHeight;
+    updateAIChatState();
+}
+
+function addAIMessage(text, type, persist = true) {
+    const time = getCurrentTime();
+
+    renderAIMessage(text, type, time);
+
+    if (persist) {
+        aiConversation.push({
+            role: type === "user" ? "user" : "assistant",
+            content: text,
+            time
+        });
+        saveAIConversation();
+    }
+
+    updateAIChatState();
 }
 
 function setAIProcessing(isProcessing) {
@@ -196,12 +276,17 @@ async function sendAIMessage() {
         const response = await fetch("http://localhost:3000/api/chat", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ message })
+            body: JSON.stringify({
+                message,
+                history: aiConversation.map(({ role, content }) => ({ role, content }))
+            })
         });
 
-        if (!response.ok) throw new Error("The AI service returned an error.");
+        const data = await response.json().catch(() => ({}));
 
-        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.error || "The AI service returned an error.");
+        }
 
         if (typeof data.reply !== "string" || !data.reply.trim()) {
             throw new Error("The AI returned an empty response.");
@@ -209,7 +294,7 @@ async function sendAIMessage() {
 
         addAIMessage(data.reply, "assistant");
     } catch (error) {
-        addAIMessage("Helix AI is unavailable right now. Please try again in a moment.", "assistant");
+        addAIMessage(error.message || "Helix AI is unavailable right now. Please try again in a moment.", "assistant", false);
     } finally {
         setAIProcessing(false);
         aiInput.focus();
@@ -229,18 +314,19 @@ aiInput?.addEventListener("keydown", (event) => {
 });
 
 document.getElementById("clear-ai-button")?.addEventListener("click", () => {
-    localStorage.removeItem(aiStorageKey);
+    clearAIConversation();
 });
 
 document.getElementById("new-chat-button")?.addEventListener("click", () => {
-    localStorage.removeItem(aiStorageKey);
+    clearAIConversation();
 });
 
 document.getElementById("sidebar-new-chat-button")?.addEventListener("click", () => {
-    if (aiMessages) aiMessages.replaceChildren();
-    document.getElementById("ai-welcome")?.removeAttribute("hidden");
+    clearAIConversation();
     aiInput?.focus();
 });
+
+renderAIConversation();
 
 const aiView = document.getElementById("ai-view");
 const closeAISidebarButton = document.getElementById("close-ai-sidebar-button");
