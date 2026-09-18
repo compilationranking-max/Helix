@@ -88,7 +88,73 @@
 
             <!-- Top bar -->
 
-            <section class="home-view" id="home-view" data-main-section="home"></section>
+            <section class="home-view" id="home-view" data-main-section="home">
+                <div class="home-shell">
+                    <header class="home-topbar">
+                        <div>
+                            <p class="system-label">HELIX / HOME</p>
+                            <p class="home-date">Thursday, September 18 <span class="status-dot"></span> NETWORK LIVE</p>
+                        </div>
+                        <button class="home-profile-chip" id="home-profile-shortcut" type="button" aria-label="Open profile">
+                            <span class="avatar home-avatar" data-avatar>US</span>
+                            <span><strong data-user>User</strong><small>View identity</small></span>
+                            <span class="home-chip-arrow">↗</span>
+                        </button>
+                    </header>
+
+                    <div class="home-content">
+                        <section class="home-hero" aria-labelledby="home-greeting">
+                            <div class="hero-copy">
+                                <p class="eyebrow"><span class="eyebrow-line"></span> YOUR SIGNAL IS CLEAR</p>
+                                <h1 id="home-greeting">Good to see you, <span data-user>User</span>.</h1>
+                                <p class="home-status-copy">Your corner of the network is active. Catch up, make something, or send a signal into the wider Helix.</p>
+                                <div class="hero-actions">
+                                    <button class="hero-primary" type="button" id="hero-broadcast-button"><span>＋</span> Broadcast an idea</button>
+                                    <button class="hero-secondary" type="button" id="hero-ai-button"><span>✦</span> Ask Helix AI</button>
+                                </div>
+                            </div>
+                            <div class="hero-online-panel" aria-label="People online now">
+                                <div class="hero-online-heading"><span class="status-dot"></span><span>ONLINE NOW</span><strong>24 <small>connections active</small></strong></div>
+                                <div class="hero-online-list">
+                                    <div class="hero-online-person"><span class="avatar avatar-cyan">MC</span><span><strong>Maya Chen</strong><small>In Direct Messages</small></span><i class="online-dot"></i></div>
+                                    <div class="hero-online-person"><span class="avatar avatar-lavender">JR</span><span><strong>Jordan Rivera</strong><small>Working on a design system</small></span><i class="online-dot"></i></div>
+                                    <div class="hero-online-person"><span class="avatar avatar-green">RL</span><span><strong>Robotics Lab</strong><small>Build night channel</small></span><i class="online-dot"></i></div>
+                                </div>
+                                <button class="hero-online-link" type="button" data-target-nav="nav-console">View active conversations <span>↗</span></button>
+                            </div>
+                        </section>
+
+                        <section class="quick-actions" aria-labelledby="quick-actions-title">
+                            <div class="section-heading-row"><div><p class="system-label">ACCESS LAYER</p><h2 id="quick-actions-title">Jump back in</h2></div><span class="section-index">01 / 05</span></div>
+                            <div class="quick-action-grid">
+                                <button class="quick-action quick-action-cyan quick-conversation" type="button" data-target-nav="nav-console"><span class="quick-icon">◈</span><span><strong>Direct Messages</strong><small>3 conversations waiting</small></span><b>↗</b></button>
+                                <button class="quick-action quick-action-violet" type="button" data-target-nav="nav-ai"><span class="quick-icon">✦</span><span><strong>Helix AI</strong><small>Think alongside your signal</small></span><b>↗</b></button>
+                                <button class="quick-action quick-action-green" type="button" data-target-nav="nav-home" id="home-broadcast-shortcut"><span class="quick-icon">＋</span><span><strong>Create / Broadcast</strong><small>Share what's in progress</small></span><b>↗</b></button>
+                                <button class="quick-action quick-action-blue" type="button" data-target-nav="nav-reels"><span class="quick-icon">▶</span><span><strong>Reels</strong><small>See what is moving now</small></span><b>↗</b></button>
+                                <button class="quick-action quick-action-slate" type="button" data-target-nav="nav-profile"><span class="quick-icon">◎</span><span><strong>Profile</strong><small>Shape your identity</small></span><b>↗</b></button>
+                            </div>
+                        </section>
+
+                        <div class="home-columns">
+                            <section class="feed-panel" aria-labelledby="feed-title">
+                                <div class="section-heading-row feed-heading"><div><p class="system-label">COMMUNITY PULSE</p><h2 id="feed-title">Recent activity</h2></div><label class="feed-search"><span>⌕</span><input id="home-search" type="search" placeholder="Filter feed" aria-label="Filter feed"></label></div>
+                                <form class="broadcast-composer" id="broadcast-form"><span class="avatar composer-avatar" data-avatar>US</span><input id="broadcast-input" type="text" maxlength="280" placeholder="Broadcast a thought to Helix..." aria-label="Broadcast a thought"><span class="character-count" id="character-count">0 / 280</span><button type="submit" aria-label="Publish broadcast">↑</button></form>
+                                <div class="community-feed" id="community-feed">
+                                    <article class="community-post" data-post-id="design-studio" data-searchable="jordan rivera design system studio"><div class="post-avatar avatar-lavender">JR</div><div class="post-content"><div class="post-meta"><div><strong>Jordan Rivera</strong><span>@jordanr · 12m</span></div><span class="connection-state"><span class="online-dot"></span> online</span></div><p>Spent the morning turning our design system into something the whole team can actually move through. The first pass is live.</p><div class="post-actions"><button type="button" data-post-action="like">♡ <span>18</span></button><button type="button" data-post-action="comment">◌ <span>4</span></button><button type="button" data-post-action="share">↗ <span>Share</span></button><button type="button" data-post-action="save">☆ <span>Save</span></button></div></div></article>
+                                    <article class="community-post" data-post-id="water-bottle" data-searchable="maya chen found water bottle campus"><div class="post-avatar avatar-cyan">MC</div><div class="post-content"><div class="post-meta"><div><strong>Maya Chen</strong><span>@mayac · 38m</span></div><span class="connection-state"><span class="online-dot"></span> online</span></div><p>Found a blue water bottle near the north studio. I left it with the community desk if anyone is looking.</p><div class="post-actions"><button type="button" data-post-action="like">♡ <span>9</span></button><button type="button" data-post-action="comment">◌ <span>2</span></button><button type="button" data-post-action="share">↗ <span>Share</span></button><button type="button" data-post-action="save">☆ <span>Save</span></button></div></div></article>
+                                    <article class="community-post" data-post-id="robotics" data-searchable="robotics lab build dev club"><div class="post-avatar avatar-green">RL</div><div class="post-content"><div class="post-meta"><div><strong>Robotics Lab</strong><span>@robotics · 1h</span></div><span class="connection-state"><span class="online-dot offline"></span> away</span></div><p>Build night starts at 19:00. Bring your half-finished ideas and a willingness to break them beautifully.</p><div class="post-actions"><button type="button" data-post-action="like">♡ <span>31</span></button><button type="button" data-post-action="comment">◌ <span>7</span></button><button type="button" data-post-action="share">↗ <span>Share</span></button><button type="button" data-post-action="save">☆ <span>Save</span></button></div></div></article>
+                                </div>
+                                <p class="feed-empty-state" id="feed-empty-state" hidden>No signals match that filter.</p>
+                            </section>
+
+                            <aside class="home-rail">
+                                <section class="status-panel"><div class="rail-heading"><div><p class="system-label">NETWORK STATUS</p><h2>Live around you</h2></div><span class="live-pill"><span class="status-dot"></span> LIVE</span></div><div class="status-metrics"><div><strong>08</strong><span>online friends</span></div><div><strong>03</strong><span>active chats</span></div><div><strong>05</strong><span>new signals</span></div></div><div class="friend-stack"><span class="avatar friend-avatar avatar-cyan">MC</span><span class="avatar friend-avatar avatar-lavender">JR</span><span class="avatar friend-avatar avatar-green">RL</span><span class="avatar friend-avatar avatar-blue">NK</span><span class="friend-more">+4</span><span class="friend-label">in your orbit now</span></div></section>
+                                <section class="ai-feature-card"><div class="feature-card-top"><span class="feature-mark">✦</span><span class="feature-label">HELIX AI / FIELD NOTE 04</span></div><h2>Make the next thought sharper.</h2><p>Turn rough notes into a plan, explore a new angle, or get unstuck without leaving your flow.</p><button type="button" id="feature-ai-button">Open Helix AI <span>↗</span></button><div class="feature-grid-lines" aria-hidden="true"></div></section>
+                            </aside>
+                        </div>
+                    </div>
+                </div>
+            </section>
 
             <section class="ai-view" id="ai-view" data-main-section="helix-ai" hidden>
 

@@ -1009,6 +1009,24 @@ document.querySelectorAll(".quick-conversation").forEach((button) => {
     button.addEventListener("click", () => document.getElementById("nav-console")?.click());
 });
 
+document.querySelectorAll("[data-target-nav]").forEach((button) => {
+    button.addEventListener("click", () => {
+        if (button.id === "home-broadcast-shortcut") {
+            document.getElementById("broadcast-input")?.focus();
+            return;
+        }
+
+        document.getElementById(button.dataset.targetNav)?.click();
+    });
+});
+
+document.getElementById("hero-broadcast-button")?.addEventListener("click", () => {
+    document.getElementById("broadcast-input")?.focus();
+});
+
+document.getElementById("hero-ai-button")?.addEventListener("click", () => document.getElementById("nav-ai")?.click());
+document.getElementById("feature-ai-button")?.addEventListener("click", () => document.getElementById("nav-ai")?.click());
+
 document.getElementById("home-profile-shortcut")?.addEventListener("click", () => {
     document.getElementById("nav-profile")?.click();
 });
