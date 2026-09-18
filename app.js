@@ -69,11 +69,13 @@ if (profileLogoutButton) {
 // =========================================================
 // MESSAGE SYSTEM
 // =========================================================
-
-const messageForm = document.getElementById("message-form");
-const messageInput = document.getElementById("message-input");
-const messagesContainer = document.getElementById("messages");
-
+// Direct Messages has been intentionally reset to a blank state.
+// The app uses the nav shell and section toggling without DM chat logic.
+function escapeHTML(text) {
+    const div = document.createElement("div");
+    div.textContent = text;
+    return div.innerHTML;
+}
 
 function getCurrentTime() {
     const now = new Date();
@@ -83,67 +85,6 @@ function getCurrentTime() {
         minute: "2-digit"
     });
 }
-
-
-function addMessage(text, type = "sent") {
-
-    if (!messagesContainer) return;
-
-    const message = document.createElement("div");
-
-    message.className = `message ${type}`;
-
-    message.innerHTML = `
-        <div class="message-bubble">
-
-            <p>${escapeHTML(text)}</p>
-
-            <span class="message-time">
-                ${getCurrentTime()}
-            </span>
-
-        </div>
-    `;
-
-    messagesContainer.appendChild(message);
-
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-}
-
-
-// Prevent HTML injection when displaying user-entered text
-function escapeHTML(text) {
-
-    const div = document.createElement("div");
-
-    div.textContent = text;
-
-    return div.innerHTML;
-}
-
-
-// =========================================================
-// SEND MESSAGE
-// =========================================================
-
-if (messageForm && messageInput) {
-
-    messageForm.addEventListener("submit", (event) => {
-
-        event.preventDefault();
-
-        const message = messageInput.value.trim();
-
-        if (!message) return;
-
-        addMessage(message, "sent");
-
-        messageInput.value = "";
-
-        simulateReply();
-    });
-}
-
 
 // =========================================================
 // HELIX AI HOME
@@ -340,178 +281,6 @@ function setAISidebarOpen(isOpen) {
 
 closeAISidebarButton?.addEventListener("click", () => setAISidebarOpen(false));
 openAISidebarButton?.addEventListener("click", () => setAISidebarOpen(true));
-
-// =========================================================
-// QUICK MACROS
-// =========================================================
-
-const macroButtons = document.querySelectorAll(".macro-btn");
-
-macroButtons.forEach((button) => {
-
-    button.addEventListener("click", () => {
-
-        const message = button.dataset.message;
-
-        if (!message) return;
-
-        addMessage(message, "sent");
-
-        simulateReply();
-    });
-
-});
-
-
-// =========================================================
-// SIMULATED REPLY
-// =========================================================
-
-function simulateReply() {
-
-    const typingIndicator =
-        document.getElementById("typing-indicator");
-
-    if (!typingIndicator) return;
-
-    typingIndicator.style.opacity = "1";
-
-    setTimeout(() => {
-
-        typingIndicator.style.opacity = "0";
-
-    }, 1500);
-}
-
-
-// =========================================================
-// CONVERSATION SELECTION
-// =========================================================
-
-const conversations =
-    document.querySelectorAll(".conversation");
-
-conversations.forEach((conversation) => {
-
-    conversation.addEventListener("click", () => {
-
-        conversations.forEach((item) => {
-            item.classList.remove("active");
-        });
-
-        conversation.classList.add("active");
-
-        updateActiveConversation(conversation);
-    });
-
-});
-
-
-function updateActiveConversation(conversation) {
-
-    const nameElement =
-        conversation.querySelector("strong");
-
-    const pingElement =
-        conversation.querySelector(".ping");
-
-    const chatTitle =
-        document.querySelector(".chat-user h2");
-
-    const chatStatus =
-        document.querySelector(".chat-user p");
-
-    const profileName =
-        document.querySelector(".profile-card h2");
-
-    const profileUsername =
-        document.querySelector(".profile-card .username");
-
-    if (nameElement) {
-
-        const name = nameElement.textContent;
-
-        if (chatTitle) {
-            chatTitle.textContent = name;
-        }
-
-        if (profileName) {
-            profileName.textContent = name;
-        }
-
-        if (profileUsername) {
-            profileUsername.textContent =
-                "@" + name.toLowerCase();
-        }
-    }
-
-    if (pingElement && chatStatus) {
-
-        const ping = pingElement.textContent.trim();
-
-        chatStatus.innerHTML = `
-            <span class="online-dot"></span>
-            Online · ${ping}
-        `;
-    }
-
-    // Clear demo messages when switching chats
-    if (messagesContainer) {
-
-        messagesContainer.innerHTML = "";
-
-        addMessage(
-            "Connection established.",
-            "received"
-        );
-
-        addMessage(
-            "You are now connected to this console.",
-            "received"
-        );
-    }
-}
-
-
-// =========================================================
-// SEARCH CONVERSATIONS
-// =========================================================
-
-const searchInput =
-    document.getElementById("chat-search");
-
-
-if (searchInput) {
-
-    searchInput.addEventListener("input", () => {
-
-        const query =
-            searchInput.value.toLowerCase().trim();
-
-        conversations.forEach((conversation) => {
-
-            const name =
-                conversation
-                    .querySelector("strong")
-                    ?.textContent
-                    .toLowerCase() || "";
-
-            const preview =
-                conversation
-                    .querySelector("p")
-                    ?.textContent
-                    .toLowerCase() || "";
-
-            const matches =
-                name.includes(query) ||
-                preview.includes(query);
-
-            conversation.style.display =
-                matches ? "flex" : "none";
-        });
-    });
-}
-
 
 // =========================================================
 // NAVIGATION
@@ -851,6 +620,8 @@ function initializeReels() {
     });
 }
 
+let previousNavigationSection = null;
+
 function setNavigationSection(id) {
     const section = id === "nav-home"
         ? "home"
@@ -864,6 +635,7 @@ function setNavigationSection(id) {
     const mainSections = document.querySelectorAll("[data-main-section]");
     const appShell = document.querySelector(".helix-app");
     const showReels = section === "reels";
+    const isEnteringDM = false;
 
     appShell?.classList.toggle("home-active", section === "home");
 
@@ -884,6 +656,8 @@ function setNavigationSection(id) {
     if (section === "profile") {
         updateProfileView();
     }
+
+    previousNavigationSection = section;
 }
 
 function updateProfileView() {
@@ -1264,20 +1038,20 @@ if (unpinButton) {
 // MUTE
 // =========================================================
 
-const muteButton =
+const homeMuteButton =
     document.getElementById("mute-btn");
 
-if (muteButton) {
+if (homeMuteButton) {
 
-    muteButton.addEventListener("click", () => {
+    homeMuteButton.addEventListener("click", () => {
 
         const isMuted =
-            muteButton.textContent === "Unmute";
+            homeMuteButton.textContent === "Unmute";
 
-        muteButton.textContent =
+        homeMuteButton.textContent =
             isMuted ? "Mute" : "Unmute";
 
-        muteButton.classList.toggle("muted");
+        homeMuteButton.classList.toggle("muted");
     });
 }
 
