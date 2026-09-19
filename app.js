@@ -19,7 +19,7 @@ if (!loggedInUser) {
 // =========================================================
 
 function updateLoggedInUser() {
-    const usernameElements = document.querySelectorAll("[data-user]");
+    const usernameElements = document.querySelectorAll("[data-user]:not(.conversation)");
     const avatarElements = document.querySelectorAll("[data-avatar]");
     const username = loggedInUser || "User";
     const photo = localStorage.getItem(`helixProfilePhoto:${loggedInUser}`);
@@ -69,13 +69,44 @@ if (profileLogoutButton) {
 // =========================================================
 // MESSAGE SYSTEM
 // =========================================================
-// Direct Messages has been intentionally reset to a blank state.
+
 // The app uses the nav shell and section toggling without DM chat logic.
-function escapeHTML(text) {
-    const div = document.createElement("div");
-    div.textContent = text;
-    return div.innerHTML;
-}
+const dmConversations = {
+    alex: {
+        name: "Alex",
+        avatar: "A",
+        ping: "14ms",
+        online: true,
+        messages: [
+            { type: "received", text: "Hey! How's the build going?", time: "10:41 AM", read: true },
+            { type: "sent", text: "Pretty good. I'm finishing the DM system.", time: "10:42 AM", read: true },
+            { type: "received", text: "Nice. Check the build?", time: "10:43 AM", read: true }
+        ]
+    },
+
+    maya: {
+        name: "Maya",
+        avatar: "M",
+        ping: "22ms",
+        online: true,
+        messages: [
+            { type: "received", text: "See you soon", time: "9:18 AM", read: true }
+        ]
+    },
+
+    ryan: {
+        name: "Ryan",
+        avatar: "R",
+        ping: "31ms",
+        online: false,
+        messages: [
+            { type: "received", text: "Nice work!", time: "Yesterday", read: true }
+        ]
+    }
+};
+
+let activeDMUser = "alex";
+const dmStorageKey = "helixDMConversations";
 
 function getCurrentTime() {
     const now = new Date();
@@ -86,6 +117,154 @@ function getCurrentTime() {
     });
 }
 
+function loadDMConversations() {
+    try {
+        const saved = JSON.parse(localStorage.getItem(dmStorageKey));
+
+        if (!saved || typeof saved !== "object") return;
+
+        Object.keys(dmConversations).forEach((user) => {
+            if (Array.isArray(saved[user])) {
+                dmConversations[user].messages = saved[user];
+            }
+        });
+    } catch (error) {
+        console.warn("Unable to load DM conversations.", error);
+    }
+}
+
+function saveDMConversations() {
+    const messages = {};
+
+    Object.keys(dmConversations).forEach((user) => {
+        messages[user] = dmConversations[user].messages;
+    });
+
+    localStorage.setItem(dmStorageKey, JSON.stringify(messages));
+}
+function renderDMConversation() {
+    const conversation = dmConversations[activeDMUser];
+    const messagesContainer = document.getElementById("messages");
+
+    if (!conversation || !messagesContainer) return;
+
+    messagesContainer.replaceChildren();
+
+    conversation.messages.forEach((message) => {
+        const messageElement = document.createElement("div");
+        messageElement.className = `message ${message.type}`;
+
+        const bubble = document.createElement("div");
+        bubble.className = "message-bubble";
+
+        const text = document.createElement("p");
+        text.textContent = message.text;
+
+        bubble.appendChild(text);
+
+        const meta = document.createElement("div");
+        meta.className = "message-meta";
+
+        const time = document.createElement("span");
+        time.className = "message-time";
+        time.textContent = message.time;
+
+        meta.appendChild(time);
+
+        if (message.type === "sent") {
+            const status = document.createElement("span");
+            status.className = "message-status";
+            status.textContent = message.read ? "✓✓" : "✓";
+            meta.appendChild(status);
+        }
+
+        messageElement.append(bubble, meta);
+        messagesContainer.appendChild(messageElement);
+    });
+
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+function updateDMHeader() {
+    const conversation = dmConversations[activeDMUser];
+
+    if (!conversation) return;
+
+    const avatar = document.getElementById("chat-avatar");
+    const name = document.getElementById("chat-user-name");
+    const status = document.getElementById("chat-status");
+
+    if (avatar) avatar.textContent = conversation.avatar;
+    if (name) name.textContent = conversation.name;
+
+    if (status) {
+        status.innerHTML = conversation.online
+            ? `<span class="online-dot"></span>Online · ${conversation.ping}`
+            : `Last seen recently · ${conversation.ping}`;
+    }
+}
+function switchDMConversation(user) {
+    if (!dmConversations[user]) return;
+
+    activeDMUser = user;
+
+    document.querySelectorAll(".conversation").forEach((conversation) => {
+        conversation.classList.toggle(
+            "active",
+            conversation.dataset.user === user
+        );
+    });
+
+    updateDMHeader();
+    renderDMConversation();
+}
+function sendDMMessage(text) {
+    const message = text.trim();
+
+    if (!message || !dmConversations[activeDMUser]) return;
+
+    dmConversations[activeDMUser].messages.push({
+        type: "sent",
+        text: message,
+        time: getCurrentTime(),
+        read: true
+    });
+
+    saveDMConversations();
+    renderDMConversation();
+}
+function setupDMSystem() {
+    loadDMConversations();
+
+    document.querySelectorAll(".conversation").forEach((conversation) => {
+        conversation.addEventListener("click", () => {
+            switchDMConversation(conversation.dataset.user);
+        });
+    });
+
+    const messageForm = document.getElementById("message-form");
+    const messageInput = document.getElementById("message-input");
+
+    messageForm?.addEventListener("submit", (event) => {
+        event.preventDefault();
+
+        if (!messageInput) return;
+
+        sendDMMessage(messageInput.value);
+        messageInput.value = "";
+        messageInput.focus();
+    });
+
+    document.querySelectorAll(".macro-btn").forEach((button) => {
+        button.addEventListener("click", () => {
+            sendDMMessage(button.textContent.trim());
+        });
+    });
+
+    updateDMHeader();
+    renderDMConversation();
+}
+
+setupDMSystem();
 // =========================================================
 // HELIX AI HOME
 // =========================================================

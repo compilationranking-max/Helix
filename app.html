@@ -224,8 +224,255 @@
 
 
             <section class="dm-view" id="dm-view" data-main-section="direct-messages" hidden>
-                <div class="dm-blank-state"></div>
-            </section>
+
+    <div class="search-container">
+        <div class="search-input-wrap">
+            <span class="search-icon">⌕</span>
+            <input
+                type="text"
+                id="chat-search"
+                placeholder="Search conversations..."
+                autocomplete="off"
+            >
+        </div>
+    </div>
+
+    <div class="messaging-area">
+
+        <!-- CONNECTIONS -->
+        <aside class="conversation-panel">
+
+            <div class="section-header">
+                <div>
+                    <span class="system-label">CONNECTIONS</span>
+                    <h2>Messages</h2>
+                </div>
+
+                <span class="connection-count" id="connection-count">3</span>
+            </div>
+
+            <div class="conversation-list" id="conversation-list">
+
+                <button class="conversation active" type="button" data-user="alex">
+                    <div class="avatar-badge">A</div>
+
+                    <div class="conversation-info">
+                        <div class="conversation-top">
+                            <strong>Alex</strong>
+                            <span class="ping">14ms</span>
+                        </div>
+
+                        <div class="conversation-top">
+                            <span>Check the build?</span>
+                            <span class="online-dot"></span>
+                        </div>
+                    </div>
+                </button>
+
+                <button class="conversation" type="button" data-user="maya">
+                    <div class="avatar-badge">M</div>
+
+                    <div class="conversation-info">
+                        <div class="conversation-top">
+                            <strong>Maya</strong>
+                            <span>22ms</span>
+                        </div>
+
+                        <div class="conversation-top">
+                            <span>See you soon</span>
+                        </div>
+                    </div>
+                </button>
+
+                <button class="conversation" type="button" data-user="ryan">
+                    <div class="avatar-badge">R</div>
+
+                    <div class="conversation-info">
+                        <div class="conversation-top">
+                            <strong>Ryan</strong>
+                            <span>31ms</span>
+                        </div>
+
+                        <div class="conversation-top">
+                            <span>Nice work!</span>
+                        </div>
+                    </div>
+                </button>
+
+            </div>
+
+        </aside>
+
+
+        <!-- ACTIVE CHAT -->
+        <section class="chat-panel">
+
+            <header class="chat-header">
+
+                <div class="chat-user">
+
+                    <div class="avatar-badge" id="chat-avatar">A</div>
+
+                    <div class="chat-user-text">
+                        <h2 id="chat-user-name">Alex</h2>
+
+                        <span class="status-line" id="chat-status">
+                            <span class="online-dot"></span>
+                            Online · 14ms
+                        </span>
+                    </div>
+
+                </div>
+
+                <div class="chat-actions">
+                    <button
+                        class="icon-button"
+                        type="button"
+                        id="chat-search-button"
+                        title="Search messages"
+                    >⌕</button>
+
+                    <button
+                        class="icon-button"
+                        type="button"
+                        id="chat-info-button"
+                        title="Conversation info"
+                    >ⓘ</button>
+                </div>
+
+            </header>
+
+
+            <!-- MESSAGES -->
+            <div class="messages" id="messages">
+
+                <div class="message received">
+                    <div class="message-bubble">
+                        <p>Hey! How's the build going?</p>
+                    </div>
+
+                    <div class="message-meta">
+                        <span class="message-time">10:41 AM</span>
+                    </div>
+                </div>
+
+
+                <div class="message sent">
+                    <div class="message-bubble">
+                        <p>Pretty good. I'm finishing the DM system.</p>
+                    </div>
+
+                    <div class="message-meta">
+                        <span class="message-time">10:42 AM</span>
+                        <span class="message-status">✓✓</span>
+                    </div>
+                </div>
+
+
+                <div class="message received">
+                    <div class="message-bubble">
+                        <p>Nice. Check the build?</p>
+                    </div>
+
+                    <div class="message-meta">
+                        <span class="message-time">10:43 AM</span>
+                    </div>
+                </div>
+
+            </div>
+
+
+            <!-- TYPING INDICATOR -->
+            <div class="typing-indicator" id="typing-indicator" hidden>
+                <span class="typing-text">Alex is typing</span>
+
+                <span class="typing-dots">
+                    <span class="typing-dot"></span>
+                    <span class="typing-dot"></span>
+                    <span class="typing-dot"></span>
+                </span>
+            </div>
+
+
+            <!-- QUICK REPLIES -->
+            <div class="quick-macros">
+
+                <button class="macro-btn" type="button">
+                    On my way
+                </button>
+
+                <button class="macro-btn" type="button">
+                    Check build
+                </button>
+
+                <button class="macro-btn" type="button">
+                    Coffee?
+                </button>
+
+            </div>
+
+
+            <!-- MESSAGE COMPOSER -->
+            <div class="message-input-area">
+
+                <div class="attachment-shell">
+
+                    <button
+                        class="attach-button"
+                        id="attach-button"
+                        type="button"
+                        title="Attachments"
+                        aria-label="Attachments"
+                    >＋</button>
+
+                    <div class="attachment-menu" id="attachment-menu">
+
+                        <button class="attachment-option" type="button">
+                            <span>▧</span>
+                            <span>Photo</span>
+                        </button>
+
+                        <button class="attachment-option" type="button">
+                            <span>▤</span>
+                            <span>File</span>
+                        </button>
+
+                        <button class="attachment-option" type="button">
+                            <span>◉</span>
+                            <span>Voice</span>
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <form class="message-input-shell" id="message-form">
+
+                    <input
+                        type="text"
+                        id="message-input"
+                        placeholder="Transmit a message..."
+                        autocomplete="off"
+                        maxlength="2000"
+                    >
+
+                    <button
+                        class="send-button"
+                        id="send-message-button"
+                        type="submit"
+                        aria-label="Send message"
+                    >↑</button>
+
+                </form>
+
+            </div>
+
+        </section>
+
+    </div>
+
+</section>
 
 
             <!-- ==================================

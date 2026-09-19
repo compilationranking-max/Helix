@@ -3384,3 +3384,296 @@ body::before {
 @media (max-width: 760px) { .home-topbar, .home-content { padding-left: 18px; padding-right: 18px; }.home-hero { min-height: 280px; padding: 27px 24px; }.hero-online-panel { width: 235px; flex-basis: 235px; }.hero-copy { max-width: 100%; }.hero-copy h1 { max-width: 80%; font-size: 34px; }.home-status-copy { max-width: 68%; }.home-columns { grid-template-columns: 1fr; }.home-rail { display: grid; grid-template-columns: 1fr 1fr; }.ai-feature-card { min-height: 220px; }.quick-action-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 520px) { .home-topbar { padding-top: 14px; padding-bottom: 14px; }.home-profile-chip small, .home-chip-arrow { display: none; }.home-content { padding-top: 18px; }.home-hero { min-height: 470px; padding: 24px 20px; align-items: flex-start; }.hero-copy h1 { max-width: 100%; font-size: 31px; }.home-status-copy { max-width: 75%; }.hero-actions { flex-direction: column; align-items: flex-start; }.hero-primary, .hero-secondary { width: auto; }.hero-online-panel { position: absolute; right: 20px; bottom: 18px; width: calc(100% - 40px); }.quick-action-grid, .home-rail { grid-template-columns: 1fr; }.quick-actions { padding-top: 26px; }.feed-panel { padding: 18px 14px 5px; }.feed-heading { align-items: flex-start; flex-direction: column; }.feed-search { width: 100%; }.connection-state { display: none !important; }.post-actions { gap: 11px; }.post-actions button { font-size: 8px; }.broadcast-composer { gap: 6px; }.character-count { display: none; } }
 
+/* =========================================================
+   HELIX DM — FINAL VISUAL OVERRIDE
+   ========================================================= */
+
+#dm-view {
+    padding: 24px 28px 28px;
+    min-height: calc(100vh - 70px);
+    background:
+        radial-gradient(circle at 75% 20%, rgba(45, 90, 180, .12), transparent 32%),
+        radial-gradient(circle at 20% 80%, rgba(0, 210, 190, .06), transparent 30%);
+}
+
+#dm-view .search-container {
+    width: min(520px, 100%);
+    margin: 0 0 18px;
+}
+
+#dm-view .search-input-wrap {
+    height: 46px;
+    border: 1px solid rgba(90, 150, 190, .25);
+    border-radius: 14px;
+    background: rgba(10, 20, 32, .72);
+    box-shadow: 0 10px 30px rgba(0,0,0,.18);
+}
+
+#dm-view #chat-search {
+    color: #e8f6ff;
+}
+
+#dm-view .messaging-area {
+    display: grid;
+    grid-template-columns: 300px minmax(0, 1fr);
+    gap: 16px;
+    height: calc(100vh - 165px);
+    min-height: 520px;
+}
+
+#dm-view .conversation-panel,
+#dm-view .chat-panel {
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid rgba(75, 145, 185, .22);
+    border-radius: 20px;
+    background: rgba(7, 15, 26, .82);
+    box-shadow: 0 18px 50px rgba(0,0,0,.25);
+    backdrop-filter: blur(18px);
+}
+
+#dm-view .conversation-panel {
+    padding: 18px;
+}
+
+#dm-view .section-header {
+    margin-bottom: 18px;
+}
+
+#dm-view .section-header h2 {
+    margin: 4px 0 0;
+    color: #f1f8ff;
+}
+
+#dm-view .conversation-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+#dm-view .conversation {
+    width: 100%;
+    min-height: 72px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px;
+    border: 1px solid transparent;
+    border-radius: 14px;
+    background: transparent;
+    color: #dcecf7;
+    text-align: left;
+    cursor: pointer;
+    transition: .18s ease;
+}
+
+#dm-view .conversation:hover {
+    background: rgba(35, 75, 105, .18);
+}
+
+#dm-view .conversation.active {
+    border-color: rgba(46, 210, 220, .38);
+    background: linear-gradient(135deg, rgba(20, 75, 105, .35), rgba(25, 35, 70, .28));
+    box-shadow: inset 3px 0 0 #38dce5, 0 8px 24px rgba(0,0,0,.16);
+}
+
+#dm-view .avatar-badge {
+    width: 42px;
+    height: 42px;
+    flex: 0 0 42px;
+    display: grid;
+    place-items: center;
+    border-radius: 13px;
+    background: linear-gradient(135deg, #273b82, #147c91);
+    color: white;
+    font-weight: 700;
+    box-shadow: 0 0 18px rgba(45, 190, 220, .16);
+}
+
+#dm-view .conversation-info {
+    min-width: 0;
+    flex: 1;
+}
+
+#dm-view .conversation-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+#dm-view .conversation-top span:first-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#dm-view .chat-panel {
+    display: flex;
+    flex-direction: column;
+}
+
+#dm-view .chat-header {
+    min-height: 78px;
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(75, 145, 185, .18);
+}
+
+#dm-view .chat-user {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+#dm-view .chat-user h2 {
+    margin: 0;
+    color: #f3f9ff;
+}
+
+#dm-view .status-line {
+    color: #7e9bad;
+    font-size: 12px;
+}
+
+#dm-view .chat-actions {
+    display: flex;
+    gap: 8px;
+}
+
+#dm-view .icon-button {
+    width: 38px;
+    height: 38px;
+    border: 1px solid rgba(80, 150, 185, .22);
+    border-radius: 11px;
+    background: rgba(20, 35, 50, .55);
+    color: #bde8f5;
+}
+
+#dm-view .messages {
+    flex: 1;
+    min-height: 0;
+    padding: 24px;
+    overflow-y: auto;
+}
+
+#dm-view .message {
+    margin-bottom: 15px;
+}
+
+#dm-view .message-bubble {
+    max-width: min(68%, 560px);
+    padding: 11px 15px;
+    border-radius: 16px;
+    border: 1px solid rgba(100, 160, 190, .14);
+    box-shadow: 0 7px 22px rgba(0,0,0,.12);
+}
+
+#dm-view .message.received .message-bubble {
+    background: rgba(24, 39, 54, .9);
+}
+
+#dm-view .message.sent .message-bubble {
+    background: linear-gradient(135deg, #234a83, #255e91);
+}
+
+#dm-view .message-bubble p {
+    margin: 0;
+    color: #edf7ff;
+    line-height: 1.45;
+}
+
+#dm-view .message-meta {
+    margin-top: 5px;
+    font-size: 10px;
+    color: #71899a;
+}
+
+#dm-view .quick-macros {
+    display: flex;
+    gap: 8px;
+    padding: 10px 20px;
+    border-top: 1px solid rgba(75, 145, 185, .12);
+}
+
+#dm-view .macro-btn {
+    padding: 7px 12px;
+    border: 1px solid rgba(70, 160, 190, .25);
+    border-radius: 999px;
+    background: rgba(20, 45, 62, .5);
+    color: #9edbe9;
+    cursor: pointer;
+}
+
+#dm-view .message-input-area {
+    display: flex;
+    gap: 9px;
+    padding: 14px 20px 18px;
+    border-top: 1px solid rgba(75, 145, 185, .16);
+}
+
+#dm-view .attachment-shell {
+    position: relative;
+}
+
+#dm-view .attach-button,
+#dm-view .send-button {
+    border: 1px solid rgba(70, 160, 190, .25);
+    border-radius: 12px;
+    background: rgba(20, 40, 55, .7);
+    color: #9eeaf4;
+}
+
+#dm-view .attach-button {
+    width: 46px;
+    height: 46px;
+}
+
+#dm-view .message-input-shell {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 5px 4px 15px;
+    border: 1px solid rgba(70, 160, 190, .28);
+    border-radius: 14px;
+    background: rgba(8, 18, 29, .9);
+}
+
+#dm-view .message-input-area input {
+    min-width: 0;
+    flex: 1;
+    color: #eefaff;
+    background: transparent;
+}
+
+#dm-view .send-button {
+    width: 38px;
+    height: 38px;
+    background: linear-gradient(135deg, #246d9a, #267d91);
+    color: white;
+}
+
+@media (max-width: 900px) {
+    #dm-view .messaging-area {
+        grid-template-columns: 240px minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 650px) {
+    #dm-view {
+        padding: 14px;
+    }
+
+    #dm-view .messaging-area {
+        grid-template-columns: 1fr;
+        height: auto;
+    }
+
+    #dm-view .conversation-panel {
+        max-height: 260px;
+    }
+
+    #dm-view .chat-panel {
+        min-height: 600px;
+    }
+}
