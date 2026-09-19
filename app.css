@@ -3033,7 +3033,7 @@ body::before {
     align-items: center;
     gap: 12px;
     min-width: 0;
-    flex: 1;
+    flex: 1 1 auto;
 }
 
 #dm-view .chat-user h2 {
@@ -3052,7 +3052,8 @@ body::before {
     align-items: center;
     justify-content: flex-end;
     gap: 10px;
-    min-width: 110px;
+    flex-shrink: 0;
+    min-width: 92px;
     margin-left: auto;
 }
 
@@ -3060,15 +3061,16 @@ body::before {
     position: relative;
     display: flex;
     align-items: center;
+    justify-content: center;
 }
 
 #dm-view .icon-button {
     display: grid;
     place-items: center;
-    width: 38px;
-    height: 38px;
-    border: 1px solid rgba(80, 150, 185, .22);
-    border-radius: 12px;
+    width: 36px;
+    height: 36px;
+    border: 1px solid rgba(80, 150, 185, .24);
+    border-radius: 50%;
     background: linear-gradient(180deg, rgba(18, 30, 42, 0.9), rgba(10, 18, 28, 0.8));
     color: #bde8f5;
     font-size: 18px;
@@ -3077,18 +3079,18 @@ body::before {
     box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.06),
         0 8px 18px rgba(0, 0, 0, 0.18),
-        0 0 0 1px rgba(0, 229, 255, 0.04);
+        0 0 0 1px rgba(0, 229, 255, 0.06);
     transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, color 0.18s ease;
 }
 
 #dm-view .icon-button:hover {
-    border-color: rgba(0, 229, 255, 0.46);
+    border-color: rgba(0, 229, 255, 0.56);
     color: #f2fdff;
     transform: translateY(-1px);
     box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.08),
         0 10px 24px rgba(0, 229, 255, 0.12),
-        0 0 0 1px rgba(0, 229, 255, 0.12);
+        0 0 0 1px rgba(0, 229, 255, 0.16);
 }
 
 #dm-view .messages {
@@ -5806,108 +5808,87 @@ body::before {
 
 #dm-view #chat-message-search {
     position: absolute !important;
-
     top: 50% !important;
-    right: 52px !important;
+    right: calc(100% + 12px) !important;
     transform: translateY(-50%) !important;
-
-    width: min(360px, calc(100vw - 340px)) !important;
-    height: 46px !important;
-
-    padding: 0 !important;
-
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    width: min(320px, calc(100vw - 280px)) !important;
+    height: 42px !important;
+    padding: 0 10px 0 38px !important;
     z-index: 100 !important;
-
-    background: transparent !important;
-    border: 0 !important;
-    box-shadow: none !important;
-
+    border: 1px solid rgba(0, 229, 255, 0.32) !important;
+    border-radius: 999px !important;
+    background: rgba(6, 12, 21, 0.96) !important;
+    box-shadow:
+        0 14px 36px rgba(0, 0, 0, 0.36),
+        0 0 18px rgba(0, 229, 255, 0.08) !important;
     overflow: visible !important;
 }
 
 #dm-view #chat-message-search.helix-message-search-open {
-    display: block !important;
+    display: flex !important;
 }
 
 #dm-view #message-search-input {
     width: 100% !important;
-    height: 46px !important;
-
-    box-sizing: border-box !important;
-
-    padding: 0 46px 0 42px !important;
-
-    border: 1px solid rgba(0, 229, 255, 0.32) !important;
-    border-radius: 14px !important;
-
-    background: rgba(6, 12, 21, 0.97) !important;
-
+    height: 100% !important;
+    min-width: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
     color: #eefaff !important;
-
-    box-shadow:
-        0 14px 40px rgba(0, 0, 0, 0.38),
-        0 0 20px rgba(0, 229, 255, 0.07) !important;
-
+    font-size: 12px !important;
     outline: none !important;
+    box-shadow: none !important;
 }
 
 #dm-view #message-search-input:focus {
-    border-color: rgba(0, 229, 255, 0.7) !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
 }
 
 #dm-view #message-search-input::placeholder {
     color: rgba(143, 166, 184, 0.72) !important;
 }
 
-/* Search icon inside popup */
 #dm-view #chat-message-search::before {
     content: "⌕";
-
     position: absolute;
-
-    left: 15px;
+    left: 14px;
     top: 50%;
-
     transform: translateY(-50%);
-
     z-index: 2;
-
     color: var(--cyan);
-
-    font-size: 21px;
+    font-size: 17px;
     line-height: 1;
-
     pointer-events: none;
 }
 
-/* Close X */
 #dm-view #chat-search-close {
-    position: absolute !important;
-
-    right: 12px !important;
-    top: 50% !important;
-
-    transform: translateY(-50%) !important;
-
-    width: 28px !important;
-    height: 28px !important;
-
+    position: relative !important;
+    display: grid !important;
+    place-items: center !important;
+    flex-shrink: 0 !important;
+    width: 24px !important;
+    height: 24px !important;
     padding: 0 !important;
-
-    border: 0 !important;
-
-    background: transparent !important;
-
+    border: 1px solid rgba(0, 229, 255, 0.26) !important;
+    border-radius: 50% !important;
+    background: rgba(10, 18, 29, 0.9) !important;
     color: var(--cyan) !important;
-
-    font-size: 18px !important;
-
+    font-size: 14px !important;
+    line-height: 1 !important;
     z-index: 3 !important;
+    box-shadow: 0 0 0 1px rgba(0, 229, 255, 0.05), 0 0 16px rgba(0, 229, 255, 0.08) !important;
 }
 
 #dm-view #chat-search-close:hover {
     color: #ffffff !important;
-    background: transparent !important;
+    border-color: rgba(0, 229, 255, 0.6) !important;
+    box-shadow: 0 0 0 1px rgba(0, 229, 255, 0.1), 0 0 18px rgba(0, 229, 255, 0.12) !important;
 }
 
 /* ---------------------------------------------------------
