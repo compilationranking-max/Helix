@@ -142,6 +142,11 @@ function saveDMConversations() {
 
     localStorage.setItem(dmStorageKey, JSON.stringify(messages));
 }
+function escapeHTML(text) {
+    const div = document.createElement("div");
+    div.textContent = text ?? "";
+    return div.innerHTML;
+}
 function renderDMConversation() {
     const conversation = dmConversations[activeDMUser];
     const messagesContainer = document.getElementById("messages");
@@ -417,7 +422,7 @@ async function sendAIMessage() {
         addAIMessage(error.message || "Helix AI is unavailable right now. Please try again in a moment.", "assistant", false);
     } finally {
         setAIProcessing(false);
-        aiInput.focus();
+       aiInput?.focus();
     }
 }
 
@@ -464,379 +469,112 @@ openAISidebarButton?.addEventListener("click", () => setAISidebarOpen(true));
 // =========================================================
 // NAVIGATION
 // =========================================================
-
-const reelData = [
-    {
-        id: "signal-in-bloom",
-        video: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
-        creator: "Mira Chen",
-        username: "@mirachen",
-        avatar: "MC",
-        caption: "A quiet signal in the middle of the noise. Find your frequency.",
-        hashtags: ["#helix", "#slowmotion"],
-        audio: "Original audio · Mira Chen",
-        likes: 1842,
-        comments: [
-            { username: "noah.k", avatar: "NK", text: "The color shift is unreal.", time: "8m" },
-            { username: "rhea", avatar: "RH", text: "This feels like a transmission from tomorrow.", time: "21m" }
-        ]
-    },
-    {
-        id: "after-hours-build",
-        video: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.webm",
-        creator: "Jules Park",
-        username: "@julespark",
-        avatar: "JP",
-        caption: "After-hours build log. Small details, big atmosphere.",
-        hashtags: ["#buildinpublic", "#nightshift"],
-        audio: "Night Drive · Helix Radio",
-        likes: 927,
-        comments: [
-            { username: "sana", avatar: "SA", text: "The whole interface is so clean.", time: "4m" }
-        ]
-    },
-    {
-        id: "orbit-notes",
-        video: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
-        creator: "Theo Vale",
-        username: "@theovale",
-        avatar: "TV",
-        caption: "Orbit notes from a Sunday walk. Keep looking up.",
-        hashtags: ["#fieldnotes", "#outside"],
-        audio: "Soft Focus · Theo Vale",
-        likes: 2411,
-        comments: []
-    }
-];
-
-const reelState = reelData.map((reel) => ({
-    ...reel,
-    liked: false,
-    saved: false,
-    following: false,
-    muted: true,
-    comments: [...reel.comments]
-}));
-
-let reelsInitialized = false;
-let activeReelIndex = 0;
-let commentReelIndex = 0;
-let shareReelIndex = 0;
-
-function formatCount(count) {
-    return count >= 1000
-        ? `${(count / 1000).toFixed(count >= 10000 ? 0 : 1).replace(".0", "")}K`
-        : String(count);
-}
-
-function renderReels() {
-    const feed = document.getElementById("reels-feed");
-
-    if (!feed) return;
-
-    feed.innerHTML = reelState.map((reel, index) => `
-        <article class="reel-card" data-reel-index="${index}">
-            <video class="reel-video" src="${escapeHTML(reel.video)}" muted playsinline loop preload="metadata"></video>
-            <span class="reel-loading">Loading media...</span>
-            <div class="reel-play-indicator">▶</div>
-            <div class="reel-progress" aria-hidden="true"><span></span></div>
-
-            <div class="reel-info">
-                <div class="reel-creator">
-                    <span class="reel-avatar">${escapeHTML(reel.avatar)}</span>
-                    <strong>${escapeHTML(reel.username)}</strong>
-                </div>
-                <p class="reel-caption">${escapeHTML(reel.caption)} ${reel.hashtags.map((tag) => `<span class="hashtag">${escapeHTML(tag)}</span>`).join(" ")}</p>
-                <p class="reel-audio"><span>♫</span>${escapeHTML(reel.audio)}</p>
-            </div>
-
-            <div class="reel-actions">
-                <button class="reel-action${reel.liked ? " liked" : ""}" type="button" data-action="like" aria-label="Like Reel"><span class="reel-action-icon">♥</span><small>${formatCount(reel.likes)}</small></button>
-                <button class="reel-action" type="button" data-action="comment" aria-label="Open comments"><span class="reel-action-icon">◌</span><small>${formatCount(reel.comments.length)}</small></button>
-                <button class="reel-action" type="button" data-action="share" aria-label="Share Reel"><span class="reel-action-icon">↗</span><small>Share</small></button>
-                <button class="reel-action" type="button" data-action="repost" aria-label="Repost Reel"><span class="reel-action-icon">⟳</span><small>Repost</small></button>
-            </div>
-        </article>
-    `).join("");
-
-    feed.querySelectorAll(".reel-card").forEach((card) => bindReelCard(card));
-    setupReelObserver(feed);
-}
-
-function bindReelCard(card) {
-    const index = Number(card.dataset.reelIndex);
-    const video = card.querySelector(".reel-video");
-    const progress = card.querySelector(".reel-progress span");
-    const loading = card.querySelector(".reel-loading");
-    const playIndicator = card.querySelector(".reel-play-indicator");
-
-    video.addEventListener("loadeddata", () => {
-        loading.hidden = true;
-    });
-
-    video.addEventListener("error", () => {
-        loading.hidden = false;
-        loading.textContent = "Media unavailable · replace sample URL";
-        loading.classList.add("error");
-    });
-
-    video.addEventListener("timeupdate", () => {
-        progress.style.width = video.duration ? `${(video.currentTime / video.duration) * 100}%` : "0%";
-    });
-
-    video.addEventListener("play", () => {
-        playIndicator.textContent = "❚❚";
-        playIndicator.classList.remove("visible");
-    });
-
-    video.addEventListener("pause", () => {
-        playIndicator.textContent = "▶";
-        playIndicator.classList.add("visible");
-    });
-
-    video.addEventListener("click", () => toggleVideo(video));
-    video.addEventListener("dblclick", () => {
-        if (!reelState[index].liked) toggleLike(index, card);
-    });
-
-    card.querySelectorAll("[data-action]").forEach((button) => {
-        button.addEventListener("click", () => {
-            const action = button.dataset.action;
-
-            if (action === "like") toggleLike(index, card);
-            if (action === "comment") openComments(index);
-            if (action === "share") openShare(index);
-            if (action === "repost") showReelFeedback(card, "Reposted to your Helix feed");
-        });
-    });
-}
-
-function toggleVideo(video) {
-    if (video.paused) {
-        pauseAllVideos(video);
-        video.play().catch(() => {});
-    } else {
-        video.pause();
-    }
-}
-
-function pauseAllVideos(exceptVideo) {
-    document.querySelectorAll(".reel-video").forEach((video) => {
-        if (video !== exceptVideo) video.pause();
-    });
-}
-
-function activateReel(card) {
-    const index = Number(card.dataset.reelIndex);
-    const video = card.querySelector(".reel-video");
-
-    activeReelIndex = index;
-    pauseAllVideos(video);
-    video.currentTime = 0;
-    video.play().catch(() => {
-        card.querySelector(".reel-play-indicator").classList.add("visible");
-    });
-}
-
-function setupReelObserver(feed) {
-    if (!window.IntersectionObserver) {
-        activateReel(feed.querySelector(".reel-card"));
-        return;
-    }
-
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach((entry) => {
-            if (entry.isIntersecting && entry.intersectionRatio >= 0.7) {
-                activateReel(entry.target);
-            }
-        });
-    }, { root: feed, threshold: [0.7] });
-
-    feed.querySelectorAll(".reel-card").forEach((card) => observer.observe(card));
-}
-
-function toggleLike(index, card) {
-    const reel = reelState[index];
-    reel.liked = !reel.liked;
-    reel.likes += reel.liked ? 1 : -1;
-
-    const button = card.querySelector('[data-action="like"]');
-    button.classList.toggle("liked", reel.liked);
-    button.querySelector("small").textContent = formatCount(reel.likes);
-}
-
-function showReelFeedback(card, message) {
-    const feedback = document.createElement("span");
-    feedback.className = "reel-loading";
-    feedback.textContent = message;
-    card.appendChild(feedback);
-    setTimeout(() => feedback.remove(), 1800);
-}
-
-function renderComments(index) {
-    const list = document.getElementById("comments-list");
-    const comments = reelState[index].comments;
-
-    list.innerHTML = "";
-
-    if (!comments.length) {
-        const empty = document.createElement("p");
-        empty.className = "comment-empty";
-        empty.textContent = "No comments yet. Start the thread.";
-        list.appendChild(empty);
-        return;
-    }
-
-    comments.forEach((comment) => {
-        const item = document.createElement("article");
-        item.className = "comment-item";
-        item.innerHTML = `
-            <span class="reel-avatar"></span>
-            <div class="comment-body">
-                <div class="comment-meta"><strong></strong><time></time></div>
-                <p></p>
-            </div>
-        `;
-        item.querySelector(".reel-avatar").textContent = comment.avatar;
-        item.querySelector("strong").textContent = comment.username;
-        item.querySelector("time").textContent = comment.time;
-        item.querySelector("p").textContent = comment.text;
-        list.appendChild(item);
-    });
-}
-
-function openComments(index) {
-    commentReelIndex = index;
-    renderComments(index);
-    document.getElementById("comments-overlay").hidden = false;
-    document.getElementById("comment-input").focus();
-}
-
-function openShare(index) {
-    shareReelIndex = index;
-    document.getElementById("share-feedback").textContent = "";
-    document.getElementById("share-overlay").hidden = false;
-}
-
-function closeOverlay(id) {
-    document.getElementById(id).hidden = true;
-}
-
-function showShareFeedback(message) {
-    document.getElementById("share-feedback").textContent = message;
-}
-
-async function copyReelLink() {
-    const link = `${window.location.href.split("#")[0]}#reel=${reelState[shareReelIndex].id}`;
-
-    try {
-        if (!navigator.clipboard) throw new Error("Clipboard unavailable");
-        await navigator.clipboard.writeText(link);
-        showShareFeedback("Link copied");
-    } catch (error) {
-        showShareFeedback("Clipboard unavailable in this browser");
-    }
-}
-
-function initializeReels() {
-    if (reelsInitialized) return;
-
-    renderReels();
-    reelsInitialized = true;
-
-    document.getElementById("comment-form")?.addEventListener("submit", (event) => {
-        event.preventDefault();
-        const input = document.getElementById("comment-input");
-        const text = input.value.trim();
-
-        if (!text) return;
-
-        reelState[commentReelIndex].comments.push({
-            username: `@${loggedInUser || "you"}`,
-            avatar: (loggedInUser || "You").slice(0, 2).toUpperCase(),
-            text,
-            time: "now"
-        });
-        input.value = "";
-        renderComments(commentReelIndex);
-
-        const card = document.querySelector(`[data-reel-index="${commentReelIndex}"]`);
-        card.querySelector('[data-action="comment"] small').textContent = formatCount(reelState[commentReelIndex].comments.length);
-    });
-
-    document.querySelectorAll("[data-close-overlay]").forEach((button) => {
-        button.addEventListener("click", () => closeOverlay(button.dataset.closeOverlay));
-    });
-
-    document.querySelectorAll(".reel-overlay").forEach((overlay) => {
-        overlay.addEventListener("click", (event) => {
-            if (event.target === overlay) closeOverlay(overlay.id);
-        });
-    });
-
-    document.getElementById("copy-link-button")?.addEventListener("click", copyReelLink);
-    document.getElementById("share-helix-button")?.addEventListener("click", () => showShareFeedback("Ready to share with your Helix connections"));
-    document.getElementById("share-external-button")?.addEventListener("click", async () => {
-        const link = `${window.location.href.split("#")[0]}#reel=${reelState[shareReelIndex].id}`;
-
-        if (!navigator.share) {
-            showShareFeedback("External sharing is not supported here");
-            return;
-        }
-
-        try {
-            await navigator.share({ title: "Helix Reel", url: link });
-        } catch (error) {
-            if (error.name !== "AbortError") showShareFeedback("External share was unavailable");
-        }
-    });
-
-    document.addEventListener("keydown", (event) => {
-        if (event.key === "Escape") {
-            closeOverlay("comments-overlay");
-            closeOverlay("share-overlay");
-        }
-    });
-}
-
 let previousNavigationSection = null;
+function renderHelixReels() {
+    const reelsFeed = document.getElementById("reels-feed");
+    if (!reelsFeed) return;
+
+    // Reels will be rebuilt later.
+}
+
+function setupReelObserver() {
+    // Reels observer will be rebuilt later.
+}
+
+function pauseAllVideos(exceptVideo = null) {
+    document.querySelectorAll("video").forEach((video) => {
+        if (video !== exceptVideo) {
+            video.pause();
+        }
+    });
+}
 
 function setNavigationSection(id) {
-    const section = id === "nav-home"
-        ? "home"
-        : id === "nav-console"
-            ? "direct-messages"
-            : id === "nav-ai"
-                ? "helix-ai"
-            : id === "nav-reels"
-                ? "reels"
-                : "profile";
-    const mainSections = document.querySelectorAll("[data-main-section]");
-    const appShell = document.querySelector(".helix-app");
-    const showReels = section === "reels";
-    const isEnteringDM = false;
+    const section =
+        id === "nav-home"
+            ? "home"
+            : id === "nav-console"
+                ? "direct-messages"
+                : id === "nav-ai"
+                    ? "helix-ai"
+                    : id === "nav-reels"
+                        ? "reels"
+                        : "profile";
 
-    appShell?.classList.toggle("home-active", section === "home");
+    const mainSections =
+        document.querySelectorAll("[data-main-section]");
+
+    const appShell =
+        document.querySelector(".helix-app");
+
+    const showReels =
+        section === "reels";
+
+    appShell?.classList.toggle(
+        "home-active",
+        section === "home"
+    );
 
     mainSections.forEach((mainSection) => {
-        mainSection.hidden = mainSection.dataset.mainSection !== section;
+        mainSection.hidden =
+            mainSection.dataset.mainSection !== section;
     });
 
-    if (section === "helix-ai") setAISidebarOpen(true);
+    if (section === "helix-ai") {
+        setAISidebarOpen(true);
+    }
 
     if (showReels) {
-        initializeReels();
-        const activeCard = document.querySelector(`[data-reel-index="${activeReelIndex}"]`);
-        if (activeCard) activateReel(activeCard);
+
+        const reelsSection =
+            document.getElementById("reels-view");
+
+        if (reelsSection) {
+            reelsSection.hidden = false;
+        }
+
+        const reelsFeed =
+            document.getElementById("reels-feed");
+
+        if (
+            reelsFeed &&
+            !reelsFeed.querySelector(".helix-reel-card")
+        ) {
+            if (
+                typeof renderHelixReels === "function"
+            ) {
+                renderHelixReels();
+            }
+        }
+
+        if (
+            typeof setupReelObserver === "function"
+        ) {
+            setupReelObserver();
+        }
+
     } else {
-        pauseAllVideos();
+
+        if (
+            typeof pauseAllVideos === "function"
+        ) {
+            pauseAllVideos();
+        }
+
     }
 
     if (section === "profile") {
-        updateProfileView();
+
+        if (
+            typeof updateProfileView === "function"
+        ) {
+            updateProfileView();
+        }
+
     }
 
-    previousNavigationSection = section;
+    previousNavigationSection =
+        section;
 }
 
 function updateProfileView() {
@@ -1262,12 +1000,7 @@ updateLoggedInUser();
 handleNavigation("nav-home");
 
 
-// Scroll messages to bottom on startup
 
-if (messagesContainer) {
-    messagesContainer.scrollTop =
-        messagesContainer.scrollHeight;
-}
 
 
 // Console message
@@ -1280,3 +1013,1518 @@ console.log(
 console.log(
     `Logged in as: ${loggedInUser}`
 );
+ // =========================================================
+// HELIX — FINAL DM + REELS INTERACTION POLISH
+// =========================================================
+
+(() => {
+
+    // =====================================================
+    // DM — CONVERSATION SEARCH
+    // =====================================================
+
+    const helixDMSearch = document.getElementById("chat-search");
+    const helixConversations =
+        document.querySelectorAll("#conversation-list .conversation");
+
+    if (helixDMSearch) {
+
+        helixDMSearch.addEventListener("input", () => {
+
+            const query =
+                helixDMSearch.value.trim().toLowerCase();
+
+            helixConversations.forEach((conversation) => {
+
+                const name =
+                    conversation
+                        .querySelector("strong")
+                        ?.textContent
+                        .toLowerCase() || "";
+
+                const preview =
+                    conversation
+                        .querySelector(".conversation-preview")
+                        ?.textContent
+                        .toLowerCase() || "";
+
+                const matches =
+                    !query ||
+                    name.includes(query) ||
+                    preview.includes(query);
+
+                conversation.style.display =
+                    matches ? "" : "none";
+            });
+        });
+    }
+
+
+    // =====================================================
+    // DM — CHAT MESSAGE SEARCH BUTTON
+    // =====================================================
+
+    const chatSearchButton =
+        document.getElementById("chat-search-button");
+
+    const chatMessageSearch =
+        document.getElementById("chat-message-search");
+
+    const messageSearchInput =
+        document.getElementById("message-search-input");
+
+    const chatSearchClose =
+        document.getElementById("chat-search-close");
+
+    const dmMessages =
+        document.getElementById("messages");
+
+
+    if (
+        chatSearchButton &&
+        chatMessageSearch &&
+        messageSearchInput
+    ) {
+
+        chatSearchButton.addEventListener("click", () => {
+
+            chatMessageSearch.hidden = false;
+
+            requestAnimationFrame(() => {
+                messageSearchInput.focus();
+            });
+        });
+
+
+        messageSearchInput.addEventListener("input", () => {
+
+            const query =
+                messageSearchInput.value.trim().toLowerCase();
+
+            if (!dmMessages) return;
+
+            dmMessages
+                .querySelectorAll(".message")
+                .forEach((message) => {
+
+                    const text =
+                        message.textContent.toLowerCase();
+
+                    const matches =
+                        !query || text.includes(query);
+
+                    message.hidden = !matches;
+
+                    message.classList.toggle(
+                        "search-match",
+                        Boolean(query && matches)
+                    );
+                });
+        });
+
+
+        if (chatSearchClose) {
+
+            chatSearchClose.addEventListener("click", () => {
+
+                messageSearchInput.value = "";
+
+                if (dmMessages) {
+
+                    dmMessages
+                        .querySelectorAll(".message")
+                        .forEach((message) => {
+
+                            message.hidden = false;
+                            message.classList.remove("search-match");
+
+                        });
+                }
+
+                chatMessageSearch.hidden = true;
+            });
+        }
+    }
+
+
+    // =====================================================
+    // DM — INFO PANEL
+    // =====================================================
+
+    const chatInfoButton =
+        document.getElementById("chat-info-button");
+
+    const dmInfoPanel =
+        document.getElementById("dm-info-panel");
+
+    const dmInfoClose =
+        document.getElementById("dm-info-close");
+
+
+    if (chatInfoButton && dmInfoPanel) {
+
+        chatInfoButton.addEventListener("click", () => {
+
+            dmInfoPanel.hidden = false;
+
+        });
+    }
+
+
+    if (dmInfoClose && dmInfoPanel) {
+
+        dmInfoClose.addEventListener("click", () => {
+
+            dmInfoPanel.hidden = true;
+
+        });
+    }
+
+
+    // =====================================================
+    // REELS — FIVE CREATOR REELS
+    // =====================================================
+
+    const reelsFeed =
+        document.getElementById("reels-feed");
+
+    if (reelsFeed) {
+
+        const reelCreators = [
+            {
+                handle: "@nova.frames",
+                name: "Nova Frames",
+                caption: "Late-night city lights ✦",
+                audio: "Original audio · Nova Frames",
+                scene: "reel-scene-1"
+            },
+            {
+                handle: "@kai.motion",
+                name: "Kai Motion",
+                caption: "Building something that moves.",
+                audio: "Original audio · Kai Motion",
+                scene: "reel-scene-2"
+            },
+            {
+                handle: "@rhea.studio",
+                name: "Rhea Studio",
+                caption: "A little color for your feed.",
+                audio: "Original audio · Rhea Studio",
+                scene: "reel-scene-3"
+            },
+            {
+                handle: "@pixel.jay",
+                name: "Pixel Jay",
+                caption: "Weekend creative mode activated.",
+                audio: "Original audio · Pixel Jay",
+                scene: "reel-scene-4"
+            },
+            {
+                handle: "@zane.visuals",
+                name: "Zane Visuals",
+                caption: "Keep moving. Keep creating. ✦",
+                audio: "Original audio · Zane Visuals",
+                scene: "reel-scene-5"
+            }
+        ];
+
+
+        const escapeReelHTML = (value) => {
+
+            const element =
+                document.createElement("div");
+
+            element.textContent = value;
+
+            return element.innerHTML;
+        };
+
+
+        reelsFeed.innerHTML =
+            reelCreators.map((creator, index) => {
+
+                return `
+                    <article
+                        class="helix-reel-card"
+                        data-reel-id="helix-reel-${index + 1}"
+                    >
+
+                        <div class="helix-reel-media">
+
+                            <div
+                                class="helix-fake-video ${creator.scene}"
+                                role="img"
+                                aria-label="Demo Reel from ${escapeReelHTML(creator.name)}"
+                            >
+                                <div class="helix-fake-orb"></div>
+                                <div class="helix-fake-grid"></div>
+
+                                <button
+                                    class="helix-reel-play"
+                                    type="button"
+                                    aria-label="Play or pause Reel"
+                                >
+                                    ▶
+                                </button>
+                            </div>
+
+
+                            <button
+                                class="helix-reel-mute"
+                                type="button"
+                                aria-label="Mute or unmute Reel"
+                            >
+                                🔇
+                            </button>
+
+
+                            <div class="helix-reel-bottom">
+
+                                <div class="helix-reel-author">
+
+                                    <div class="helix-reel-avatar">
+                                        ${creator.name.charAt(0)}
+                                    </div>
+
+                                    <div class="helix-reel-author-info">
+
+                                        <strong>
+                                            ${escapeReelHTML(creator.handle)}
+                                        </strong>
+
+                                        <span>
+                                            ${escapeReelHTML(creator.name)}
+                                        </span>
+
+                                    </div>
+
+                                    <button
+                                        class="helix-reel-follow"
+                                        type="button"
+                                    >
+                                        Follow
+                                    </button>
+
+                                </div>
+
+
+                                <p class="helix-reel-caption">
+                                    ${escapeReelHTML(creator.caption)}
+                                </p>
+
+
+                                <div class="helix-reel-audio">
+                                    ♪ ${escapeReelHTML(creator.audio)}
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="helix-reel-actions">
+
+                            <button
+                                class="helix-reel-action helix-like"
+                                type="button"
+                                aria-label="Like Reel"
+                            >
+                                <span class="helix-action-icon">♡</span>
+                                <span class="helix-action-count">0</span>
+                            </button>
+
+
+                            <button
+                                class="helix-reel-action helix-comment"
+                                type="button"
+                                aria-label="Comment on Reel"
+                            >
+                                <span class="helix-action-icon">💬</span>
+                                <span class="helix-action-count">0</span>
+                            </button>
+
+
+                            <button
+                                class="helix-reel-action helix-share"
+                                type="button"
+                                aria-label="Share Reel"
+                            >
+                                <span class="helix-action-icon">↗</span>
+                                <span class="helix-action-count">Share</span>
+                            </button>
+
+
+                            <button
+                                class="helix-reel-action helix-save"
+                                type="button"
+                                aria-label="Save Reel"
+                            >
+                                <span class="helix-action-icon">🔖</span>
+                                <span class="helix-action-count">Save</span>
+                            </button>
+
+                        </div>
+
+                    </article>
+                `;
+
+            }).join("");
+
+
+        // =================================================
+        // REELS — INTERACTIONS
+        // =================================================
+
+        reelsFeed
+            .querySelectorAll(".helix-reel-card")
+            .forEach((reel) => {
+
+                const playButton =
+                    reel.querySelector(".helix-reel-play");
+
+                const fakeVideo =
+                    reel.querySelector(".helix-fake-video");
+
+                const muteButton =
+                    reel.querySelector(".helix-reel-mute");
+
+                const followButton =
+                    reel.querySelector(".helix-reel-follow");
+
+                const likeButton =
+                    reel.querySelector(".helix-like");
+
+                const commentButton =
+                    reel.querySelector(".helix-comment");
+
+                const shareButton =
+                    reel.querySelector(".helix-share");
+
+                const saveButton =
+                    reel.querySelector(".helix-save");
+
+
+                // PLAY / PAUSE
+
+                const toggleFakeVideo = () => {
+
+                    if (!fakeVideo) return;
+
+                    fakeVideo.classList.toggle("is-paused");
+
+                    if (playButton) {
+
+                        playButton.textContent =
+                            fakeVideo.classList.contains("is-paused")
+                                ? "▶"
+                                : "Ⅱ";
+                    }
+                };
+
+
+                if (playButton) {
+
+                    playButton.addEventListener(
+                        "click",
+                        (event) => {
+
+                            event.stopPropagation();
+
+                            toggleFakeVideo();
+
+                        }
+                    );
+                }
+
+
+                if (fakeVideo) {
+
+                    fakeVideo.addEventListener(
+                        "click",
+                        (event) => {
+
+                            if (
+                                event.target.closest(
+                                    ".helix-reel-play"
+                                )
+                            ) {
+                                return;
+                            }
+
+                            toggleFakeVideo();
+
+                        }
+                    );
+                }
+
+
+                // MUTE
+
+                if (muteButton) {
+
+                    muteButton.addEventListener(
+                        "click",
+                        () => {
+
+                            const muted =
+                                muteButton.dataset.muted === "true";
+
+                            muteButton.dataset.muted =
+                                String(!muted);
+
+                            muteButton.textContent =
+                                muted ? "🔊" : "🔇";
+
+                        }
+                    );
+                }
+
+
+                // FOLLOW
+
+                if (followButton) {
+
+                    followButton.addEventListener(
+                        "click",
+                        () => {
+
+                            const following =
+                                followButton.classList.toggle(
+                                    "following"
+                                );
+
+                            followButton.textContent =
+                                following
+                                    ? "Following"
+                                    : "Follow";
+
+                        }
+                    );
+                }
+
+
+                // LIKE
+
+                if (likeButton) {
+
+                    likeButton.addEventListener(
+                        "click",
+                        () => {
+
+                            const count =
+                                likeButton.querySelector(
+                                    ".helix-action-count"
+                                );
+
+                            const liked =
+                                likeButton.classList.toggle(
+                                    "liked"
+                                );
+
+                            if (count) {
+
+                                const current =
+                                    Number(count.textContent) || 0;
+
+                                count.textContent =
+                                    liked
+                                        ? current + 1
+                                        : Math.max(0, current - 1);
+                            }
+
+                        }
+                    );
+                }
+
+
+                // COMMENT
+
+                if (commentButton) {
+
+                    commentButton.addEventListener(
+                        "click",
+                        () => {
+
+                            const comment =
+                                window.prompt(
+                                    "Write a comment:"
+                                );
+
+                            if (
+                                !comment ||
+                                !comment.trim()
+                            ) {
+                                return;
+                            }
+
+                            const count =
+                                commentButton.querySelector(
+                                    ".helix-action-count"
+                                );
+
+                            if (count) {
+
+                                const current =
+                                    Number(count.textContent) || 0;
+
+                                count.textContent =
+                                    current + 1;
+                            }
+
+                        }
+                    );
+                }
+
+
+                // SHARE
+
+                if (shareButton) {
+
+                    shareButton.addEventListener(
+                        "click",
+                        async () => {
+
+                            const creator =
+                                reel.querySelector(
+                                    ".helix-reel-author-info strong"
+                                )?.textContent ||
+                                "@helix_user";
+
+                            const caption =
+                                reel.querySelector(
+                                    ".helix-reel-caption"
+                                )?.textContent.trim() ||
+                                "Helix Reel";
+
+
+                            const shareData = {
+                                title: "Helix Reel",
+                                text: `${creator} — ${caption}`,
+                                url: window.location.href
+                            };
+
+
+                            try {
+
+                                if (
+                                    navigator.share
+                                ) {
+
+                                    await navigator.share(
+                                        shareData
+                                    );
+
+                                } else if (
+                                    navigator.clipboard
+                                ) {
+
+                                    await navigator.clipboard.writeText(
+                                        window.location.href
+                                    );
+
+                                    window.alert(
+                                        "Reel link copied."
+                                    );
+
+                                } else {
+
+                                    window.prompt(
+                                        "Copy this Reel link:",
+                                        window.location.href
+                                    );
+                                }
+
+                            } catch (error) {
+
+                                if (
+                                    error?.name !==
+                                    "AbortError"
+                                ) {
+                                    console.log(
+                                        "Share cancelled or unavailable."
+                                    );
+                                }
+                            }
+
+                        }
+                    );
+                }
+
+
+                // SAVE
+
+                if (saveButton) {
+
+                    saveButton.addEventListener(
+                        "click",
+                        () => {
+
+                            const saved =
+                                saveButton.classList.toggle(
+                                    "saved"
+                                );
+
+                            const count =
+                                saveButton.querySelector(
+                                    ".helix-action-count"
+                                );
+
+                            if (count) {
+
+                                count.textContent =
+                                    saved ? "Saved" : "Save";
+                            }
+
+                        }
+                    );
+                }
+
+            });
+    }
+
+
+    // =====================================================
+    // FINAL SAFETY LOG
+    // =====================================================
+
+    console.log(
+        "HELIX FINAL DM + REELS POLISH LOADED"
+    );
+
+})();
+// =========================================================
+// HELIX — FINAL DM POLISH
+// =========================================================
+(() => {
+    const dmRoot = document.getElementById("dm-view");
+    if (!dmRoot) return;
+
+    const messagesBox = document.getElementById("messages");
+    const messageForm = document.getElementById("message-form");
+    const messageInput = document.getElementById("message-input");
+
+    // ---------------------------------------------------------
+    // REMOVE THE QUICK-REPLY / MACRO STRIP COMPLETELY
+    // ---------------------------------------------------------
+    const macroWords = ["On my way", "Check build", "Coffee?"];
+
+    dmRoot.querySelectorAll("button").forEach((button) => {
+        const text = button.textContent.trim();
+
+        if (macroWords.includes(text)) {
+            const parent = button.parentElement;
+
+            if (parent) {
+                parent.remove();
+            } else {
+                button.remove();
+            }
+        }
+    });
+
+    // Remove any now-empty quick-reply containers.
+    dmRoot.querySelectorAll("*").forEach((element) => {
+        if (
+            element !== dmRoot &&
+            element.children.length === 0 &&
+            element.textContent.trim() === "" &&
+            element.className &&
+            /macro|quick|suggest|reply/i.test(String(element.className))
+        ) {
+            element.remove();
+        }
+    });
+
+    // ---------------------------------------------------------
+    // BOT REPLY SYSTEM
+    // ---------------------------------------------------------
+    const botReplies = {
+        Alex: [
+            "Yep bro, checking it now.",
+            "Looks good from my side.",
+            "Give me a sec, I'm testing it.",
+            "Nice, this is coming together.",
+            "Yeah bro, that part is clean now."
+        ],
+
+        Maya: [
+            "Yep, I saw it.",
+            "Looks good! Give me a minute.",
+            "I'm checking that now.",
+            "Nice bro, that works.",
+            "Got it, I'll take a look."
+        ],
+
+        Ryan: [
+            "Yep bro, I'm on it.",
+            "Looks good from here.",
+            "Give me a second, checking it.",
+            "Nice, that works.",
+            "Yeah bro, I got you."
+        ]
+    };
+
+    let replyTimer = null;
+
+    function getActivePerson() {
+        const activeConversation = dmRoot.querySelector(
+            ".conversation.active"
+        );
+
+        if (!activeConversation) {
+            return "Alex";
+        }
+
+        const nameElement = activeConversation.querySelector(
+            ".conversation-name, .conversation-title, strong"
+        );
+
+        return nameElement
+            ? nameElement.textContent.trim()
+            : "Alex";
+    }
+
+    function createTypingIndicator(name) {
+        let existing = document.getElementById("helix-typing-indicator");
+
+        if (existing) {
+            existing.remove();
+        }
+
+        existing = document.createElement("div");
+        existing.id = "helix-typing-indicator";
+        existing.className = "helix-typing-indicator";
+
+        existing.innerHTML = `
+            <span>${escapeTypingName(name)} is typing</span>
+            <span class="typing-dots">
+                <i></i><i></i><i></i>
+            </span>
+        `;
+
+        if (messagesBox) {
+            messagesBox.appendChild(existing);
+            messagesBox.scrollTop = messagesBox.scrollHeight;
+        }
+
+        return existing;
+    }
+
+    function escapeTypingName(name) {
+        return String(name).replace(/[&<>"']/g, (character) => {
+            const map = {
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                '"': "&quot;",
+                "'": "&#039;"
+            };
+
+            return map[character];
+        });
+    }
+
+    function createBotMessage(name, text) {
+        if (!messagesBox) return;
+
+        const message = document.createElement("div");
+        message.className = "message received helix-bot-message";
+
+        const now = new Date();
+
+        const time = now.toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit"
+        });
+
+        message.innerHTML = `
+            <div class="message-bubble">
+                <p>${escapeTypingName(text)}</p>
+            </div>
+            <div class="message-meta">
+                <span class="message-time">${time}</span>
+            </div>
+        `;
+
+        messagesBox.appendChild(message);
+        messagesBox.scrollTop = messagesBox.scrollHeight;
+    }
+
+    function sendBotReply() {
+        const name = getActivePerson();
+        const replies = botReplies[name] || botReplies.Alex;
+
+        const reply =
+            replies[Math.floor(Math.random() * replies.length)];
+
+        const indicator = createTypingIndicator(name);
+
+        clearTimeout(replyTimer);
+
+        replyTimer = setTimeout(() => {
+            if (indicator) {
+                indicator.remove();
+            }
+
+            createBotMessage(name, reply);
+        }, 1200);
+    }
+
+    // ---------------------------------------------------------
+    // INTERCEPT MESSAGE SEND
+    // ---------------------------------------------------------
+    if (messageForm && messageInput) {
+        messageForm.addEventListener(
+            "submit",
+            (event) => {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+
+                const text = messageInput.value.trim();
+
+                if (!text) return;
+
+                // Add user's message directly.
+                if (messagesBox) {
+                    const message = document.createElement("div");
+
+                    message.className =
+                        "message sent helix-user-message";
+
+                    const now = new Date();
+
+                    const time = now.toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit"
+                    });
+
+                    message.innerHTML = `
+                        <div class="message-bubble">
+                            <p>${escapeTypingName(text)}</p>
+                        </div>
+                        <div class="message-meta">
+                            <span class="message-time">${time}</span>
+                            <span class="message-status">✓✓</span>
+                        </div>
+                    `;
+
+                    messagesBox.appendChild(message);
+                    messagesBox.scrollTop =
+                        messagesBox.scrollHeight;
+                }
+
+                messageInput.value = "";
+
+                // Let the other person respond.
+                sendBotReply();
+            },
+            true
+        );
+    }
+
+    // ---------------------------------------------------------
+    // ALSO HANDLE ENTER KEY CLEANLY
+    // ---------------------------------------------------------
+    if (messageInput) {
+        messageInput.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+
+                if (messageForm) {
+                    messageForm.requestSubmit();
+                }
+            }
+        });
+    }
+
+    // ---------------------------------------------------------
+    // CLEAN UP EMPTY MACRO SPACE
+    // ---------------------------------------------------------
+    dmRoot.querySelectorAll(".macro-buttons, .quick-replies, .dm-macros").forEach(
+        (element) => {
+            element.remove();
+        }
+    );
+
+    console.log("Helix final DM polish loaded.");
+})();
+// =========================================================
+// HELIX — FINAL DISCORD DM LAYOUT POLISH
+// =========================================================
+(() => {
+    const dmView = document.getElementById("dm-view");
+
+    if (!dmView) return;
+
+    const chatSearchButton =
+        document.getElementById("chat-search-button");
+
+    const chatMessageSearch =
+        document.getElementById("chat-message-search");
+
+    const messageSearchInput =
+        document.getElementById("message-search-input");
+
+    const chatSearchClose =
+        document.getElementById("chat-search-close");
+
+    const leftSearch =
+        document.getElementById("chat-search");
+
+    // ---------------------------------------------------------
+    // CLEAN LEFT SEARCH WRAPPER
+    // ---------------------------------------------------------
+    if (leftSearch) {
+        const shell = leftSearch.parentElement;
+
+        if (shell) {
+            shell.classList.add("helix-clean-search-shell");
+        }
+    }
+
+    // ---------------------------------------------------------
+    // TOP MESSAGE SEARCH
+    //
+    // It is COMPLETELY hidden until the search icon is clicked.
+    // ---------------------------------------------------------
+    function closeMessageSearch() {
+        if (!chatMessageSearch) return;
+
+        chatMessageSearch.classList.remove(
+            "helix-message-search-open"
+        );
+
+        chatMessageSearch.hidden = true;
+
+        if (messageSearchInput) {
+            messageSearchInput.value = "";
+
+            dmView
+                .querySelectorAll("#messages .message")
+                .forEach((message) => {
+                    message.style.display = "";
+                    message.classList.remove("search-match");
+                });
+        }
+    }
+
+    function openMessageSearch() {
+        if (!chatMessageSearch) return;
+
+        chatMessageSearch.hidden = false;
+
+        chatMessageSearch.classList.add(
+            "helix-message-search-open"
+        );
+
+        requestAnimationFrame(() => {
+            if (messageSearchInput) {
+                messageSearchInput.focus();
+            }
+        });
+    }
+
+    if (chatMessageSearch) {
+        chatMessageSearch.hidden = true;
+    }
+
+    // ---------------------------------------------------------
+    // SEARCH BUTTON
+    // ---------------------------------------------------------
+    if (chatSearchButton) {
+        chatSearchButton.addEventListener(
+            "click",
+            (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                event.stopImmediatePropagation();
+
+                const isOpen =
+                    chatMessageSearch &&
+                    !chatMessageSearch.hidden;
+
+                if (isOpen) {
+                    closeMessageSearch();
+                } else {
+                    openMessageSearch();
+                }
+            },
+            true
+        );
+    }
+
+    // ---------------------------------------------------------
+    // CLOSE X
+    // ---------------------------------------------------------
+    if (chatSearchClose) {
+        chatSearchClose.addEventListener(
+            "click",
+            (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                event.stopImmediatePropagation();
+
+                closeMessageSearch();
+            },
+            true
+        );
+    }
+
+    // ---------------------------------------------------------
+    // SEARCH MESSAGES
+    // ---------------------------------------------------------
+    if (messageSearchInput) {
+        messageSearchInput.addEventListener(
+            "input",
+            () => {
+                const query =
+                    messageSearchInput.value
+                        .trim()
+                        .toLowerCase();
+
+                const messages =
+                    dmView.querySelectorAll(
+                        "#messages .message"
+                    );
+
+                messages.forEach((message) => {
+                    const text =
+                        message.textContent
+                            .toLowerCase();
+
+                    const matches =
+                        query === "" ||
+                        text.includes(query);
+
+                    message.style.display =
+                        matches ? "" : "none";
+
+                    message.classList.toggle(
+                        "search-match",
+                        query !== "" && matches
+                    );
+                });
+            }
+        );
+    }
+
+    // ---------------------------------------------------------
+    // ESC CLOSES MESSAGE SEARCH
+    // ---------------------------------------------------------
+    document.addEventListener("keydown", (event) => {
+        if (
+            event.key === "Escape" &&
+            chatMessageSearch &&
+            !chatMessageSearch.hidden
+        ) {
+            closeMessageSearch();
+        }
+    });
+
+    // ---------------------------------------------------------
+    // LEFT SEARCH — CLEAN FILTER
+    // ---------------------------------------------------------
+    if (leftSearch) {
+        leftSearch.addEventListener("input", () => {
+            const query =
+                leftSearch.value
+                    .trim()
+                    .toLowerCase();
+
+            dmView
+                .querySelectorAll(".conversation")
+                .forEach((conversation) => {
+                    const text =
+                        conversation.textContent
+                            .toLowerCase();
+
+                    conversation.style.display =
+                        query === "" ||
+                        text.includes(query)
+                            ? ""
+                            : "none";
+                });
+        });
+    }
+
+    // ---------------------------------------------------------
+    // DISCORD-STYLE MESSAGE WIDTH
+    // ---------------------------------------------------------
+    function polishMessages() {
+        dmView
+            .querySelectorAll("#messages .message")
+            .forEach((message) => {
+                const bubble =
+                    message.querySelector(
+                        ".message-bubble"
+                    );
+
+                if (!bubble) return;
+
+                bubble.classList.add(
+                    "helix-flex-message"
+                );
+            });
+    }
+
+    polishMessages();
+
+    // Watch for new messages from the bot.
+    if (window.MutationObserver && document.getElementById("messages")) {
+        const observer =
+            new MutationObserver(() => {
+                polishMessages();
+            });
+
+        observer.observe(
+            document.getElementById("messages"),
+            {
+                childList: true,
+                subtree: true
+            }
+        );
+    }
+
+    console.log(
+        "Helix Discord-style DM polish loaded."
+    );
+})();
+// =========================================================
+// HELIX — MESSAGE DOM REPAIR
+// =========================================================
+(() => {
+    const dmView = document.getElementById("dm-view");
+    const messagesBox = document.getElementById("messages");
+
+    if (!dmView || !messagesBox) return;
+
+    function cleanMessage(message) {
+        if (!message || !message.classList.contains("message")) {
+            return;
+        }
+
+        const bubble = message.querySelector(":scope > .message-bubble");
+
+        if (!bubble) return;
+
+        let meta = message.querySelector(":scope > .message-meta");
+
+        /*
+         * If the old markup put message-meta INSIDE the bubble,
+         * move it outside.
+         */
+        const nestedMeta = bubble.querySelector(".message-meta");
+
+        if (nestedMeta) {
+            meta = nestedMeta;
+
+            message.appendChild(meta);
+        }
+
+        /*
+         * Find the actual paragraph.
+         */
+        let paragraph = bubble.querySelector("p");
+
+        if (!paragraph) {
+            paragraph = document.createElement("p");
+
+            /*
+             * Preserve the visible text currently inside
+             * the bubble, excluding metadata.
+             */
+            const clone = bubble.cloneNode(true);
+
+            clone.querySelectorAll(
+                ".message-meta, .message-time, .message-status"
+            ).forEach((element) => {
+                element.remove();
+            });
+
+            paragraph.textContent = clone.textContent.trim();
+        }
+
+        /*
+         * Save the actual message text before rebuilding
+         * the bubble.
+         */
+        const messageText = paragraph.textContent;
+
+        /*
+         * Rebuild the bubble completely.
+         * This removes old width/positioning junk from
+         * previous message markup.
+         */
+        bubble.innerHTML = "";
+
+        const cleanParagraph = document.createElement("p");
+        cleanParagraph.textContent = messageText;
+
+        bubble.appendChild(cleanParagraph);
+
+        /*
+         * If there was no metadata, don't create fake metadata.
+         */
+        if (meta) {
+            message.appendChild(meta);
+        }
+
+        /*
+         * Make sure metadata contains only its own elements.
+         */
+        if (meta) {
+            const time = meta.querySelector(".message-time");
+            const status = meta.querySelector(".message-status");
+
+            if (time) {
+                time.style.position = "static";
+            }
+
+            if (status) {
+                status.style.position = "static";
+            }
+        }
+
+        /*
+         * Mark it as repaired.
+         */
+        message.dataset.helixMessageFixed = "true";
+    }
+
+    function repairAllMessages() {
+        messagesBox
+            .querySelectorAll(":scope > .message")
+            .forEach(cleanMessage);
+    }
+
+    repairAllMessages();
+
+    /*
+     * Repair newly-created bot/user messages too,
+     * without touching the replier logic.
+     */
+    let repairing = false;
+
+    const observer = new MutationObserver(() => {
+        if (repairing) return;
+
+        repairing = true;
+
+        requestAnimationFrame(() => {
+            repairAllMessages();
+            repairing = false;
+        });
+    });
+
+    observer.observe(messagesBox, {
+        childList: true
+    });
+
+    console.log("Helix message DOM repaired.");
+})();
+// =========================================================
+// HELIX — FINAL SENT MESSAGE REPAIR
+// =========================================================
+
+(() => {
+    function repairSentMessage(message) {
+        if (!message || !message.classList.contains("sent")) {
+            return;
+        }
+
+        const bubble = message.querySelector(":scope > .message-bubble");
+        if (!bubble) {
+            return;
+        }
+
+        /*
+         * Make sure metadata is outside the bubble.
+         */
+        let meta = message.querySelector(":scope > .message-meta");
+
+        if (!meta) {
+            meta = bubble.querySelector(":scope > .message-meta");
+
+            if (meta) {
+                message.appendChild(meta);
+            }
+        }
+
+        /*
+         * If metadata is still somewhere inside the bubble,
+         * move it outside.
+         */
+        if (meta && bubble.contains(meta)) {
+            message.appendChild(meta);
+        }
+
+        /*
+         * Make sure the bubble contains ONLY the message text.
+         */
+        let paragraph = bubble.querySelector(":scope > p");
+
+        if (!paragraph) {
+            paragraph = document.createElement("p");
+
+            const text = Array.from(bubble.childNodes)
+                .filter((node) => {
+                    return node !== meta;
+                })
+                .map((node) => node.textContent || "")
+                .join("")
+                .trim();
+
+            paragraph.textContent = text;
+            bubble.innerHTML = "";
+            bubble.appendChild(paragraph);
+        }
+
+        /*
+         * Force the message row to behave normally.
+         */
+        const important = (property, value) => {
+            message.style.setProperty(property, value, "important");
+        };
+
+        important("position", "relative");
+        important("top", "auto");
+        important("right", "auto");
+        important("bottom", "auto");
+        important("left", "auto");
+        important("transform", "none");
+        important("float", "none");
+        important("clear", "both");
+
+        important("display", "flex");
+        important("flex-direction", "column");
+        important("align-items", "flex-end");
+
+        important("width", "100%");
+        important("max-width", "100%");
+        important("height", "auto");
+        important("min-height", "0");
+
+        important("margin", "0 0 12px 0");
+        important("padding", "0");
+        important("box-sizing", "border-box");
+
+        /*
+         * Force the bubble to hug the text.
+         */
+        bubble.style.setProperty("position", "relative", "important");
+        bubble.style.setProperty("top", "auto", "important");
+        bubble.style.setProperty("right", "auto", "important");
+        bubble.style.setProperty("bottom", "auto", "important");
+        bubble.style.setProperty("left", "auto", "important");
+        bubble.style.setProperty("transform", "none", "important");
+
+        bubble.style.setProperty("display", "inline-block", "important");
+        bubble.style.setProperty("width", "fit-content", "important");
+        bubble.style.setProperty("max-width", "78%", "important");
+        bubble.style.setProperty("min-width", "0", "important");
+
+        bubble.style.setProperty("height", "auto", "important");
+        bubble.style.setProperty("min-height", "0", "important");
+
+        bubble.style.setProperty("flex", "0 0 auto", "important");
+
+        bubble.style.setProperty("margin", "0", "important");
+        bubble.style.setProperty("padding", "10px 14px", "important");
+
+        bubble.style.setProperty("box-sizing", "border-box", "important");
+        bubble.style.setProperty("overflow", "visible", "important");
+
+        /*
+         * Force the paragraph to size naturally.
+         */
+        paragraph.style.setProperty("display", "block", "important");
+        paragraph.style.setProperty("position", "static", "important");
+
+        paragraph.style.setProperty("width", "auto", "important");
+        paragraph.style.setProperty("max-width", "none", "important");
+
+        paragraph.style.setProperty("height", "auto", "important");
+        paragraph.style.setProperty("min-height", "0", "important");
+
+        paragraph.style.setProperty("margin", "0", "important");
+        paragraph.style.setProperty("padding", "0", "important");
+
+        paragraph.style.setProperty("box-sizing", "border-box", "important");
+
+        paragraph.style.setProperty("white-space", "pre-wrap", "important");
+        paragraph.style.setProperty("word-break", "normal", "important");
+        paragraph.style.setProperty("overflow-wrap", "anywhere", "important");
+
+        paragraph.style.setProperty("line-height", "1.45", "important");
+
+        /*
+         * Force metadata underneath the bubble.
+         */
+        if (meta) {
+            meta.style.setProperty("position", "static", "important");
+            meta.style.setProperty("display", "flex", "important");
+
+            meta.style.setProperty("align-items", "center", "important");
+            meta.style.setProperty("justify-content", "flex-end", "important");
+
+            meta.style.setProperty("width", "auto", "important");
+            meta.style.setProperty("height", "auto", "important");
+            meta.style.setProperty("min-height", "0", "important");
+
+            meta.style.setProperty("margin", "4px 4px 0 0", "important");
+            meta.style.setProperty("padding", "0", "important");
+
+            meta.style.setProperty("transform", "none", "important");
+            meta.style.setProperty("line-height", "1", "important");
+        }
+    }
+
+    function repairAllSentMessages() {
+        const messages = document.querySelectorAll(
+            "#dm-view #messages > .message.sent"
+        );
+
+        messages.forEach(repairSentMessage);
+    }
+
+    /*
+     * Initial repair.
+     */
+    function startRepair() {
+        repairAllSentMessages();
+
+        const messagesBox = document.getElementById("messages");
+
+        if (!messagesBox) {
+            return;
+        }
+
+        /*
+         * Watch only for newly created messages.
+         * Received messages are completely ignored.
+         */
+        const observer = new MutationObserver(() => {
+            requestAnimationFrame(() => {
+                repairAllSentMessages();
+            });
+        });
+
+        observer.observe(messagesBox, {
+            childList: true,
+            subtree: true
+        });
+
+        /*
+         * One final pass after the page has completely settled.
+         */
+        setTimeout(repairAllSentMessages, 100);
+        setTimeout(repairAllSentMessages, 300);
+        setTimeout(repairAllSentMessages, 700);
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", startRepair);
+    } else {
+        startRepair();
+    }
+})();

@@ -225,254 +225,306 @@
 
             <section class="dm-view" id="dm-view" data-main-section="direct-messages" hidden>
 
-    <div class="search-container">
-        <div class="search-input-wrap">
+    <div class="dm-instagram-shell">
+
+    <!-- DM LEFT COLUMN -->
+    <aside class="dm-inbox">
+
+        <div class="dm-inbox-header">
+            <h2>Messages</h2>
+            <button class="dm-compose-button" type="button" title="New message">✎</button>
+        </div>
+
+        <div class="dm-search">
             <span class="search-icon">⌕</span>
             <input
                 type="text"
                 id="chat-search"
-                placeholder="Search conversations..."
+                placeholder="Search"
                 autocomplete="off"
             >
         </div>
+
+        <div class="dm-connections-header">
+            <span>Messages</span>
+            <span id="connection-count">3</span>
+        </div>
+
+        <div class="conversation-list" id="conversation-list">
+
+            <button class="conversation active" type="button" data-user="alex">
+                <div class="avatar-badge">A</div>
+
+                <div class="conversation-info">
+                    <div class="conversation-top">
+                        <strong>Alex</strong>
+                        <span class="online-dot"></span>
+                    </div>
+
+                    <div class="conversation-preview">
+                        <span>Check the build?</span>
+                        <span class="ping">14ms</span>
+                    </div>
+                </div>
+            </button>
+
+            <button class="conversation" type="button" data-user="maya">
+                <div class="avatar-badge">M</div>
+
+                <div class="conversation-info">
+                    <div class="conversation-top">
+                        <strong>Maya</strong>
+                    </div>
+
+                    <div class="conversation-preview">
+                        <span>See you soon</span>
+                        <span class="ping">22ms</span>
+                    </div>
+                </div>
+            </button>
+
+            <button class="conversation" type="button" data-user="ryan">
+                <div class="avatar-badge">R</div>
+
+                <div class="conversation-info">
+                    <div class="conversation-top">
+                        <strong>Ryan</strong>
+                    </div>
+
+                    <div class="conversation-preview">
+                        <span>Nice work!</span>
+                        <span class="ping">31ms</span>
+                    </div>
+                </div>
+            </button>
+
+        </div>
+    </aside>
+
+    <!-- DM CHAT -->
+    <section class="chat-panel">
+
+        <header class="chat-header">
+
+            <div class="chat-user">
+
+                <div class="avatar-badge" id="chat-avatar">A</div>
+
+                <div class="chat-user-text">
+                    <h2 id="chat-user-name">Alex</h2>
+
+                    <span class="status-line" id="chat-status">
+                        <span class="online-dot"></span>
+                        Online · 14ms
+                    </span>
+                </div>
+
+            </div>
+
+            <div class="chat-actions">
+
+    <div class="chat-search-wrapper" id="chat-search-wrapper">
+
+        <button
+            class="icon-button"
+            type="button"
+            id="chat-search-button"
+            title="Search messages"
+        >⌕</button>
+
+        <div class="chat-message-search" id="chat-message-search" hidden>
+
+            <span class="chat-search-icon">⌕</span>
+
+            <input
+                type="text"
+                id="message-search-input"
+                placeholder="Search messages..."
+                autocomplete="off"
+            >
+
+            <button
+                class="chat-search-close"
+                id="chat-search-close"
+                type="button"
+                aria-label="Close search"
+            >×</button>
+
+        </div>
+
     </div>
 
-    <div class="messaging-area">
+    <button
+        class="icon-button"
+        type="button"
+        id="chat-info-button"
+        title="Conversation info"
+    >ⓘ</button>
 
-        <!-- CONNECTIONS -->
-        <aside class="conversation-panel">
+</div>
 
-            <div class="section-header">
-                <div>
-                    <span class="system-label">CONNECTIONS</span>
-                    <h2>Messages</h2>
+        </header>
+
+        <div class="messages" id="messages">
+
+            <div class="message received">
+                <div class="message-bubble">
+                    <p>Hey! How's the build going?</p>
                 </div>
 
-                <span class="connection-count" id="connection-count">3</span>
+                <div class="message-meta">
+                    <span class="message-time">10:41 AM</span>
+                </div>
             </div>
 
-            <div class="conversation-list" id="conversation-list">
+            <div class="message sent">
+                <div class="message-bubble">
+                    <p>Pretty good. I'm finishing the DM system.</p>
+                </div>
 
-                <button class="conversation active" type="button" data-user="alex">
-                    <div class="avatar-badge">A</div>
-
-                    <div class="conversation-info">
-                        <div class="conversation-top">
-                            <strong>Alex</strong>
-                            <span class="ping">14ms</span>
-                        </div>
-
-                        <div class="conversation-top">
-                            <span>Check the build?</span>
-                            <span class="online-dot"></span>
-                        </div>
-                    </div>
-                </button>
-
-                <button class="conversation" type="button" data-user="maya">
-                    <div class="avatar-badge">M</div>
-
-                    <div class="conversation-info">
-                        <div class="conversation-top">
-                            <strong>Maya</strong>
-                            <span>22ms</span>
-                        </div>
-
-                        <div class="conversation-top">
-                            <span>See you soon</span>
-                        </div>
-                    </div>
-                </button>
-
-                <button class="conversation" type="button" data-user="ryan">
-                    <div class="avatar-badge">R</div>
-
-                    <div class="conversation-info">
-                        <div class="conversation-top">
-                            <strong>Ryan</strong>
-                            <span>31ms</span>
-                        </div>
-
-                        <div class="conversation-top">
-                            <span>Nice work!</span>
-                        </div>
-                    </div>
-                </button>
-
+                <div class="message-meta">
+                    <span class="message-time">10:42 AM</span>
+                    <span class="message-status">✓✓</span>
+                </div>
             </div>
 
-        </aside>
-
-
-        <!-- ACTIVE CHAT -->
-        <section class="chat-panel">
-
-            <header class="chat-header">
-
-                <div class="chat-user">
-
-                    <div class="avatar-badge" id="chat-avatar">A</div>
-
-                    <div class="chat-user-text">
-                        <h2 id="chat-user-name">Alex</h2>
-
-                        <span class="status-line" id="chat-status">
-                            <span class="online-dot"></span>
-                            Online · 14ms
-                        </span>
-                    </div>
-
+            <div class="message received">
+                <div class="message-bubble">
+                    <p>Nice. Check the build?</p>
                 </div>
 
-                <div class="chat-actions">
-                    <button
-                        class="icon-button"
-                        type="button"
-                        id="chat-search-button"
-                        title="Search messages"
-                    >⌕</button>
-
-                    <button
-                        class="icon-button"
-                        type="button"
-                        id="chat-info-button"
-                        title="Conversation info"
-                    >ⓘ</button>
+                <div class="message-meta">
+                    <span class="message-time">10:43 AM</span>
                 </div>
-
-            </header>
-
-
-            <!-- MESSAGES -->
-            <div class="messages" id="messages">
-
-                <div class="message received">
-                    <div class="message-bubble">
-                        <p>Hey! How's the build going?</p>
-                    </div>
-
-                    <div class="message-meta">
-                        <span class="message-time">10:41 AM</span>
-                    </div>
-                </div>
-
-
-                <div class="message sent">
-                    <div class="message-bubble">
-                        <p>Pretty good. I'm finishing the DM system.</p>
-                    </div>
-
-                    <div class="message-meta">
-                        <span class="message-time">10:42 AM</span>
-                        <span class="message-status">✓✓</span>
-                    </div>
-                </div>
-
-
-                <div class="message received">
-                    <div class="message-bubble">
-                        <p>Nice. Check the build?</p>
-                    </div>
-
-                    <div class="message-meta">
-                        <span class="message-time">10:43 AM</span>
-                    </div>
-                </div>
-
             </div>
 
+        </div>
 
-            <!-- TYPING INDICATOR -->
-            <div class="typing-indicator" id="typing-indicator" hidden>
-                <span class="typing-text">Alex is typing</span>
+        <div class="typing-indicator" id="typing-indicator" hidden>
+            <span class="typing-text">Alex is typing</span>
 
-                <span class="typing-dots">
-                    <span class="typing-dot"></span>
-                    <span class="typing-dot"></span>
-                    <span class="typing-dot"></span>
-                </span>
-            </div>
+            <span class="typing-dots">
+                <span class="typing-dot"></span>
+                <span class="typing-dot"></span>
+                <span class="typing-dot"></span>
+            </span>
+        </div>
 
+        <div class="quick-macros">
 
-            <!-- QUICK REPLIES -->
-            <div class="quick-macros">
+            <button class="macro-btn" type="button">On my way</button>
+            <button class="macro-btn" type="button">Check build</button>
+            <button class="macro-btn" type="button">Coffee?</button>
 
-                <button class="macro-btn" type="button">
-                    On my way
-                </button>
+        </div>
 
-                <button class="macro-btn" type="button">
-                    Check build
-                </button>
+        <div class="message-input-area">
 
-                <button class="macro-btn" type="button">
-                    Coffee?
-                </button>
+        <div class="attachment-shell">
 
-            </div>
+    <button
+        class="attach-button"
+        id="attach-button"
+        type="button"
+        title="Attachments"
+        aria-label="Attachments"
+    >＋</button>
 
+    <div class="attachment-menu" id="attachment-menu" hidden>
 
-            <!-- MESSAGE COMPOSER -->
-            <div class="message-input-area">
+        <button
+            class="attachment-option"
+            id="attach-photo"
+            type="button"
+        >
+            <span>▧</span>
+            <span>Photo / Video</span>
+        </button>
 
-                <div class="attachment-shell">
+        <button
+            class="attachment-option"
+            id="attach-file"
+            type="button"
+        >
+            <span>▤</span>
+            <span>File</span>
+        </button>
 
-                    <button
-                        class="attach-button"
-                        id="attach-button"
-                        type="button"
-                        title="Attachments"
-                        aria-label="Attachments"
-                    >＋</button>
+    </div>
 
-                    <div class="attachment-menu" id="attachment-menu">
+    <input
+        type="file"
+        id="photo-video-input"
+        accept="image/*,video/*"
+        hidden
+    >
 
-                        <button class="attachment-option" type="button">
-                            <span>▧</span>
-                            <span>Photo</span>
-                        </button>
+    <input
+        type="file"
+        id="file-input"
+        hidden
+    >
 
-                        <button class="attachment-option" type="button">
-                            <span>▤</span>
-                            <span>File</span>
-                        </button>
+</div>
 
-                        <button class="attachment-option" type="button">
-                            <span>◉</span>
-                            <span>Voice</span>
-                        </button>
+          <form class="message-input-shell" id="message-form">
 
-                    </div>
+    <input
+        type="text"
+        id="message-input"
+        placeholder="Message..."
+        autocomplete="off"
+        maxlength="2000"
+    >
 
-                </div>
+    <button
+        class="send-button"
+        id="send-message-button"
+        type="submit"
+        aria-label="Send message"
+    >→</button>
 
+</form>
+        </div>
 
-                <form class="message-input-shell" id="message-form">
+    </section>
 
-                    <input
-                        type="text"
-                        id="message-input"
-                        placeholder="Transmit a message..."
-                        autocomplete="off"
-                        maxlength="2000"
-                    >
+</div>
+<aside class="dm-info-panel" id="dm-info-panel" hidden>
 
-                    <button
-                        class="send-button"
-                        id="send-message-button"
-                        type="submit"
-                        aria-label="Send message"
-                    >↑</button>
+    <div class="dm-info-header">
+        <h3>Conversation info</h3>
 
-                </form>
+        <button
+            class="dm-info-close"
+            id="dm-info-close"
+            type="button"
+        >×</button>
+    </div>
 
-            </div>
+    <div class="dm-info-profile">
 
+        <div class="avatar-badge" id="info-avatar">A</div>
+
+        <h2 id="info-name">Alex</h2>
+
+        <span id="info-status">Online · 14ms</span>
+
+    </div>
+
+    <div class="dm-info-section">
+        <h4>Shared media</h4>
+        <p>No shared media yet</p>
+    </div>
+
+    <div class="dm-info-section">
+        <h4>Files</h4>
+        <p>No files shared yet</p>
+    </div>
+
+</aside>
         </section>
 
-    </div>
-
-</section>
 
 
             <!-- ==================================
@@ -495,8 +547,81 @@
 
                 </div>
 
-                <div class="reels-feed" id="reels-feed"></div>
+             <div class="reels-feed" id="reels-feed">
 
+    <article class="helix-reel-card">
+        <div class="helix-reel-media">
+            <video
+                class="helix-reel-video"
+                src=""
+                playsinline
+                loop
+                muted
+                preload="metadata"
+            ></video>
+
+            <div class="helix-reel-placeholder">
+                <div class="helix-reel-placeholder-icon">▶</div>
+                <p>Helix Reel</p>
+                <span>Add a video to start watching</span>
+            </div>
+
+            <button class="helix-reel-mute" type="button" aria-label="Mute or unmute">
+                🔇
+            </button>
+
+            <div class="helix-reel-bottom">
+
+                <div class="helix-reel-author">
+                    <div class="helix-reel-avatar">H</div>
+
+                    <div class="helix-reel-author-info">
+                        <strong>@helix_user</strong>
+                        <span>Helix creator</span>
+                    </div>
+
+                    <button class="helix-reel-follow" type="button">
+                        Follow
+                    </button>
+                </div>
+
+                <p class="helix-reel-caption">
+                    Welcome to Helix Reels ✦
+                </p>
+
+                <div class="helix-reel-audio">
+                    ♪ Original audio · Helix
+                </div>
+
+            </div>
+        </div>
+
+        <div class="helix-reel-actions">
+
+            <button class="helix-reel-action helix-like" type="button">
+                <span class="helix-action-icon">♡</span>
+                <span class="helix-action-count">0</span>
+            </button>
+
+            <button class="helix-reel-action helix-comment" type="button">
+                <span class="helix-action-icon">💬</span>
+                <span class="helix-action-count">0</span>
+            </button>
+
+            <button class="helix-reel-action helix-share" type="button">
+                <span class="helix-action-icon">↗</span>
+                <span class="helix-action-count">Share</span>
+            </button>
+
+            <button class="helix-reel-action helix-save" type="button">
+                <span class="helix-action-icon">🔖</span>
+                <span class="helix-action-count">Save</span>
+            </button>
+
+        </div>
+    </article>
+
+</div>
             </section>
 
 
@@ -616,56 +741,7 @@
         </main>
 
 
-        <div class="reel-overlay" id="comments-overlay" hidden>
-
-            <section class="reel-drawer" role="dialog" aria-modal="true" aria-labelledby="comments-title">
-
-                <header class="reel-drawer-header">
-                    <div>
-                        <p class="system-label">THREAD</p>
-                        <h2 id="comments-title">Comments</h2>
-                    </div>
-
-                    <button class="overlay-close" type="button" data-close-overlay="comments-overlay" aria-label="Close comments">×</button>
-                </header>
-
-                <div class="comments-list" id="comments-list"></div>
-
-                <form class="comment-form" id="comment-form">
-                    <input type="text" id="comment-input" placeholder="Add a comment..." autocomplete="off" maxlength="240">
-                    <button class="send-button" type="submit" aria-label="Post comment">↑</button>
-                </form>
-
-            </section>
-
-        </div>
-
-
-        <div class="reel-overlay" id="share-overlay" hidden>
-
-            <section class="share-sheet" role="dialog" aria-modal="true" aria-labelledby="share-title">
-
-                <header class="reel-drawer-header">
-                    <div>
-                        <p class="system-label">TRANSMIT</p>
-                        <h2 id="share-title">Share Reel</h2>
-                    </div>
-
-                    <button class="overlay-close" type="button" data-close-overlay="share-overlay" aria-label="Close share menu">×</button>
-                </header>
-
-                <div class="share-options">
-                    <button class="share-option" type="button" id="copy-link-button"><span>⌁</span><span><strong>Copy link</strong><small>Save this Reel to your clipboard</small></span></button>
-                    <button class="share-option" type="button" id="share-helix-button"><span>◈</span><span><strong>Share to Helix</strong><small>Send it to your connections</small></span></button>
-                    <button class="share-option" type="button" id="share-external-button"><span>↗</span><span><strong>Share externally</strong><small>Use your device share menu</small></span></button>
-                </div>
-
-                <p class="share-feedback" id="share-feedback" role="status"></p>
-
-            </section>
-
-        </div>
-
+ 
     </div>
 
 
