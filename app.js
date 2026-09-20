@@ -71,42 +71,9 @@ if (profileLogoutButton) {
 // =========================================================
 
 // The app uses the nav shell and section toggling without DM chat logic.
-const dmConversations = {
-    alex: {
-        name: "Alex",
-        avatar: "A",
-        ping: "14ms",
-        online: true,
-        messages: [
-            { type: "received", text: "Hey! How's the build going?", time: "10:41 AM", read: true },
-            { type: "sent", text: "Pretty good. I'm finishing the DM system.", time: "10:42 AM", read: true },
-            { type: "received", text: "Nice. Check the build?", time: "10:43 AM", read: true }
-        ]
-    },
-
-    maya: {
-        name: "Maya",
-        avatar: "M",
-        ping: "22ms",
-        online: true,
-        messages: [
-            { type: "received", text: "See you soon", time: "9:18 AM", read: true }
-        ]
-    },
-
-    ryan: {
-        name: "Ryan",
-        avatar: "R",
-        ping: "31ms",
-        online: false,
-        messages: [
-            { type: "received", text: "Nice work!", time: "Yesterday", read: true }
-        ]
-    }
-};
-
-let activeDMUser = "alex";
-const dmStorageKey = "helixDMConversations";
+const dmConversations = {};
+let activeDMUser = null;
+const dmStorageKey = "helixDMConversations:v2";
 
 function getCurrentTime() {
     const now = new Date();
@@ -817,11 +784,7 @@ const commentsList = document.getElementById("comments-list");
 const commentForm = document.getElementById("comment-form");
 const commentInput = document.getElementById("comment-input");
 let activeCommentPost = null;
-const postComments = {
-    "design-studio": [{ author: "Jordan Rivera", text: "I can take a look after 7!" }],
-    "water-bottle": [{ author: "Maya Chen", text: "Hope it finds its owner soon." }],
-    robotics: []
-};
+const postComments = {};
 
 broadcastInput?.addEventListener("input", () => {
     if (characterCount) characterCount.textContent = `${broadcastInput.value.length} / 280`;
@@ -1190,43 +1153,7 @@ console.log(
 
     if (reelsFeed) {
 
-        const reelCreators = [
-            {
-                handle: "@nova.frames",
-                name: "Nova Frames",
-                caption: "Late-night city lights ✦",
-                audio: "Original audio · Nova Frames",
-                scene: "reel-scene-1"
-            },
-            {
-                handle: "@kai.motion",
-                name: "Kai Motion",
-                caption: "Building something that moves.",
-                audio: "Original audio · Kai Motion",
-                scene: "reel-scene-2"
-            },
-            {
-                handle: "@rhea.studio",
-                name: "Rhea Studio",
-                caption: "A little color for your feed.",
-                audio: "Original audio · Rhea Studio",
-                scene: "reel-scene-3"
-            },
-            {
-                handle: "@pixel.jay",
-                name: "Pixel Jay",
-                caption: "Weekend creative mode activated.",
-                audio: "Original audio · Pixel Jay",
-                scene: "reel-scene-4"
-            },
-            {
-                handle: "@zane.visuals",
-                name: "Zane Visuals",
-                caption: "Keep moving. Keep creating. ✦",
-                audio: "Original audio · Zane Visuals",
-                scene: "reel-scene-5"
-            }
-        ];
+        const reelCreators = [];
 
 
         const escapeReelHTML = (value) => {
