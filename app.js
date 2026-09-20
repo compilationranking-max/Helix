@@ -436,7 +436,6 @@ function startNewAIChat() {
     document.getElementById("ai-welcome")?.removeAttribute("hidden");
     updateAIChatState();
     renderAIChatHistory();
-    playAIWelcomeDragon();
 }
 
 function clearAIConversation() {
@@ -1183,6 +1182,66 @@ if (homeMuteButton) {
         homeMuteButton.classList.toggle("muted");
     });
 }
+
+
+
+// =========================================================
+// HELIX SETTINGS CONTROLS
+// =========================================================
+const settingsItems = document.querySelectorAll(".profile-settings-item");
+const settingsSections = document.querySelectorAll("[data-settings-section]");
+
+function focusSettingsSection(targetId) {
+    const target = document.getElementById(targetId);
+    if (!target) return;
+
+    settingsItems.forEach((item) => {
+        item.classList.toggle("active", item.dataset.settingsTarget === targetId);
+    });
+
+    target.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+    });
+}
+
+settingsItems.forEach((item) => {
+    item.addEventListener("click", () => {
+        focusSettingsSection(item.dataset.settingsTarget || "settings-account");
+    });
+});
+
+document.querySelectorAll("[data-settings-action]").forEach((button) => {
+    button.addEventListener("click", () => {
+        const action = button.dataset.settingsAction;
+        const state = button.querySelector(".settings-option-state");
+
+        if (state && ["private", "activity-status", "message-notifications", "friend-notifications", "post-notifications", "compact"].includes(action)) {
+            const on = state.textContent.trim() === "ON";
+            state.textContent = on ? "OFF" : "ON";
+        }
+
+        if (action === "theme") {
+            document.body.classList.toggle("helix-soft-mode");
+            if (state) state.textContent = document.body.classList.contains("helix-soft-mode") ? "SOFT" : "DARK";
+        }
+
+        const messages = {
+            "activity-log": "Activity log is ready for the database-backed activity system.",
+            "saved": "Saved content will appear here as your saved posts are added.",
+            "download-data": "Data export will be connected when Helix's server-side account system is live.",
+            "deactivate": "Account deactivation will be connected to the secure account system.",
+            "help": "Help Center is being prepared for the public Helix release.",
+            "report": "Problem reporting will be connected to Helix support.",
+            "about": "Helix — your communication and community workspace."
+        };
+
+        if (messages[action]) {
+            const status = document.getElementById("profile-action-message");
+            if (status) status.textContent = messages[action];
+        }
+    });
+});
 
 
 // =========================================================
