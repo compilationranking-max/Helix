@@ -278,23 +278,19 @@
                             <span aria-hidden="true">＋</span>
                             <span>New Chat</span>
                         </button>
-                        <button class="ai-sidebar-item" type="button">
-                            <span aria-hidden="true">⌕</span>
+
+                        <button class="ai-sidebar-item" type="button" id="sidebar-search-chats-button">
+                            <span class="ai-sidebar-search-icon" aria-hidden="true">⌕</span>
                             <span>Search Chats</span>
                         </button>
-                        <button class="ai-sidebar-item" type="button">
-                            <span aria-hidden="true">▧</span>
-                            <span>Images</span>
-                        </button>
-                        <button class="ai-sidebar-item" type="button">
-                            <span aria-hidden="true">▤</span>
-                            <span>Library</span>
-                        </button>
-                        <button class="ai-sidebar-item" type="button">
-                            <span aria-hidden="true">◇</span>
-                            <span>Projects</span>
-                        </button>
+
+                        <div class="ai-chat-search-panel" id="ai-chat-search-panel" hidden>
+                            <span aria-hidden="true">⌕</span>
+                            <input id="ai-chat-search-input" type="search" placeholder="Search previous chats..." autocomplete="off">
+                        </div>
                     </nav>
+
+                    <div class="ai-chat-history" id="ai-chat-history" aria-label="Previous Helix AI chats"></div>
 
                     <p class="ai-sidebar-status"><span class="status-dot"></span>AI OFFLINE</p>
                 </aside>
