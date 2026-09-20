@@ -423,9 +423,44 @@
 
                         <p class="profile-settings-label">SETTINGS</p>
 
-                        <button class="profile-settings-item active" type="button">
+                        <button class="profile-settings-item active" type="button" data-settings-target="settings-account">
                             <span>◎</span>
                             <span>Account Info</span>
+                        </button>
+
+                        <button class="profile-settings-item" type="button" data-settings-target="settings-privacy">
+                            <span>◉</span>
+                            <span>Privacy &amp; Safety</span>
+                        </button>
+
+                        <button class="profile-settings-item" type="button" data-settings-target="settings-notifications">
+                            <span>◌</span>
+                            <span>Notifications</span>
+                        </button>
+
+                        <button class="profile-settings-item" type="button" data-settings-target="settings-appearance">
+                            <span>◈</span>
+                            <span>Appearance</span>
+                        </button>
+
+                        <button class="profile-settings-item" type="button" data-settings-target="settings-activity">
+                            <span>◌</span>
+                            <span>Your Activity</span>
+                        </button>
+
+                        <button class="profile-settings-item" type="button" data-settings-target="settings-blocked">
+                            <span>⊘</span>
+                            <span>Blocked Accounts</span>
+                        </button>
+
+                        <button class="profile-settings-item" type="button" data-settings-target="settings-data">
+                            <span>⇩</span>
+                            <span>Data &amp; Downloads</span>
+                        </button>
+
+                        <button class="profile-settings-item" type="button" data-settings-target="settings-help">
+                            <span>?</span>
+                            <span>Help &amp; Support</span>
                         </button>
 
                     </aside>
@@ -497,6 +532,217 @@
                             <button class="profile-logout-button" type="button" id="profile-logout-btn">Logout</button>
                             <button class="profile-secondary-button" type="button" id="logout-all-sessions-btn">Log out of all sessions</button>
                         </div>
+
+                        <section class="settings-extra-section" id="settings-privacy" data-settings-section>
+                            <div class="settings-section-heading">
+                                <div>
+                                    <span class="account-label">PRIVACY &amp; SAFETY</span>
+                                    <h2>Control your Helix presence</h2>
+                                </div>
+                                <span class="settings-section-index">01</span>
+                            </div>
+
+                            <button class="settings-option-row" type="button" data-settings-action="private">
+                                <span class="settings-option-icon">◉</span>
+                                <span class="settings-option-copy">
+                                    <strong>Private account</strong>
+                                    <small>Choose who can view and connect with you.</small>
+                                </span>
+                                <span class="settings-option-state">OFF</span>
+                                <span class="settings-option-arrow">›</span>
+                            </button>
+
+                            <button class="settings-option-row" type="button" data-settings-action="activity-status">
+                                <span class="settings-option-icon">◌</span>
+                                <span class="settings-option-copy">
+                                    <strong>Activity status</strong>
+                                    <small>Show when you're active on Helix.</small>
+                                </span>
+                                <span class="settings-option-state">ON</span>
+                                <span class="settings-option-arrow">›</span>
+                            </button>
+                        </section>
+
+                        <section class="settings-extra-section" id="settings-notifications" data-settings-section>
+                            <div class="settings-section-heading">
+                                <div>
+                                    <span class="account-label">NOTIFICATIONS</span>
+                                    <h2>Stay in the loop</h2>
+                                </div>
+                                <span class="settings-section-index">02</span>
+                            </div>
+
+                            <button class="settings-option-row" type="button" data-settings-action="message-notifications">
+                                <span class="settings-option-icon">✦</span>
+                                <span class="settings-option-copy">
+                                    <strong>Message notifications</strong>
+                                    <small>Alerts for new direct messages.</small>
+                                </span>
+                                <span class="settings-option-state">ON</span>
+                                <span class="settings-option-arrow">›</span>
+                            </button>
+
+                            <button class="settings-option-row" type="button" data-settings-action="friend-notifications">
+                                <span class="settings-option-icon">♢</span>
+                                <span class="settings-option-copy">
+                                    <strong>Friend requests</strong>
+                                    <small>Get notified when someone sends a request.</small>
+                                </span>
+                                <span class="settings-option-state">ON</span>
+                                <span class="settings-option-arrow">›</span>
+                            </button>
+
+                            <button class="settings-option-row" type="button" data-settings-action="post-notifications">
+                                <span class="settings-option-icon">◇</span>
+                                <span class="settings-option-copy">
+                                    <strong>Post activity</strong>
+                                    <small>Alerts for likes and comments on your posts.</small>
+                                </span>
+                                <span class="settings-option-state">ON</span>
+                                <span class="settings-option-arrow">›</span>
+                            </button>
+                        </section>
+
+                        <section class="settings-extra-section" id="settings-appearance" data-settings-section>
+                            <div class="settings-section-heading">
+                                <div>
+                                    <span class="account-label">APPEARANCE</span>
+                                    <h2>Shape your Helix workspace</h2>
+                                </div>
+                                <span class="settings-section-index">03</span>
+                            </div>
+
+                            <button class="settings-option-row" type="button" data-settings-action="theme">
+                                <span class="settings-option-icon">◈</span>
+                                <span class="settings-option-copy">
+                                    <strong>Theme</strong>
+                                    <small>Helix dark terminal interface.</small>
+                                </span>
+                                <span class="settings-option-state">DARK</span>
+                                <span class="settings-option-arrow">›</span>
+                            </button>
+
+                            <button class="settings-option-row" type="button" data-settings-action="compact">
+                                <span class="settings-option-icon">≡</span>
+                                <span class="settings-option-copy">
+                                    <strong>Compact mode</strong>
+                                    <small>Fit more content into the workspace.</small>
+                                </span>
+                                <span class="settings-option-state">OFF</span>
+                                <span class="settings-option-arrow">›</span>
+                            </button>
+                        </section>
+
+                        <section class="settings-extra-section" id="settings-activity" data-settings-section>
+                            <div class="settings-section-heading">
+                                <div>
+                                    <span class="account-label">YOUR ACTIVITY</span>
+                                    <h2>Review your Helix footprint</h2>
+                                </div>
+                                <span class="settings-section-index">04</span>
+                            </div>
+
+                            <button class="settings-option-row" type="button" data-settings-action="activity-log">
+                                <span class="settings-option-icon">◌</span>
+                                <span class="settings-option-copy">
+                                    <strong>Activity log</strong>
+                                    <small>Review your recent account activity.</small>
+                                </span>
+                                <span class="settings-option-arrow">›</span>
+                            </button>
+
+                            <button class="settings-option-row" type="button" data-settings-action="saved">
+                                <span class="settings-option-icon">☆</span>
+                                <span class="settings-option-copy">
+                                    <strong>Saved content</strong>
+                                    <small>Manage posts and content you've saved.</small>
+                                </span>
+                                <span class="settings-option-arrow">›</span>
+                            </button>
+                        </section>
+
+                        <section class="settings-extra-section" id="settings-blocked" data-settings-section>
+                            <div class="settings-section-heading">
+                                <div>
+                                    <span class="account-label">SAFETY</span>
+                                    <h2>Blocked accounts</h2>
+                                </div>
+                                <span class="settings-section-index">05</span>
+                            </div>
+
+                            <div class="settings-empty-card">
+                                <span>⊘</span>
+                                <div>
+                                    <strong>No blocked accounts</strong>
+                                    <small>Accounts you block will appear here.</small>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section class="settings-extra-section" id="settings-data" data-settings-section>
+                            <div class="settings-section-heading">
+                                <div>
+                                    <span class="account-label">DATA &amp; DOWNLOADS</span>
+                                    <h2>Manage your information</h2>
+                                </div>
+                                <span class="settings-section-index">06</span>
+                            </div>
+
+                            <button class="settings-option-row" type="button" data-settings-action="download-data">
+                                <span class="settings-option-icon">⇩</span>
+                                <span class="settings-option-copy">
+                                    <strong>Download your information</strong>
+                                    <small>Export account data from Helix.</small>
+                                </span>
+                                <span class="settings-option-arrow">›</span>
+                            </button>
+
+                            <button class="settings-option-row danger-option" type="button" data-settings-action="deactivate">
+                                <span class="settings-option-icon">!</span>
+                                <span class="settings-option-copy">
+                                    <strong>Deactivate account</strong>
+                                    <small>Temporarily disable your Helix account.</small>
+                                </span>
+                                <span class="settings-option-arrow">›</span>
+                            </button>
+                        </section>
+
+                        <section class="settings-extra-section" id="settings-help" data-settings-section>
+                            <div class="settings-section-heading">
+                                <div>
+                                    <span class="account-label">HELP &amp; SUPPORT</span>
+                                    <h2>Need a hand?</h2>
+                                </div>
+                                <span class="settings-section-index">07</span>
+                            </div>
+
+                            <button class="settings-option-row" type="button" data-settings-action="help">
+                                <span class="settings-option-icon">?</span>
+                                <span class="settings-option-copy">
+                                    <strong>Help Center</strong>
+                                    <small>Find answers to common Helix questions.</small>
+                                </span>
+                                <span class="settings-option-arrow">›</span>
+                            </button>
+
+                            <button class="settings-option-row" type="button" data-settings-action="report">
+                                <span class="settings-option-icon">!</span>
+                                <span class="settings-option-copy">
+                                    <strong>Report a problem</strong>
+                                    <small>Send feedback about something that isn't working.</small>
+                                </span>
+                                <span class="settings-option-arrow">›</span>
+                            </button>
+
+                            <button class="settings-option-row" type="button" data-settings-action="about">
+                                <span class="settings-option-icon">i</span>
+                                <span class="settings-option-copy">
+                                    <strong>About Helix</strong>
+                                    <small>View the platform version and project information.</small>
+                                </span>
+                                <span class="settings-option-arrow">›</span>
+                            </button>
+                        </section>
 
                         <p class="profile-action-message" id="profile-action-message" role="status"></p>
 
