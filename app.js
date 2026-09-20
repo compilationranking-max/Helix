@@ -330,6 +330,34 @@ function updateAIChatState() {
     aiChatContent?.classList.toggle("active-chat", aiConversation.length > 0);
 }
 
+function playAIWelcomeDragon() {
+    const existing = document.getElementById("helix-ai-new-chat-intro");
+    if (existing) existing.remove();
+
+    const intro = document.createElement("div");
+    intro.className = "helix-intro helix-ai-new-chat-intro";
+    intro.id = "helix-ai-new-chat-intro";
+    intro.setAttribute("aria-hidden", "true");
+    intro.innerHTML = `
+        <div class="helix-intro-glow"></div>
+        <div class="helix-intro-content">
+            <img class="helix-intro-dragon" src="dragon-intro.png" alt="" draggable="false">
+            <div class="helix-ai-new-chat-title">Helix dragon is here to help you</div>
+        </div>
+        <div class="helix-intro-scanline"></div>
+    `;
+
+    document.body.appendChild(intro);
+
+    window.setTimeout(() => {
+        intro.classList.add("is-hidden");
+    }, 2850);
+
+    window.setTimeout(() => {
+        intro.remove();
+    }, 3650);
+}
+
 function renderAIMessage(text, type, time) {
     if (!aiMessages) return;
 
@@ -455,6 +483,7 @@ document.getElementById("new-chat-button")?.addEventListener("click", () => {
 
 document.getElementById("sidebar-new-chat-button")?.addEventListener("click", () => {
     clearAIConversation();
+    playAIWelcomeDragon();
     aiInput?.focus();
 });
 
