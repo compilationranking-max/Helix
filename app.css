@@ -258,6 +258,14 @@ body::before {
     font-size: 17px;
 }
 
+.nav-icon-image {
+    width: 26px;
+    height: 26px;
+    flex: 0 0 26px;
+    object-fit: contain;
+    display: block;
+}
+
 
 /* Sidebar bottom */
 
