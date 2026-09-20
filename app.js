@@ -287,8 +287,16 @@ const aiMessages = document.getElementById("ai-messages");
 const aiTyping = document.getElementById("ai-typing");
 const aiSendButton = document.getElementById("ai-send-button");
 const aiStorageKey = `helixAIConversation:${loggedInUser || "User"}`;
+const aiChatsKey = `helixAIChats:${loggedInUser || "User"}`;
 const AI_HISTORY_LIMIT = 20;
+const AI_CHAT_LIST_LIMIT = 50;
 let aiConversation = loadAIConversation();
+let currentAIChatId = sessionStorage.getItem(`helixCurrentAIChat:${loggedInUser || "User"}`) || createAIChatId();
+let aiChatSessions = loadAIChatSessions();
+
+function createAIChatId() {
+    return `chat-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
 
 function loadAIConversation() {
     try {
@@ -310,9 +318,125 @@ function loadAIConversation() {
     }
 }
 
+function loadAIChatSessions() {
+    try {
+        const saved = JSON.parse(localStorage.getItem(aiChatsKey) || "[]");
+        if (!Array.isArray(saved)) return [];
+
+        return saved
+            .filter((chat) => (
+                chat &&
+                typeof chat.id === "string" &&
+                typeof chat.title === "string" &&
+                Array.isArray(chat.messages)
+            ))
+            .sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0))
+            .slice(0, AI_CHAT_LIST_LIMIT);
+    } catch (error) {
+        localStorage.removeItem(aiChatsKey);
+        return [];
+    }
+}
+
+function saveAIChatSessions() {
+    aiChatSessions = aiChatSessions
+        .sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0))
+        .slice(0, AI_CHAT_LIST_LIMIT);
+
+    localStorage.setItem(aiChatsKey, JSON.stringify(aiChatSessions));
+}
+
+function getAIChatTitle(messages) {
+    const firstUserMessage = messages.find((message) => message.role === "user");
+    if (!firstUserMessage) return "New Helix Chat";
+
+    const clean = firstUserMessage.content.replace(/\s+/g, " ").trim();
+    return clean.length > 34 ? `${clean.slice(0, 34)}…` : clean;
+}
+
+function saveCurrentAIChatSession() {
+    if (!aiConversation.length) return;
+
+    const now = new Date().toISOString();
+    const existingIndex = aiChatSessions.findIndex((chat) => chat.id === currentAIChatId);
+    const session = {
+        id: currentAIChatId,
+        title: getAIChatTitle(aiConversation),
+        messages: aiConversation,
+        updatedAt: now,
+        createdAt: existingIndex >= 0 ? aiChatSessions[existingIndex].createdAt : now
+    };
+
+    if (existingIndex >= 0) {
+        aiChatSessions[existingIndex] = session;
+    } else {
+        aiChatSessions.unshift(session);
+    }
+
+    saveAIChatSessions();
+    renderAIChatHistory();
+}
+
 function saveAIConversation() {
     aiConversation = aiConversation.slice(-AI_HISTORY_LIMIT);
     localStorage.setItem(aiStorageKey, JSON.stringify(aiConversation));
+    saveCurrentAIChatSession();
+}
+
+function renderAIChatHistory(query = "") {
+    const history = document.getElementById("ai-chat-history");
+    if (!history) return;
+
+    const normalizedQuery = query.trim().toLowerCase();
+    const sessions = aiChatSessions.filter((chat) => (
+        !normalizedQuery ||
+        chat.title.toLowerCase().includes(normalizedQuery)
+    ));
+
+    if (!sessions.length) {
+        history.innerHTML = '<div class="ai-chat-history-empty">No previous chats yet.</div>';
+        return;
+    }
+
+    history.innerHTML = sessions.map((chat) => `
+        <button class="ai-chat-history-item${chat.id === currentAIChatId ? " active" : ""}" type="button" data-ai-chat-id="${escapeHTML(chat.id)}">
+            <span class="ai-chat-history-icon" aria-hidden="true">◌</span>
+            <span class="ai-chat-history-copy">
+                <strong>${escapeHTML(chat.title)}</strong>
+                <small>${new Date(chat.updatedAt || Date.now()).toLocaleDateString([], { month: "short", day: "numeric" })}</small>
+            </span>
+        </button>
+    `).join("");
+}
+
+function loadAIChatSession(chatId) {
+    const session = aiChatSessions.find((chat) => chat.id === chatId);
+    if (!session) return;
+
+    currentAIChatId = session.id;
+    sessionStorage.setItem(`helixCurrentAIChat:${loggedInUser || "User"}`, currentAIChatId);
+
+    aiConversation = Array.isArray(session.messages) ? session.messages.slice(-AI_HISTORY_LIMIT) : [];
+    localStorage.setItem(aiStorageKey, JSON.stringify(aiConversation));
+
+    renderAIConversation();
+    renderAIChatHistory(document.getElementById("ai-chat-search-input")?.value || "");
+    aiInput?.focus();
+}
+
+function startNewAIChat() {
+    saveCurrentAIChatSession();
+
+    currentAIChatId = createAIChatId();
+    sessionStorage.setItem(`helixCurrentAIChat:${loggedInUser || "User"}`, currentAIChatId);
+
+    aiConversation = [];
+    localStorage.removeItem(aiStorageKey);
+    aiMessages?.replaceChildren();
+    document.getElementById("ai-welcome")?.removeAttribute("hidden");
+    updateAIChatState();
+    renderAIChatHistory();
+    playAIWelcomeDragon();
 }
 
 function clearAIConversation() {
@@ -321,6 +445,7 @@ function clearAIConversation() {
     aiMessages?.replaceChildren();
     document.getElementById("ai-welcome")?.removeAttribute("hidden");
     updateAIChatState();
+    renderAIChatHistory();
 }
 
 function updateAIChatState() {
@@ -342,7 +467,7 @@ function playAIWelcomeDragon() {
         <div class="helix-intro-glow"></div>
         <div class="helix-intro-content">
             <img class="helix-intro-dragon" src="dragon-intro.png" alt="" draggable="false">
-            <div class="helix-ai-new-chat-title">Helix dragon is here to help you</div>
+            <div class="helix-ai-new-chat-title">HELIX DRAGON IS HERE TO HELP YOU</div>
         </div>
         <div class="helix-intro-scanline"></div>
     `;
@@ -482,12 +607,43 @@ document.getElementById("new-chat-button")?.addEventListener("click", () => {
 });
 
 document.getElementById("sidebar-new-chat-button")?.addEventListener("click", () => {
-    clearAIConversation();
-    playAIWelcomeDragon();
+    startNewAIChat();
     aiInput?.focus();
 });
 
+document.getElementById("sidebar-search-chats-button")?.addEventListener("click", () => {
+    const panel = document.getElementById("ai-chat-search-panel");
+    const input = document.getElementById("ai-chat-search-input");
+    if (!panel) return;
+
+    panel.hidden = !panel.hidden;
+
+    if (!panel.hidden) {
+        input?.focus();
+    } else if (input) {
+        input.value = "";
+        renderAIChatHistory();
+    }
+});
+
+document.getElementById("ai-chat-search-input")?.addEventListener("input", (event) => {
+    renderAIChatHistory(event.target.value);
+});
+
+document.getElementById("ai-chat-history")?.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-ai-chat-id]");
+    if (!button) return;
+    loadAIChatSession(button.dataset.aiChatId);
+});
+
+document.getElementById("nav-ai")?.addEventListener("click", () => {
+    playAIWelcomeDragon();
+    renderAIChatHistory();
+});
+
+
 renderAIConversation();
+renderAIChatHistory();
 
 const aiView = document.getElementById("ai-view");
 const closeAISidebarButton = document.getElementById("close-ai-sidebar-button");
