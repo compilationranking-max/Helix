@@ -7065,3 +7065,13 @@ body::before {
     font-size: 13px;
     line-height: 1.5;
 }
+
+
+/* QUICK ACTION ICONS — MATCH SIDEBAR */
+.quick-icon-image {
+    width: 26px;
+    height: 26px;
+    flex: 0 0 26px;
+    object-fit: contain;
+    display: block;
+}
