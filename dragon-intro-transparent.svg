@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 335 285" preserveAspectRatio="xMidYMid meet">
+  <defs>
+    <!-- The original artwork contains a gray checkerboard baked into the PNG.
+         This filter keeps the blue/cyan dragon pixels and makes the neutral
+         checkerboard transparent. -->
+    <filter id="remove-checkerboard" x="-15%" y="-15%" width="130%" height="130%" color-interpolation-filters="sRGB">
+      <feColorMatrix in="SourceGraphic" type="matrix"
+        values="1 0 0 0 0
+                0 1 0 0 0
+                0 0 1 0 0
+                -0.55 -0.55 1.10 0 -0.03"/>
+    </filter>
+  </defs>
+  <image href="dragon-intro.png" x="0" y="0" width="335" height="285"
+         preserveAspectRatio="none" filter="url(#remove-checkerboard)"/>
+</svg>
