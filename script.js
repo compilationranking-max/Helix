@@ -207,6 +207,7 @@ loginBtn.addEventListener("click", () => {
 showMessage("Login successful!", "success");
 
 localStorage.setItem("helixLoggedIn", username);
+sessionStorage.setItem("helixShowIntro", "1");
 
 // Open the Helix app
 setTimeout(() => {
