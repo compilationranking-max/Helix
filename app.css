@@ -7016,3 +7016,44 @@ body::before {
         font-size: clamp(21px, 5vw, 30px);
     }
 }
+
+
+/* Empty DM state when no real conversations exist. */
+.dm-chat-empty-panel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+}
+
+.dm-chat-empty-state {
+    width: min(420px, 80%);
+    padding: 32px 28px;
+    text-align: center;
+    border: 1px solid rgba(110, 150, 190, 0.14);
+    border-radius: 20px;
+    background: rgba(8, 13, 21, 0.42);
+    box-shadow: inset 0 0 0 1px rgba(0, 229, 255, 0.025);
+}
+
+.dm-chat-empty-state .dm-empty-icon {
+    display: block;
+    margin-bottom: 12px;
+    color: var(--cyan);
+    font-size: 22px;
+    opacity: 0.9;
+}
+
+.dm-chat-empty-state strong {
+    display: block;
+    color: #edf8ff;
+    font-size: 20px;
+    font-weight: 750;
+}
+
+.dm-chat-empty-state p {
+    margin: 8px 0 0;
+    color: rgba(190, 210, 230, 0.62);
+    font-size: 13px;
+    line-height: 1.5;
+}
