@@ -7075,3 +7075,44 @@ body::before {
     object-fit: contain;
     display: block;
 }
+
+
+/* =========================================================
+   WIDE HOME AI FEATURE CARD
+   Keep the network status on the right, but let the purple
+   Helix AI card stretch across the full home area underneath.
+   ========================================================= */
+.home-columns .home-rail {
+    display: contents;
+}
+
+.home-columns > .home-rail > .status-panel {
+    grid-column: 2;
+    grid-row: 1;
+}
+
+.home-columns > .home-rail > .ai-feature-card {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    width: 100%;
+}
+
+.home-columns > .home-rail > .ai-feature-card h2 {
+    max-width: 520px;
+}
+
+.home-columns > .home-rail > .ai-feature-card p {
+    max-width: 620px;
+}
+
+@media (max-width: 760px) {
+    .home-columns .home-rail {
+        display: contents;
+    }
+
+    .home-columns > .home-rail > .status-panel,
+    .home-columns > .home-rail > .ai-feature-card {
+        grid-column: 1;
+        grid-row: auto;
+    }
+}
