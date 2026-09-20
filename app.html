@@ -44,6 +44,11 @@
                     <span>Direct Messages</span>
                 </button>
 
+                <button class="nav-item" id="nav-friends">
+                    <span class="nav-icon">♢</span>
+                    <span>Friends</span>
+                </button>
+
                 <button class="nav-item" id="nav-ai">
                     <span class="nav-icon">✦</span>
                     <span>Helix AI</span>
@@ -149,6 +154,65 @@
                             </aside>
                         </div>
                     </div>
+                </div>
+            </section>
+
+            <section class="friends-view" id="friends-view" data-main-section="friends" hidden>
+                <div class="friends-shell">
+                    <header class="friends-header">
+                        <div>
+                            <p class="system-label">HELIX / NETWORK</p>
+                            <h1>Friends</h1>
+                            <p>Connect with real Helix users and manage your requests.</p>
+                        </div>
+                        <span class="friends-live"><span class="status-dot"></span> NETWORK LIVE</span>
+                    </header>
+
+                    <div class="friends-grid">
+                        <section class="friends-card friends-search-card">
+                            <div class="friends-card-heading">
+                                <div>
+                                    <p class="system-label">DISCOVER</p>
+                                    <h2>Find people</h2>
+                                </div>
+                            </div>
+                            <div class="friends-search-box">
+                                <span>⌕</span>
+                                <input id="friends-search-input" type="search" placeholder="Search by username..." autocomplete="off" maxlength="32">
+                            </div>
+                            <div id="friends-search-results" class="friends-list">
+                                <div class="friends-empty">Search for a username to find people on Helix.</div>
+                            </div>
+                        </section>
+
+                        <section class="friends-card">
+                            <div class="friends-card-heading">
+                                <div>
+                                    <p class="system-label">INCOMING</p>
+                                    <h2>Friend requests</h2>
+                                </div>
+                                <span class="friends-count" id="friends-request-count">0</span>
+                            </div>
+                            <div id="friends-request-list" class="friends-list">
+                                <div class="friends-empty">No pending requests.</div>
+                            </div>
+                        </section>
+
+                        <section class="friends-card friends-full-card">
+                            <div class="friends-card-heading">
+                                <div>
+                                    <p class="system-label">CONNECTED</p>
+                                    <h2>Your friends</h2>
+                                </div>
+                                <span class="friends-count" id="friends-count">0</span>
+                            </div>
+                            <div id="friends-list" class="friends-list">
+                                <div class="friends-empty">You have no friends yet. Find someone above to get started.</div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <p class="friends-feedback" id="friends-feedback" role="status" aria-live="polite"></p>
                 </div>
             </section>
 
