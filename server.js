@@ -35,6 +35,207 @@ app.use(cors());
 app.use(express.json({ limit: "1mb" }));
 app.use(express.static(__dirname));
 
+const networkDataDir = path.join(__dirname, "data");
+const networkDataFile = path.join(networkDataDir, "helix-network.json");
+
+function loadNetworkData() {
+    try {
+        if (!require("fs").existsSync(networkDataFile)) {
+            return { users: {}, requests: [], friends: [] };
+        }
+        const parsed = JSON.parse(require("fs").readFileSync(networkDataFile, "utf8"));
+        return {
+            users: parsed.users && typeof parsed.users === "object" ? parsed.users : {},
+            requests: Array.isArray(parsed.requests) ? parsed.requests : [],
+            friends: Array.isArray(parsed.friends) ? parsed.friends : []
+        };
+    } catch (error) {
+        console.warn("Unable to load Helix network data:", error.message);
+        return { users: {}, requests: [], friends: [] };
+    }
+}
+
+function saveNetworkData(data) {
+    const fs = require("fs");
+    fs.mkdirSync(networkDataDir, { recursive: true });
+    const tempFile = `${networkDataFile}.tmp`;
+    fs.writeFileSync(tempFile, JSON.stringify(data, null, 2), "utf8");
+    fs.renameSync(tempFile, networkDataFile);
+}
+
+function normalizeUsername(value) {
+    return typeof value === "string" ? value.trim() : "";
+}
+
+function validUsername(value) {
+    return value.length >= 3 && value.length <= 32;
+}
+
+function samePair(a, b, x, y) {
+    return (a === x && b === y) || (a === y && b === x);
+}
+
+function networkState(username) {
+    const data = loadNetworkData();
+    const friends = data.friends
+        .filter((friend) => friend.a === username || friend.b === username)
+        .map((friend) => friend.a === username ? friend.b : friend.a);
+
+    const incoming = data.requests
+        .filter((request) => request.to === username && request.status === "pending")
+        .map((request) => ({
+            id: request.id,
+            from: request.from,
+            createdAt: request.createdAt
+        }));
+
+    const outgoing = data.requests
+        .filter((request) => request.from === username && request.status === "pending")
+        .map((request) => ({
+            id: request.id,
+            to: request.to,
+            createdAt: request.createdAt
+        }));
+
+    return { friends, incoming, outgoing };
+}
+
+app.post("/api/network/sync", (req, res) => {
+    const username = normalizeUsername(req.body?.username);
+    if (!validUsername(username)) {
+        return res.status(400).json({ error: "Invalid username." });
+    }
+
+    const data = loadNetworkData();
+    if (!data.users[username]) {
+        data.users[username] = { username, createdAt: new Date().toISOString() };
+        saveNetworkData(data);
+    }
+
+    res.json({ ok: true, username, ...networkState(username) });
+});
+
+app.get("/api/network/search", (req, res) => {
+    const username = normalizeUsername(req.query.username);
+    const query = normalizeUsername(req.query.q).toLowerCase();
+
+    if (!validUsername(username)) {
+        return res.status(400).json({ error: "Invalid username." });
+    }
+
+    const data = loadNetworkData();
+    const state = networkState(username);
+    const blockedNames = new Set([
+        username,
+        ...state.friends,
+        ...state.incoming.map((item) => item.from),
+        ...state.outgoing.map((item) => item.to)
+    ]);
+
+    const results = Object.keys(data.users)
+        .filter((name) => !blockedNames.has(name))
+        .filter((name) => !query || name.toLowerCase().includes(query))
+        .slice(0, 20);
+
+    res.json({ results });
+});
+
+app.get("/api/network/state", (req, res) => {
+    const username = normalizeUsername(req.query.username);
+    if (!validUsername(username)) {
+        return res.status(400).json({ error: "Invalid username." });
+    }
+    res.json(networkState(username));
+});
+
+app.post("/api/network/request", (req, res) => {
+    const from = normalizeUsername(req.body?.from);
+    const to = normalizeUsername(req.body?.to);
+
+    if (!validUsername(from) || !validUsername(to) || from === to) {
+        return res.status(400).json({ error: "Invalid friend request." });
+    }
+
+    const data = loadNetworkData();
+    if (!data.users[from] || !data.users[to]) {
+        return res.status(404).json({ error: "User not found on the Helix network yet." });
+    }
+
+    if (data.friends.some((friend) => samePair(friend.a, friend.b, from, to))) {
+        return res.status(409).json({ error: "You are already friends." });
+    }
+
+    const existing = data.requests.find((request) =>
+        request.status === "pending" &&
+        samePair(request.from, request.to, from, to)
+    );
+
+    if (existing) {
+        return res.status(409).json({ error: "A friend request is already pending." });
+    }
+
+    const request = {
+        id: require("crypto").randomUUID(),
+        from,
+        to,
+        status: "pending",
+        createdAt: new Date().toISOString()
+    };
+
+    data.requests.push(request);
+    saveNetworkData(data);
+    res.status(201).json({ ok: true, request });
+});
+
+app.post("/api/network/request/:id/respond", (req, res) => {
+    const username = normalizeUsername(req.body?.username);
+    const action = req.body?.action;
+
+    if (!validUsername(username) || !["accept", "decline"].includes(action)) {
+        return res.status(400).json({ error: "Invalid request response." });
+    }
+
+    const data = loadNetworkData();
+    const request = data.requests.find((item) =>
+        item.id === req.params.id &&
+        item.to === username &&
+        item.status === "pending"
+    );
+
+    if (!request) {
+        return res.status(404).json({ error: "Friend request not found." });
+    }
+
+    request.status = action === "accept" ? "accepted" : "declined";
+
+    if (action === "accept" && !data.friends.some((friend) =>
+        samePair(friend.a, friend.b, request.from, request.to)
+    )) {
+        data.friends.push({
+            a: request.from,
+            b: request.to,
+            createdAt: new Date().toISOString()
+        });
+    }
+
+    saveNetworkData(data);
+    res.json({ ok: true, ...networkState(username) });
+});
+
+app.delete("/api/network/friend", (req, res) => {
+    const username = normalizeUsername(req.body?.username);
+    const friend = normalizeUsername(req.body?.friend);
+
+    if (!validUsername(username) || !validUsername(friend)) {
+        return res.status(400).json({ error: "Invalid friend." });
+    }
+
+    const data = loadNetworkData();
+    data.friends = data.friends.filter((item) => !samePair(item.a, item.b, username, friend));
+    saveNetworkData(data);
+    res.json({ ok: true, ...networkState(username) });
+});
+
 function buildConversationInput(history, message) {
     const validHistory = Array.isArray(history)
         ? history.filter((item) => (
