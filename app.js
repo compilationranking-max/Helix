@@ -3749,6 +3749,338 @@ console.log(
 const friendsSearchInput = document.getElementById("friends-search-input");
 const friendsSearchResults = document.getElementById("friends-search-results");
 const friendsRequestList = document.getElementById("friends-request-list");
+const friendsSentList = document.getElementById("friends-sent-list");
+const friendsList = document.getElementById("friends-list");
+const friendsRequestCount = document.getElementById("friends-request-count");
+const friendsSentCount = document.getElementById("friends-sent-count");
+const friendsCount = document.getElementById("friends-count");
+const friendsFeedback = document.getElementById("friends-feedback");
+const friendsFilterInput = document.getElementById("friends-filter-input");
+const friendsSortSelect = document.getElementById("friends-sort-select");
+const friendsRefreshButton = document.getElementById("friends-refresh-button");
+const friendsSearchClear = document.getElementById("friends-search-clear");
+const friendsNetworkState = { friends: [], incoming: [], outgoing: [] };
+let friendsSearchTimer = null;
+
+function friendInitials(username) {
+    return (username || "??").slice(0, 2).toUpperCase();
+}
+
+function setFriendsFeedback(message, isError = false) {
+    if (!friendsFeedback) return;
+    friendsFeedback.textContent = message || "";
+    friendsFeedback.style.color = isError ? "#d98c9c" : "#70e7f1";
+}
+
+function friendEmpty(title, detail, mark = "◎") {
+    return `<div class="friends-empty"><span class="friends-empty-mark">${mark}</span><strong>${escapeHTML(title)}</strong><small>${escapeHTML(detail)}</small></div>`;
+}
+
+function renderFriendRows(container, names, buttonLabel, action, secondaryLabel = "") {
+    if (!container) return;
+
+    if (!names.length) {
+        container.innerHTML = friendEmpty("Nothing here yet", "Your network will appear here as it grows.");
+        return;
+    }
+
+    container.innerHTML = names.map((name) => `
+        <div class="friend-row">
+            <span class="friend-row-avatar"><span class="friend-row-presence"></span>${escapeHTML(friendInitials(name))}</span>
+            <div class="friend-row-copy">
+                <strong>${escapeHTML(name)}</strong>
+                <small><span class="friend-row-signal"></span> Helix network user</small>
+            </div>
+            ${buttonLabel ? `<button type="button" data-friend-action="${action}" data-friend-name="${escapeHTML(name)}">${buttonLabel}</button>` : ""}
+            ${secondaryLabel ? `<button type="button" class="friend-decline" data-friend-action="decline" data-request-id="${escapeHTML(secondaryLabel)}">Decline</button>` : ""}
+        </div>
+    `).join("");
+}
+
+function renderFriendsConnectedList() {
+    if (!friendsList) return;
+
+    const query = (friendsFilterInput?.value || "").trim().toLowerCase();
+    const sort = friendsSortSelect?.value || "az";
+    const names = [...friendsNetworkState.friends]
+        .filter((name) => !query || name.toLowerCase().includes(query))
+        .sort((a, b) => sort === "za" ? b.localeCompare(a) : a.localeCompare(b));
+
+    if (!names.length) {
+        friendsList.innerHTML = query
+            ? friendEmpty("No matching friends", "Try another name or clear the filter.", "⌕")
+            : friendEmpty("Your network is empty", "Discover someone above and send your first friend request.");
+        return;
+    }
+
+    friendsList.innerHTML = names.map((name) => `
+        <div class="friend-row">
+            <span class="friend-row-avatar"><span class="friend-row-presence"></span>${escapeHTML(friendInitials(name))}</span>
+            <div class="friend-row-copy">
+                <strong>${escapeHTML(name)}</strong>
+                <small><span class="friend-row-signal"></span> Connected on Helix</small>
+            </div>
+            <button type="button" data-friend-action="remove" data-friend-name="${escapeHTML(name)}">Remove</button>
+        </div>
+    `).join("");
+}
+
+async function syncHelixNetworkUser() {
+    if (!loggedInUser) return;
+
+    try {
+        const response = await fetch("/api/network/sync", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username: loggedInUser })
+        });
+        if (!response.ok) throw new Error("Network sync failed.");
+        await refreshFriendsNetwork();
+    } catch (error) {
+        setFriendsFeedback("Friends network is unavailable until the Helix server is running.", true);
+    }
+}
+
+async function refreshFriendsNetwork() {
+    if (!loggedInUser) return;
+
+    friendsRefreshButton?.classList.add("is-refreshing");
+
+    try {
+        const response = await fetch(`/api/network/state?username=${encodeURIComponent(loggedInUser)}`);
+        if (!response.ok) throw new Error("Could not load network state.");
+        const state = await response.json();
+
+        friendsNetworkState.friends = Array.isArray(state.friends) ? state.friends : [];
+        friendsNetworkState.incoming = Array.isArray(state.incoming) ? state.incoming : [];
+        friendsNetworkState.outgoing = Array.isArray(state.outgoing) ? state.outgoing : [];
+
+        renderFriendsConnectedList();
+
+        if (friendsCount) friendsCount.textContent = String(friendsNetworkState.friends.length);
+        if (friendsRequestCount) friendsRequestCount.textContent = String(friendsNetworkState.incoming.length);
+        if (friendsSentCount) friendsSentCount.textContent = String(friendsNetworkState.outgoing.length);
+
+        const total = friendsNetworkState.friends.length;
+        const incoming = friendsNetworkState.incoming.length;
+        const outgoing = friendsNetworkState.outgoing.length;
+        const statTotal = document.getElementById("friends-stat-total");
+        const statIncoming = document.getElementById("friends-stat-incoming");
+        const statOutgoing = document.getElementById("friends-stat-outgoing");
+        const statNetwork = document.getElementById("friends-stat-network");
+        if (statTotal) statTotal.textContent = String(total);
+        if (statIncoming) statIncoming.textContent = String(incoming);
+        if (statOutgoing) statOutgoing.textContent = String(outgoing);
+        if (statNetwork) statNetwork.textContent = String(total + incoming + outgoing);
+
+        const requestBadge = document.getElementById("friends-filter-request-badge");
+        const sentBadge = document.getElementById("friends-filter-sent-badge");
+        if (requestBadge) requestBadge.textContent = String(incoming);
+        if (sentBadge) sentBadge.textContent = String(outgoing);
+
+        if (friendsRequestList) {
+            if (!friendsNetworkState.incoming.length) {
+                friendsRequestList.innerHTML = friendEmpty("No incoming requests", "New connection requests will appear here.", "↓");
+            } else {
+                friendsRequestList.innerHTML = friendsNetworkState.incoming.map((request) => `
+                    <div class="friend-row">
+                        <span class="friend-row-avatar"><span class="friend-row-presence friend-row-presence-pulse"></span>${escapeHTML(friendInitials(request.from))}</span>
+                        <div class="friend-row-copy">
+                            <strong>${escapeHTML(request.from)}</strong>
+                            <small><span class="friend-row-signal"></span> Wants to connect with you</small>
+                        </div>
+                        <button type="button" data-friend-action="accept" data-request-id="${escapeHTML(request.id)}">Accept</button>
+                        <button type="button" class="friend-decline" data-friend-action="decline" data-request-id="${escapeHTML(request.id)}">Decline</button>
+                    </div>
+                `).join("");
+            }
+        }
+
+        if (friendsSentList) {
+            if (!friendsNetworkState.outgoing.length) {
+                friendsSentList.innerHTML = friendEmpty("No sent requests", "Requests you send will be tracked here.", "↑");
+            } else {
+                friendsSentList.innerHTML = friendsNetworkState.outgoing.map((request) => `
+                    <div class="friend-row">
+                        <span class="friend-row-avatar friend-row-avatar-violet"><span class="friend-row-presence"></span>${escapeHTML(friendInitials(request.to))}</span>
+                        <div class="friend-row-copy">
+                            <strong>${escapeHTML(request.to)}</strong>
+                            <small><span class="friend-row-signal friend-row-signal-violet"></span> Request pending</small>
+                        </div>
+                        <button type="button" class="friend-decline" data-friend-action="cancel" data-request-id="${escapeHTML(request.id)}">Cancel</button>
+                    </div>
+                `).join("");
+            }
+        }
+    } catch (error) {
+        setFriendsFeedback("Could not load your Helix network.", true);
+    } finally {
+        setTimeout(() => friendsRefreshButton?.classList.remove("is-refreshing"), 180);
+    }
+}
+
+async function searchHelixUsers(query) {
+    if (!friendsSearchResults || !loggedInUser) return;
+
+    const trimmed = query.trim();
+    if (!trimmed) {
+        friendsSearchResults.innerHTML = friendEmpty("Search the network", "Type a username to discover people on Helix.", "⌕");
+        return;
+    }
+
+    friendsSearchResults.innerHTML = friendEmpty("Scanning the network", "Looking for matching Helix users…", "◌");
+
+    try {
+        const response = await fetch(`/api/network/search?username=${encodeURIComponent(loggedInUser)}&q=${encodeURIComponent(trimmed)}`);
+        const data = await response.json();
+
+        if (!response.ok) throw new Error(data.error || "Search failed.");
+
+        if (!data.results?.length) {
+            friendsSearchResults.innerHTML = friendEmpty("No matches found", "Try a different username.", "⌕");
+            return;
+        }
+
+        friendsSearchResults.innerHTML = data.results.map((name) => `
+            <div class="friend-row friend-search-result">
+                <span class="friend-row-avatar"><span class="friend-row-presence"></span>${escapeHTML(friendInitials(name))}</span>
+                <div class="friend-row-copy">
+                    <strong>${escapeHTML(name)}</strong>
+                    <small><span class="friend-row-signal"></span> Available to connect</small>
+                </div>
+                <button type="button" data-friend-action="request" data-friend-name="${escapeHTML(name)}">Add Friend</button>
+            </div>
+        `).join("");
+    } catch (error) {
+        friendsSearchResults.innerHTML = friendEmpty("Search unavailable", "Check that the Helix server is running.", "!");
+    }
+}
+
+async function sendFriendRequest(username) {
+    try {
+        const response = await fetch("/api/network/request", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ from: loggedInUser, to: username })
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Could not send request.");
+
+        setFriendsFeedback(`Friend request sent to ${username}.`);
+        await searchHelixUsers(friendsSearchInput?.value || "");
+        await refreshFriendsNetwork();
+    } catch (error) {
+        setFriendsFeedback(error.message || "Could not send friend request.", true);
+    }
+}
+
+async function respondToFriendRequest(requestId, action) {
+    try {
+        const response = await fetch(`/api/network/request/${encodeURIComponent(requestId)}/respond`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username: loggedInUser, action })
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Could not update request.");
+
+        setFriendsFeedback(action === "accept" ? "Friend request accepted." : "Friend request declined.");
+        await refreshFriendsNetwork();
+    } catch (error) {
+        setFriendsFeedback(error.message || "Could not update friend request.", true);
+    }
+}
+
+async function cancelFriendRequest(requestId) {
+    try {
+        const response = await fetch(`/api/network/request/${encodeURIComponent(requestId)}`, {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username: loggedInUser })
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Could not cancel request.");
+
+        setFriendsFeedback("Friend request cancelled.");
+        await refreshFriendsNetwork();
+        if (friendsSearchInput?.value) await searchHelixUsers(friendsSearchInput.value);
+    } catch (error) {
+        setFriendsFeedback(error.message || "Could not cancel friend request.", true);
+    }
+}
+
+async function removeHelixFriend(username) {
+    try {
+        const response = await fetch("/api/network/friend", {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username: loggedInUser, friend: username })
+        });
+        if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            throw new Error(data.error || "Could not remove friend.");
+        }
+        setFriendsFeedback(`${username} was removed from your friends.`);
+        await refreshFriendsNetwork();
+    } catch (error) {
+        setFriendsFeedback(error.message || "Could not remove friend.", true);
+    }
+}
+
+document.addEventListener("click", (event) => {
+    const friendFilter = event.target.closest("[data-friends-filter]");
+    if (friendFilter) {
+        const filter = friendFilter.dataset.friendsFilter;
+        document.querySelectorAll("[data-friends-filter]").forEach((button) => {
+            const active = button === friendFilter;
+            button.classList.toggle("active", active);
+            button.setAttribute("aria-selected", active ? "true" : "false");
+        });
+        document.querySelectorAll("[data-friends-panel]").forEach((panel) => {
+            const panelType = panel.dataset.friendsPanel;
+            const show = filter === "all" ||
+                (filter === "friends" && panelType === "friends") ||
+                (filter === "requests" && panelType === "requests") ||
+                (filter === "sent" && panelType === "sent") ||
+                panelType === "discover";
+            panel.hidden = !show;
+        });
+        return;
+    }
+
+    const button = event.target.closest("[data-friend-action]");
+    if (!button) return;
+
+    const action = button.dataset.friendAction;
+    if (action === "request") sendFriendRequest(button.dataset.friendName);
+    if (action === "accept") respondToFriendRequest(button.dataset.requestId, "accept");
+    if (action === "decline") respondToFriendRequest(button.dataset.requestId, "decline");
+    if (action === "cancel") cancelFriendRequest(button.dataset.requestId);
+    if (action === "remove") removeHelixFriend(button.dataset.friendName);
+});
+
+friendsSearchInput?.addEventListener("input", () => {
+    clearTimeout(friendsSearchTimer);
+    friendsSearchTimer = setTimeout(() => searchHelixUsers(friendsSearchInput.value), 180);
+});
+
+friendsSearchClear?.addEventListener("click", () => {
+    if (!friendsSearchInput) return;
+    friendsSearchInput.value = "";
+    searchHelixUsers("");
+    friendsSearchInput.focus();
+});
+
+friendsFilterInput?.addEventListener("input", renderFriendsConnectedList);
+friendsSortSelect?.addEventListener("change", renderFriendsConnectedList);
+friendsRefreshButton?.addEventListener("click", refreshFriendsNetwork);
+
+syncHelixNetworkUser();
+
+// =========================================================
+const friendsSearchInput = document.getElementById("friends-search-input");
+const friendsSearchResults = document.getElementById("friends-search-results");
+const friendsRequestList = document.getElementById("friends-request-list");
 const friendsList = document.getElementById("friends-list");
 const friendsRequestCount = document.getElementById("friends-request-count");
 const friendsCount = document.getElementById("friends-count");
