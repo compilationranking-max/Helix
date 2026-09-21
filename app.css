@@ -7708,3 +7708,37 @@ body.helix-reduced-motion *::after {
     }
 }
 
+
+
+/* =========================================================
+   DATA & DOWNLOADS
+   ========================================================= */
+
+#profile-view .settings-data-grid {
+    display: grid;
+    gap: 10px;
+}
+
+#profile-view .settings-data-status-card {
+    border-style: solid;
+}
+
+#profile-view .settings-disabled-row {
+    cursor: not-allowed;
+    opacity: .55;
+}
+
+#profile-view .settings-disabled-row:hover {
+    transform: none;
+    border-color: rgba(255,255,255,.08);
+}
+
+#profile-view .settings-disabled-row .settings-option-arrow {
+    display: none;
+}
+
+@media (max-width: 720px) {
+    #profile-view .settings-data-grid {
+        gap: 8px;
+    }
+}
