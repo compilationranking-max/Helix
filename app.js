@@ -2070,6 +2070,360 @@ document.querySelectorAll("[data-settings-action]").forEach((button) => {
 
 
 // =========================================================
+// DIGITAL DETOX
+// =========================================================
+
+(() => {
+    const detoxStorageKey = `helixDigitalDetox:${loggedInUser || "User"}`;
+    const detoxLockStorageKey = `helixDigitalDetoxLock:${loggedInUser || "User"}`;
+    const detoxSessionKey = `helixDigitalDetoxSession:${loggedInUser || "User"}`;
+    const LOCK_DURATION_MS = 90 * 1000;
+    const IDLE_RESET_MS = 2 * 60 * 1000;
+
+    const defaultSettings = {
+        mode: "off",
+        minutes: 0
+    };
+
+    let detoxSettings = {
+        ...defaultSettings,
+        ...readLocalJSON(detoxStorageKey, {})
+    };
+
+    let continuousStartAt = null;
+    let lastVisibleAt = null;
+
+    const lockOverlay = document.getElementById("digital-detox-lock");
+    const countdown = document.getElementById("digital-detox-countdown");
+    const statusPill = document.getElementById("detox-status-pill");
+    const statusDetail = document.getElementById("detox-status-detail");
+    const nextBreak = document.getElementById("detox-next-break");
+    const progressBar = document.getElementById("detox-progress-bar");
+    const feedback = document.getElementById("detox-feedback");
+    const customRow = document.getElementById("detox-custom-row");
+    const customInput = document.getElementById("detox-custom-minutes");
+
+    function saveDetoxSettings() {
+        localStorage.setItem(detoxStorageKey, JSON.stringify(detoxSettings));
+    }
+
+    function loadLockUntil() {
+        const state = readLocalJSON(detoxLockStorageKey, {});
+        const until = Number(state?.lockedUntil || 0);
+        return Number.isFinite(until) ? until : 0;
+    }
+
+    function saveLockUntil(until) {
+        localStorage.setItem(
+            detoxLockStorageKey,
+            JSON.stringify({ lockedUntil: until })
+        );
+    }
+
+    function getDetoxLimitMs() {
+        const minutes = Number(detoxSettings.minutes);
+        return detoxSettings.mode !== "off" && Number.isFinite(minutes) && minutes > 0
+            ? minutes * 60 * 1000
+            : 0;
+    }
+
+    function formatDuration(ms) {
+        const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+
+        if (hours > 0) {
+            return `${hours}h ${String(minutes).padStart(2, "0")}m`;
+        }
+
+        return `${minutes}m ${String(seconds).padStart(2, "0")}s`;
+    }
+
+    function formatCountdown(ms) {
+        const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+        return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+    }
+
+    function resetContinuousUsage() {
+        continuousStartAt = null;
+        lastVisibleAt = null;
+        sessionStorage.removeItem(detoxSessionKey);
+    }
+
+    function startContinuousUsage() {
+        if (getDetoxLimitMs() <= 0 || document.hidden || loadLockUntil() > Date.now()) return;
+
+        const savedStart = Number(sessionStorage.getItem(detoxSessionKey) || 0);
+
+        if (savedStart > 0 && savedStart <= Date.now()) {
+            continuousStartAt = savedStart;
+        } else {
+            continuousStartAt = Date.now();
+            sessionStorage.setItem(detoxSessionKey, String(continuousStartAt));
+        }
+
+        lastVisibleAt = Date.now();
+    }
+
+    function setFeedback(message, isError = false) {
+        if (!feedback) return;
+        feedback.textContent = message;
+        feedback.classList.toggle("is-error", isError);
+    }
+
+    function renderDetoxSettings() {
+        const limitMs = getDetoxLimitMs();
+        const lockedUntil = loadLockUntil();
+        const locked = lockedUntil > Date.now();
+
+        document.querySelectorAll("[data-detox-duration]").forEach((button) => {
+            const value = button.dataset.detoxDuration;
+            const active = value === "custom"
+                ? detoxSettings.mode === "custom"
+                : value === detoxSettings.mode;
+            button.classList.toggle("active", active);
+        });
+
+        if (customRow) {
+            customRow.hidden = detoxSettings.mode !== "custom";
+        }
+
+        if (customInput && detoxSettings.mode === "custom" && detoxSettings.minutes > 0) {
+            customInput.value = String(detoxSettings.minutes);
+        }
+
+        if (statusPill) {
+            statusPill.textContent = locked
+                ? "LOCKED"
+                : limitMs > 0
+                    ? `${detoxSettings.minutes}M`
+                    : "OFF";
+            statusPill.classList.toggle("is-active", limitMs > 0 && !locked);
+            statusPill.classList.toggle("is-locked", locked);
+        }
+
+        updateDetoxProgress();
+    }
+
+    function updateDetoxProgress() {
+        const limitMs = getDetoxLimitMs();
+        const lockedUntil = loadLockUntil();
+        const now = Date.now();
+
+        if (lockedUntil > now) {
+            if (statusDetail) statusDetail.textContent = "Break in progress";
+            if (nextBreak) nextBreak.textContent = formatCountdown(lockedUntil - now);
+            if (progressBar) progressBar.style.width = "100%";
+            return;
+        }
+
+        if (lockedUntil && lockedUntil <= now) {
+            saveLockUntil(0);
+        }
+
+        if (!limitMs || !detoxSettings.mode || detoxSettings.mode === "off") {
+            if (statusDetail) statusDetail.textContent = "Disabled";
+            if (nextBreak) nextBreak.textContent = "Not scheduled";
+            if (progressBar) progressBar.style.width = "0%";
+            return;
+        }
+
+        if (!continuousStartAt) {
+            if (statusDetail) statusDetail.textContent = "Ready";
+            if (nextBreak) nextBreak.textContent = formatDuration(limitMs);
+            if (progressBar) progressBar.style.width = "0%";
+            return;
+        }
+
+        const elapsed = Math.min(limitMs, now - continuousStartAt);
+        const remaining = Math.max(0, limitMs - elapsed);
+        const percent = Math.max(0, Math.min(100, (elapsed / limitMs) * 100));
+
+        if (statusDetail) statusDetail.textContent = `${formatDuration(elapsed)} active`;
+        if (nextBreak) nextBreak.textContent = formatDuration(remaining);
+        if (progressBar) progressBar.style.width = `${percent}%`;
+    }
+
+    function showLockScreen() {
+        if (!lockOverlay) return;
+        lockOverlay.hidden = false;
+        lockOverlay.classList.add("is-active");
+        document.body.classList.add("digital-detox-locked");
+        updateLockScreen();
+    }
+
+    function hideLockScreen() {
+        if (!lockOverlay) return;
+        lockOverlay.classList.remove("is-active");
+        lockOverlay.hidden = true;
+        document.body.classList.remove("digital-detox-locked");
+    }
+
+    function activateDetoxLock() {
+        const lockedUntil = Date.now() + LOCK_DURATION_MS;
+        saveLockUntil(lockedUntil);
+        resetContinuousUsage();
+        setFeedback("Detox break started. Helix will unlock automatically after 1 minute 30 seconds.");
+        showLockScreen();
+    }
+
+    function updateLockScreen() {
+        const lockedUntil = loadLockUntil();
+        const remaining = lockedUntil - Date.now();
+
+        if (remaining <= 0) {
+            saveLockUntil(0);
+            hideLockScreen();
+            startContinuousUsage();
+            setFeedback("Break complete. Your Helix session is ready again.");
+            renderDetoxSettings();
+            return;
+        }
+
+        if (countdown) countdown.textContent = formatCountdown(remaining);
+        if (statusPill) {
+            statusPill.textContent = "LOCKED";
+            statusPill.classList.add("is-locked");
+        }
+
+        window.setTimeout(updateLockScreen, Math.min(1000, remaining));
+    }
+
+    function chooseDetoxDuration(mode) {
+        if (mode === "off") {
+            detoxSettings = { mode: "off", minutes: 0 };
+            saveDetoxSettings();
+            resetContinuousUsage();
+            setFeedback("Digital Detox is off.");
+            renderDetoxSettings();
+            return;
+        }
+
+        if (mode === "custom") {
+            if (customRow) customRow.hidden = false;
+            customInput?.focus();
+            setFeedback("Enter your custom time in minutes, then choose Set custom time.");
+            return;
+        }
+
+        const minutes = Number(mode);
+        if (!Number.isFinite(minutes) || minutes <= 0) return;
+
+        detoxSettings = { mode, minutes };
+        saveDetoxSettings();
+        resetContinuousUsage();
+        startContinuousUsage();
+        setFeedback(`Digital Detox set to ${minutes === 60 ? "1 hour" : minutes + " minutes"}.`);
+        renderDetoxSettings();
+    }
+
+    document.querySelectorAll("[data-detox-duration]").forEach((button) => {
+        button.addEventListener("click", () => {
+            chooseDetoxDuration(button.dataset.detoxDuration);
+        });
+    });
+
+    document.getElementById("detox-custom-save")?.addEventListener("click", () => {
+        const minutes = Number(customInput?.value);
+
+        if (!Number.isInteger(minutes) || minutes < 1 || minutes > 1440) {
+            setFeedback("Custom time must be a whole number from 1 to 1440 minutes.", true);
+            return;
+        }
+
+        detoxSettings = {
+            mode: "custom",
+            minutes
+        };
+
+        saveDetoxSettings();
+        resetContinuousUsage();
+        startContinuousUsage();
+        setFeedback(`Custom Digital Detox set to ${minutes} minutes.`);
+        renderDetoxSettings();
+    });
+
+    document.addEventListener("visibilitychange", () => {
+        if (document.hidden) {
+            resetContinuousUsage();
+            return;
+        }
+
+        lastVisibleAt = Date.now();
+        startContinuousUsage();
+    });
+
+    window.addEventListener("storage", (event) => {
+        if (event.key === detoxStorageKey) {
+            detoxSettings = {
+                ...defaultSettings,
+                ...readLocalJSON(detoxStorageKey, {})
+            };
+            if (getDetoxLimitMs() <= 0) resetContinuousUsage();
+            renderDetoxSettings();
+        }
+
+        if (event.key === detoxLockStorageKey) {
+            const lockedUntil = loadLockUntil();
+            if (lockedUntil > Date.now()) {
+                resetContinuousUsage();
+                showLockScreen();
+            } else {
+                hideLockScreen();
+                renderDetoxSettings();
+            }
+        }
+    });
+
+    function detoxTick() {
+        const lockedUntil = loadLockUntil();
+
+        if (lockedUntil > Date.now()) {
+            showLockScreen();
+            return;
+        }
+
+        if (lockedUntil) saveLockUntil(0);
+
+        const limitMs = getDetoxLimitMs();
+
+        if (!limitMs || document.hidden) {
+            updateDetoxProgress();
+            return;
+        }
+
+        if (!continuousStartAt) {
+            startContinuousUsage();
+            updateDetoxProgress();
+            return;
+        }
+
+        const elapsed = Date.now() - continuousStartAt;
+
+        if (elapsed >= limitMs) {
+            activateDetoxLock();
+            return;
+        }
+
+        updateDetoxProgress();
+    }
+
+    renderDetoxSettings();
+
+    if (loadLockUntil() > Date.now()) {
+        showLockScreen();
+    } else if (getDetoxLimitMs() > 0) {
+        startContinuousUsage();
+    }
+
+    window.setInterval(detoxTick, 1000);
+})();
+
+
+// =========================================================
 // NOTIFICATION CONTROLS
 // =========================================================
 
