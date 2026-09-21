@@ -3829,12 +3829,29 @@ async function syncHelixNetworkUser() {
     if (!loggedInUser) return;
 
     try {
+        const users = JSON.parse(localStorage.getItem("helixUsers")) || {};
+        const account = users[loggedInUser] || {};
         const response = await fetch("/api/network/sync", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username: loggedInUser })
+            body: JSON.stringify({
+                username: loggedInUser,
+                accountId: account.accountId || ""
+            })
         });
-        if (!response.ok) throw new Error("Network sync failed.");
+
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || "Network sync failed.");
+
+        if (data.accountId) {
+            users[loggedInUser] = {
+                ...account,
+                accountId: data.accountId
+            };
+            localStorage.setItem("helixUsers", JSON.stringify(users));
+            updateProfileView();
+        }
+
         await refreshFriendsNetwork();
     } catch (error) {
         setFriendsFeedback("Friends network is unavailable until the Helix server is running.", true);
