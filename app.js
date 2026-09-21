@@ -1267,10 +1267,165 @@ settingsItems.forEach((item) => {
     });
 });
 
+function setDataDownloadStatus(title, detail) {
+    const status = document.getElementById("data-download-status");
+    if (!status) return;
+
+    const strong = status.querySelector("strong");
+    const small = status.querySelector("small");
+
+    if (strong) strong.textContent = title;
+    if (small) small.textContent = detail;
+}
+
+function readLocalJSON(key, fallback = []) {
+    try {
+        const value = JSON.parse(localStorage.getItem(key) || "null");
+        return value ?? fallback;
+    } catch {
+        return fallback;
+    }
+}
+
+function collectHelixLocalData() {
+    const data = {};
+
+    for (let index = 0; index < localStorage.length; index += 1) {
+        const key = localStorage.key(index);
+
+        if (!key || !key.toLowerCase().startsWith("helix")) continue;
+
+        const rawValue = localStorage.getItem(key);
+
+        try {
+            data[key] = JSON.parse(rawValue);
+        } catch {
+            data[key] = rawValue;
+        }
+    }
+
+    return data;
+}
+
+function getCurrentAccountRecord() {
+    const users = readLocalJSON("helixUsers", []);
+    if (!Array.isArray(users)) return null;
+
+    return users.find((user) => (
+        user &&
+        (
+            user.username === loggedInUser ||
+            user.name === loggedInUser
+        )
+    )) || null;
+}
+
+function downloadHelixJSON(filename, payload) {
+    const blob = new Blob(
+        [JSON.stringify(payload, null, 2)],
+        { type: "application/json;charset=utf-8" }
+    );
+
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+
+    anchor.href = url;
+    anchor.download = filename;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function exportHelixData(type) {
+    const accountRecord = getCurrentAccountRecord();
+    const profilePhoto = loggedInUser
+        ? localStorage.getItem(`helixProfilePhoto:${loggedInUser}`)
+        : null;
+
+    const payload = {
+        exportedAt: new Date().toISOString(),
+        exportType: type,
+        account: {
+            username: loggedInUser || null,
+            accountId: accountRecord?.accountId || null,
+            createdAt: accountRecord?.createdAt || null,
+            email: accountRecord?.email || accountRecord?.linkedEmail || null,
+            phone: accountRecord?.phone || accountRecord?.linkedPhone || null
+        },
+        profile: {
+            profilePhoto: profilePhoto || null
+        },
+        localData: collectHelixLocalData()
+    };
+
+    if (type === "content") {
+        payload.content = {
+            posts: readLocalJSON("helixPosts", readLocalJSON("helixActivityPosts", [])),
+            comments: readLocalJSON("helixComments", readLocalJSON("helixActivityComments", [])),
+            likes: readLocalJSON("helixLikes", readLocalJSON("helixActivityLikes", [])),
+            savedPosts: readLocalJSON("helixSavedPosts", []),
+            savedReels: readLocalJSON("helixSavedReels", []),
+            recentlyViewed: readLocalJSON("helixRecentlyViewed", [])
+        };
+    }
+
+    const suffix = type === "content" ? "content-export" : "account-data";
+    const safeUsername = (loggedInUser || "user").replace(/[^a-z0-9_-]/gi, "_");
+
+    downloadHelixJSON(
+        `helix-${safeUsername}-${suffix}.json`,
+        payload
+    );
+
+    setDataDownloadStatus(
+        "Export downloaded",
+        type === "content"
+            ? "Your profile, locally stored content and media references were packaged into a JSON file."
+            : "Your Helix account information and locally stored Helix data were packaged into a JSON file."
+    );
+}
+
+function clearHelixLocalData() {
+    const confirmed = window.confirm(
+        "Clear all Helix data stored in this browser? You will be signed out and this cannot be undone."
+    );
+
+    if (!confirmed) return;
+
+    localStorage.clear();
+    sessionStorage.clear();
+    window.location.href = "index.html";
+}
+
 document.querySelectorAll("[data-settings-action]").forEach((button) => {
     button.addEventListener("click", () => {
         const action = button.dataset.settingsAction;
         const state = button.querySelector(".settings-option-state");
+
+        if (action === "download-data") {
+            exportHelixData("account");
+            return;
+        }
+
+        if (action === "export-content") {
+            exportHelixData("content");
+            return;
+        }
+
+        if (action === "clear-local-data") {
+            clearHelixLocalData();
+            return;
+        }
+
+        if (action === "delete-account") {
+            setDataDownloadStatus(
+                "Account deletion is not available yet",
+                "Permanent deletion will be connected after Helix moves to a secure server-side account system."
+            );
+            return;
+        }
 
         if (state && ["private", "activity-status", "message-notifications", "friend-notifications", "post-notifications", "compact"].includes(action)) {
             const on = state.textContent.trim() === "ON";
@@ -1285,7 +1440,6 @@ document.querySelectorAll("[data-settings-action]").forEach((button) => {
         const messages = {
             "activity-log": "Activity log is ready for the database-backed activity system.",
             "saved": "Saved content will appear here as your saved posts are added.",
-            "download-data": "Data export will be connected when Helix's server-side account system is live.",
             "deactivate": "Account deactivation will be connected to the secure account system.",
             "help": "Help Center is being prepared for the public Helix release.",
             "report": "Problem reporting will be connected to Helix support.",
