@@ -7742,3 +7742,161 @@ body.helix-reduced-motion *::after {
         gap: 8px;
     }
 }
+
+
+/* =========================================================
+   HELP & SUPPORT
+   ========================================================= */
+.help-support-modal-body {
+    margin-top: 18px;
+}
+
+.help-support-copy {
+    margin-bottom: 16px;
+}
+
+.help-support-copy strong {
+    display: block;
+    color: #eaf8fc;
+    font-size: 12px;
+}
+
+.help-support-copy p,
+.help-support-success p,
+.help-support-about p {
+    margin: 6px 0 0;
+    color: #71899a;
+    font-size: 9px;
+    line-height: 1.6;
+}
+
+.help-support-card-list,
+.help-support-faq {
+    display: grid;
+    gap: 9px;
+}
+
+.help-support-card-list article,
+.help-support-faq details,
+.help-support-about {
+    padding: 13px;
+    border: 1px solid rgba(123,147,173,.11);
+    border-radius: 10px;
+    background: rgba(255,255,255,.018);
+}
+
+.help-support-card-list article strong {
+    color: #dcecf2;
+    font-size: 10px;
+}
+
+.help-support-card-list article p,
+.help-support-faq p {
+    margin: 5px 0 0;
+    color: #657d8e;
+    font-size: 8px;
+    line-height: 1.55;
+}
+
+.help-support-faq summary {
+    color: #dcecf2;
+    font-size: 10px;
+    cursor: pointer;
+}
+
+.help-support-faq details[open] summary {
+    color: var(--cyan-soft);
+}
+
+.help-support-form {
+    display: grid;
+    gap: 12px;
+}
+
+.help-support-form label {
+    display: grid;
+    gap: 6px;
+    color: #8fa5b5;
+    font-size: 8px;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+}
+
+.help-support-form input,
+.help-support-form textarea,
+.help-support-form select {
+    width: 100%;
+    border: 1px solid rgba(123,147,173,.14);
+    border-radius: 9px;
+    outline: 0;
+    padding: 10px 11px;
+    color: #dcecf2;
+    background: rgba(2,7,13,.65);
+    font: inherit;
+    font-size: 10px;
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+.help-support-form textarea {
+    resize: vertical;
+}
+
+.help-support-form input:focus,
+.help-support-form textarea:focus,
+.help-support-form select:focus {
+    border-color: rgba(0,229,255,.34);
+    box-shadow: 0 0 0 2px rgba(0,229,255,.06);
+}
+
+.help-support-about {
+    display: grid;
+    gap: 10px;
+}
+
+.help-support-about > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding-bottom: 9px;
+    border-bottom: 1px solid rgba(123,147,173,.07);
+}
+
+.help-support-about > div:last-of-type {
+    border-bottom: 0;
+}
+
+.help-support-about span {
+    color: #607889;
+    font-size: 8px;
+    text-transform: uppercase;
+}
+
+.help-support-about strong {
+    color: #dcecf2;
+    font-size: 9px;
+    text-align: right;
+}
+
+.help-support-success {
+    padding: 16px;
+    border: 1px solid rgba(0,229,255,.14);
+    border-radius: 10px;
+    background: rgba(0,229,255,.035);
+}
+
+.help-support-success strong {
+    color: var(--cyan-soft);
+    font-size: 11px;
+}
+
+@media (max-width: 600px) {
+    .help-support-about > div {
+        display: grid;
+        gap: 4px;
+    }
+
+    .help-support-about strong {
+        text-align: left;
+    }
+}
