@@ -136,7 +136,9 @@ signupBtn.addEventListener("click", () => {
 
     // Create account
     users[username] = {
-        password: password
+        password: password,
+        createdAt: new Date().toISOString(),
+        accountId: `hx_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`
     };
 
     saveUsers(users);
