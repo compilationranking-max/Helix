@@ -8678,3 +8678,315 @@ body.helix-reduced-motion *::after {
     border-color: rgba(0,229,255,.34);
     background: rgba(0,229,255,.075);
 }
+
+
+/* =========================================================
+   DIGITAL DETOX
+   ========================================================= */
+#profile-view .settings-detox-section {
+    border-color: rgba(0, 229, 255, .16);
+    background:
+        radial-gradient(circle at 95% 0%, rgba(0,229,255,.06), transparent 35%),
+        rgba(7, 12, 20, .6);
+}
+
+#profile-view .detox-option-panel {
+    padding: 18px;
+    border: 1px solid rgba(0, 229, 255, .12);
+    border-radius: 12px;
+    background: rgba(0,0,0,.16);
+}
+
+#profile-view .detox-option-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+#profile-view .detox-option-heading strong {
+    display: block;
+    color: #e4f7fb;
+    font-size: 12px;
+}
+
+#profile-view .detox-option-heading small {
+    display: block;
+    max-width: 620px;
+    margin-top: 5px;
+    color: #637c8d;
+    font-size: 8px;
+    line-height: 1.5;
+}
+
+#profile-view .detox-status-pill {
+    min-width: 46px;
+    padding: 6px 8px;
+    border: 1px solid rgba(123,147,173,.14);
+    border-radius: 999px;
+    color: #6c8494;
+    background: rgba(123,147,173,.045);
+    font: 8px "SFMono-Regular",Consolas,monospace;
+    letter-spacing: .6px;
+    text-align: center;
+}
+
+#profile-view .detox-status-pill.is-active {
+    border-color: rgba(0,229,255,.24);
+    color: #6ce8f4;
+    background: rgba(0,229,255,.07);
+    box-shadow: 0 0 14px rgba(0,229,255,.07);
+}
+
+#profile-view .detox-status-pill.is-locked {
+    border-color: rgba(255,158,96,.24);
+    color: #ffbd8c;
+    background: rgba(255,158,96,.055);
+}
+
+#profile-view .detox-choice-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 8px;
+}
+
+#profile-view .detox-choice {
+    min-height: 40px;
+    border: 1px solid rgba(123,147,173,.12);
+    border-radius: 9px;
+    color: #77909f;
+    background: rgba(6,12,19,.72);
+    font: 9px "SFMono-Regular",Consolas,monospace;
+    letter-spacing: .5px;
+    cursor: pointer;
+    transition: .18s ease;
+}
+
+#profile-view .detox-choice:hover {
+    color: #dffcff;
+    border-color: rgba(0,229,255,.28);
+    background: rgba(0,229,255,.055);
+}
+
+#profile-view .detox-choice.active {
+    color: #dffcff;
+    border-color: rgba(0,229,255,.48);
+    background: linear-gradient(180deg, rgba(0,229,255,.14), rgba(0,229,255,.055));
+    box-shadow:
+        inset 0 0 0 1px rgba(0,229,255,.08),
+        0 0 16px rgba(0,229,255,.08);
+}
+
+#profile-view .detox-custom-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 150px auto;
+    align-items: end;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+#profile-view .detox-custom-row label {
+    display: grid;
+    gap: 6px;
+    color: #718899;
+    font-size: 8px;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+}
+
+#profile-view .detox-custom-row input {
+    width: 100%;
+    box-sizing: border-box;
+    height: 39px;
+    padding: 0 11px;
+    border: 1px solid rgba(123,147,173,.14);
+    border-radius: 9px;
+    outline: 0;
+    color: #e1f4f8;
+    background: rgba(3,8,14,.78);
+    font: 10px "SFMono-Regular",Consolas,monospace;
+}
+
+#profile-view .detox-custom-row input:focus {
+    border-color: rgba(0,229,255,.35);
+    box-shadow: 0 0 0 2px rgba(0,229,255,.06);
+}
+
+#profile-view .detox-status-card {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 12px;
+}
+
+#profile-view .detox-status-item {
+    padding: 12px;
+    border: 1px solid rgba(123,147,173,.09);
+    border-radius: 10px;
+    background: rgba(255,255,255,.016);
+}
+
+#profile-view .detox-status-item span,
+#profile-view .detox-status-item strong {
+    display: block;
+}
+
+#profile-view .detox-status-item span {
+    color: #536e7d;
+    font: 7px "SFMono-Regular",Consolas,monospace;
+    letter-spacing: .8px;
+}
+
+#profile-view .detox-status-item strong {
+    margin-top: 5px;
+    color: #cce8ee;
+    font: 10px "SFMono-Regular",Consolas,monospace;
+}
+
+#profile-view .detox-progress-track {
+    width: 100%;
+    height: 4px;
+    margin-top: 12px;
+    overflow: hidden;
+    border-radius: 99px;
+    background: rgba(123,147,173,.10);
+}
+
+#profile-view .detox-progress-track > span {
+    display: block;
+    width: 0;
+    height: 100%;
+    border-radius: inherit;
+    background: #4fe4f2;
+    box-shadow: 0 0 12px rgba(79,228,242,.42);
+    transition: width .45s linear;
+}
+
+#profile-view .detox-feedback {
+    min-height: 16px;
+    margin-top: 10px;
+    color: #63d9e6;
+    font: 8px "SFMono-Regular",Consolas,monospace;
+    line-height: 1.4;
+}
+
+#profile-view .detox-feedback.is-error {
+    color: #d88d9c;
+}
+
+.digital-detox-lock {
+    position: fixed;
+    inset: 0;
+    z-index: 100001;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    background:
+        radial-gradient(circle at 50% 42%, rgba(0,229,255,.07), transparent 32%),
+        rgba(1,4,9,.985);
+    backdrop-filter: blur(18px);
+}
+
+.digital-detox-lock[hidden] {
+    display: none;
+}
+
+.digital-detox-lock-glow {
+    position: absolute;
+    width: min(64vw, 700px);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: rgba(0,229,255,.055);
+    filter: blur(80px);
+    animation: detoxLockPulse 2.8s ease-in-out infinite;
+}
+
+.digital-detox-lock-card {
+    position: relative;
+    z-index: 2;
+    width: min(520px, calc(100vw - 36px));
+    padding: 36px 30px 32px;
+    border: 1px solid rgba(0,229,255,.17);
+    border-radius: 18px;
+    background:
+        linear-gradient(180deg, rgba(10,20,31,.96), rgba(4,9,16,.96));
+    box-shadow:
+        0 35px 90px rgba(0,0,0,.55),
+        0 0 40px rgba(0,229,255,.07);
+    text-align: center;
+}
+
+.digital-detox-lock-icon {
+    width: 72px;
+    height: 72px;
+    margin: 0 auto 18px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(0,229,255,.18);
+    border-radius: 18px;
+    color: #63ecf7;
+    background: rgba(0,229,255,.055);
+    box-shadow: 0 0 26px rgba(0,229,255,.08);
+}
+
+.digital-detox-lock-icon svg {
+    width: 46px;
+    height: 46px;
+    stroke: currentColor;
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    fill: none;
+}
+
+.digital-detox-lock-card h2 {
+    margin-top: 9px;
+    color: #effcff;
+    font-size: 27px;
+    letter-spacing: .06em;
+}
+
+.digital-detox-countdown {
+    margin-top: 20px;
+    color: #65eff9;
+    font: 700 clamp(46px, 8vw, 68px) "SFMono-Regular",Consolas,monospace;
+    letter-spacing: .04em;
+    text-shadow:
+        0 0 12px rgba(0,229,255,.35),
+        0 0 32px rgba(0,229,255,.14);
+}
+
+.digital-detox-lock-card p:last-child {
+    max-width: 390px;
+    margin: 14px auto 0;
+    color: #6f8796;
+    font-size: 9px;
+    line-height: 1.6;
+}
+
+@keyframes detoxLockPulse {
+    0%, 100% { transform: scale(.85); opacity: .45; }
+    50% { transform: scale(1.06); opacity: .8; }
+}
+
+@media (max-width: 760px) {
+    #profile-view .detox-choice-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    #profile-view .detox-custom-row {
+        grid-template-columns: 1fr;
+        align-items: stretch;
+    }
+
+    #profile-view .detox-status-card {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .digital-detox-lock-glow {
+        animation: none;
+    }
+}
