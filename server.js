@@ -187,6 +187,28 @@ app.post("/api/network/request", (req, res) => {
     res.status(201).json({ ok: true, request });
 });
 
+app.delete("/api/network/request/:id", (req, res) => {
+    const username = normalizeUsername(req.body?.username);
+    if (!validUsername(username)) {
+        return res.status(400).json({ error: "Invalid username." });
+    }
+
+    const data = loadNetworkData();
+    const request = data.requests.find((item) =>
+        item.id === req.params.id &&
+        item.from === username &&
+        item.status === "pending"
+    );
+
+    if (!request) {
+        return res.status(404).json({ error: "Pending outgoing request not found." });
+    }
+
+    request.status = "cancelled";
+    saveNetworkData(data);
+    res.json({ ok: true, ...networkState(username) });
+});
+
 app.post("/api/network/request/:id/respond", (req, res) => {
     const username = normalizeUsername(req.body?.username);
     const action = req.body?.action;
