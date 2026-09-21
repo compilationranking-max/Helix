@@ -72,6 +72,20 @@
                 </div>
 
                 <div class="input-group">
+                    <label for="signup-account-id">Account ID</label>
+                    <input
+                        type="text"
+                        id="signup-account-id"
+                        placeholder="Choose a unique ID (e.g. nithin_dev)"
+                        autocomplete="off"
+                        minlength="3"
+                        maxlength="32"
+                        pattern="[A-Za-z0-9_.-]+"
+                    >
+                    <small class="auth-input-hint">3–32 characters: letters, numbers, dots, underscores or hyphens.</small>
+                </div>
+
+                <div class="input-group">
                     <label for="signup-password">Password</label>
                     <input
                         type="password"
