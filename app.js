@@ -1593,6 +1593,109 @@ document.querySelectorAll("[data-settings-action]").forEach((button) => {
 })();
 
 // =========================================================
+// BLOCKED ACCOUNTS
+// =========================================================
+
+(() => {
+    const storageKey = "helixBlockedUsers";
+
+    function readBlockedUsers() {
+        try {
+            const value = JSON.parse(localStorage.getItem(storageKey) || "[]");
+            return Array.isArray(value) ? value : [];
+        } catch {
+            return [];
+        }
+    }
+
+    function saveBlockedUsers(users) {
+        localStorage.setItem(storageKey, JSON.stringify(users));
+    }
+
+    function getBlockedIdentity(entry) {
+        if (typeof entry === "string") {
+            return { id: entry, username: entry };
+        }
+
+        const username = String(
+            entry?.username || entry?.name || entry?.user || entry?.id || "Unknown user"
+        );
+
+        return {
+            id: String(entry?.id || entry?.accountId || username),
+            username
+        };
+    }
+
+    function escapeHtml(value) {
+        return String(value).replace(/[&<>"']/g, (char) => ({
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#039;"
+        }[char]));
+    }
+
+    function renderBlockedAccounts() {
+        const list = document.getElementById("blocked-accounts-list");
+        if (!list) return;
+
+        const blocked = readBlockedUsers();
+
+        if (!blocked.length) {
+            list.innerHTML = `
+                <div class="settings-empty-card">
+                    <span>⊘</span>
+                    <div>
+                        <strong>No blocked accounts</strong>
+                        <small>Accounts you block will appear here, and you can unblock them at any time.</small>
+                    </div>
+                </div>
+            `;
+            return;
+        }
+
+        list.innerHTML = blocked.map((entry, index) => {
+            const user = getBlockedIdentity(entry);
+            return `
+                <div class="blocked-account-row">
+                    <div class="blocked-account-avatar" aria-hidden="true">${escapeHtml(user.username.slice(0, 2).toUpperCase())}</div>
+                    <div class="blocked-account-copy">
+                        <strong>${escapeHtml(user.username)}</strong>
+                        <small>Blocked account</small>
+                    </div>
+                    <button class="profile-secondary-button blocked-unblock-button" type="button" data-unblock-index="${index}">Unblock</button>
+                </div>
+            `;
+        }).join("");
+    }
+
+    document.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-unblock-index]");
+        if (!button) return;
+
+        const blocked = readBlockedUsers();
+        const index = Number(button.dataset.unblockIndex);
+        if (!Number.isInteger(index) || index < 0 || index >= blocked.length) return;
+
+        blocked.splice(index, 1);
+        saveBlockedUsers(blocked);
+        renderBlockedAccounts();
+
+        const status = document.getElementById("profile-action-message");
+        if (status) status.textContent = "Account unblocked.";
+
+        if (typeof window.helixRenderPrivacy === "function") {
+            window.helixRenderPrivacy();
+        }
+    });
+
+    renderBlockedAccounts();
+    window.helixRenderBlockedAccounts = renderBlockedAccounts;
+})();
+
+// =========================================================
 // INITIALIZATION
 // =========================================================
 
