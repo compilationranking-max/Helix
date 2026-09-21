@@ -1103,6 +1103,8 @@ function openAccountModal(action) {
     accountModalError.textContent = "";
     accountModalFields.innerHTML = action === "username"
         ? `<label class="helix-modal-label" for="account-modal-username">New username</label><input class="helix-modal-input" id="account-modal-username" type="text" autocomplete="username" value="${loggedInUser || ""}" minlength="3" maxlength="30" required>`
+        : action === "account-id"
+        ? `<label class="helix-modal-label" for="account-modal-account-id">Account ID</label><input class="helix-modal-input" id="account-modal-account-id" type="text" autocomplete="off" value="${document.getElementById("profile-account-id")?.textContent?.trim() || ""}" minlength="3" maxlength="32" pattern="[A-Za-z0-9_.-]+" required><p class="helix-confirmation-copy">Choose a unique ID using letters, numbers, dots, underscores or hyphens.</p>`
         : action === "email"
         ? `<label class="helix-modal-label" for="account-modal-email">Gmail address</label><input class="helix-modal-input" id="account-modal-email" type="email" autocomplete="email" placeholder="you@gmail.com" required>`
         : action === "phone"
@@ -1112,6 +1114,7 @@ function openAccountModal(action) {
                 : `<p class="helix-confirmation-copy">This will end every active Helix session for this account.</p>`;
 
     accountModalTitle.textContent = action === "username" ? "Change username"
+        : action === "account-id" ? "Change Account ID"
         : action === "email" ? "Link Gmail"
         : action === "phone" ? "Add phone"
             : action === "password" ? "Change password" : "End all sessions";
@@ -1136,6 +1139,7 @@ document.querySelectorAll("[data-modal-close]").forEach((element) => {
 });
 
 document.getElementById("change-username-btn")?.addEventListener("click", () => openAccountModal("username"));
+document.getElementById("change-account-id-btn")?.addEventListener("click", () => openAccountModal("account-id"));
 document.getElementById("link-email-btn")?.addEventListener("click", () => openAccountModal("email"));
 document.getElementById("add-phone-btn")?.addEventListener("click", () => openAccountModal("phone"));
 document.getElementById("change-password-btn")?.addEventListener("click", () => openAccountModal("password"));
@@ -1145,7 +1149,44 @@ accountModalForm?.addEventListener("submit", (event) => {
     event.preventDefault();
     accountModalError.textContent = "";
 
-    if (activeAccountAction === "username") {
+    if (activeAccountAction === "account-id") {
+        const newAccountId = document
+            .getElementById("account-modal-account-id")
+            .value
+            .trim()
+            .toLowerCase();
+
+        if (!/^[a-z0-9][a-z0-9_.-]{2,31}$/.test(newAccountId)) {
+            accountModalError.textContent = "Account ID must be 3–32 characters using letters, numbers, dots, underscores or hyphens.";
+            return;
+        }
+
+        const response = await fetch("/api/network/account-id", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                username: loggedInUser,
+                accountId: newAccountId
+            })
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+            accountModalError.textContent = data.error || "Could not update Account ID.";
+            return;
+        }
+
+        const users = JSON.parse(localStorage.getItem("helixUsers")) || {};
+        if (!users[loggedInUser]) {
+            accountModalError.textContent = "Account record could not be found.";
+            return;
+        }
+
+        users[loggedInUser].accountId = data.accountId || newAccountId;
+        localStorage.setItem("helixUsers", JSON.stringify(users));
+
+    } else if (activeAccountAction === "username") {
         const newUsername = document.getElementById("account-modal-username").value.trim();
         const users = JSON.parse(localStorage.getItem("helixUsers")) || {};
 
