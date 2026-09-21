@@ -11,6 +11,7 @@ const showLoginBtn = document.getElementById("show-login");
 
 const loginBtn = document.getElementById("login-btn");
 const signupBtn = document.getElementById("signup-btn");
+const signupAccountId = document.getElementById("signup-account-id");
 
 const authMessage = document.getElementById("auth-message");
 
@@ -87,6 +88,12 @@ signupBtn.addEventListener("click", () => {
         .value
         .trim();
 
+    const accountId = document
+        .getElementById("signup-account-id")
+        .value
+        .trim()
+        .toLowerCase();
+
     const password = document
         .getElementById("signup-password")
         .value;
@@ -109,6 +116,12 @@ signupBtn.addEventListener("click", () => {
         return;
     }
 
+
+    // Account ID validation
+    if (!/^[a-z0-9][a-z0-9_.-]{2,31}$/.test(accountId)) {
+        showMessage("Account ID must be 3–32 characters using letters, numbers, dots, underscores or hyphens.");
+        return;
+    }
 
     // Password length
     if (password.length < 6) {
@@ -134,34 +147,67 @@ signupBtn.addEventListener("click", () => {
     }
 
 
-    // Create account
-    users[username] = {
-        password: password,
-        createdAt: new Date().toISOString(),
-        accountId: `hx_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`
+    // Create account with the user's chosen unique ID.
+    const createLocalAccount = () => {
+        users[username] = {
+            password: password,
+            createdAt: new Date().toISOString(),
+            accountId
+        };
+        saveUsers(users);
     };
 
-    saveUsers(users);
+    // When the server is reachable, it is the source of truth for ID uniqueness.
+    // Offline/local prototype mode still allows the account to be created and synced later.
+    fetch("/api/network/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, accountId })
+    })
+        .then(async (response) => {
+            const data = await response.json().catch(() => ({}));
+            if (response.status === 409) {
+                throw new Error(data.error || "That Account ID is already taken.");
+            }
+            if (!response.ok) {
+                createLocalAccount();
+                return;
+            }
+
+            users[username] = {
+                password,
+                createdAt: new Date().toISOString(),
+                accountId: data.accountId || accountId
+            };
+            saveUsers(users);
+        })
+        .catch((error) => {
+            if (error.message.includes("already taken")) {
+                throw error;
+            }
+            createLocalAccount();
+        })
+        .then(() => {
+            showMessage("Account created successfully!", "success");
+
+            document.getElementById("signup-username").value = "";
+            document.getElementById("signup-account-id").value = "";
+            document.getElementById("signup-password").value = "";
+            document.getElementById("signup-confirm-password").value = "";
+
+            setTimeout(() => {
+                signupForm.classList.add("hidden");
+                loginForm.classList.remove("hidden");
+                clearMessage();
+            }, 1000);
+        })
+        .catch((error) => {
+            showMessage(error.message || "Could not create the account.");
+        });
+
+    return;
 
 
-    showMessage("Account created successfully!", "success");
-
-
-    // Clear signup fields
-    document.getElementById("signup-username").value = "";
-    document.getElementById("signup-password").value = "";
-    document.getElementById("signup-confirm-password").value = "";
-
-
-    // Automatically switch to login
-    setTimeout(() => {
-
-        signupForm.classList.add("hidden");
-        loginForm.classList.remove("hidden");
-
-        clearMessage();
-
-    }, 1000);
 });
 
 
