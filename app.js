@@ -772,13 +772,34 @@ function setNavigationSection(id) {
 
 function updateProfileView() {
     const profileUsername = document.getElementById("profile-account-username");
+    const profileCreated = document.getElementById("profile-account-created");
+    const profileAccountId = document.getElementById("profile-account-id");
     const profileEmail = document.getElementById("profile-account-email");
     const profilePhone = document.getElementById("profile-account-phone");
     const profilePhotoPreview = document.getElementById("profile-photo-preview");
     const profilePhotoInitials = document.getElementById("profile-photo-initials");
 
+    const users = JSON.parse(localStorage.getItem("helixUsers")) || {};
+    const account = users[loggedInUser];
+
+    if (account && !account.accountId) {
+        account.accountId = `hx_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+        users[loggedInUser] = account;
+        localStorage.setItem("helixUsers", JSON.stringify(users));
+    }
+
     if (profileUsername) {
         profileUsername.textContent = loggedInUser || "Not available";
+    }
+
+    if (profileCreated) {
+        profileCreated.textContent = account?.createdAt
+            ? new Date(account.createdAt).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })
+            : "Not recorded";
+    }
+
+    if (profileAccountId) {
+        profileAccountId.textContent = account?.accountId || "Not available";
     }
 
     if (profileEmail) {
@@ -826,7 +847,9 @@ function openAccountModal(action) {
 
     activeAccountAction = action;
     accountModalError.textContent = "";
-    accountModalFields.innerHTML = action === "email"
+    accountModalFields.innerHTML = action === "username"
+        ? `<label class="helix-modal-label" for="account-modal-username">New username</label><input class="helix-modal-input" id="account-modal-username" type="text" autocomplete="username" value="${loggedInUser || ""}" minlength="3" maxlength="30" required>`
+        : action === "email"
         ? `<label class="helix-modal-label" for="account-modal-email">Gmail address</label><input class="helix-modal-input" id="account-modal-email" type="email" autocomplete="email" placeholder="you@gmail.com" required>`
         : action === "phone"
             ? `<label class="helix-modal-label" for="account-modal-phone">Phone number</label><input class="helix-modal-input" id="account-modal-phone" type="tel" autocomplete="tel" placeholder="+1 555 010 2048" required>`
@@ -834,7 +857,8 @@ function openAccountModal(action) {
                 ? `<label class="helix-modal-label" for="account-modal-current-password">Current password</label><input class="helix-modal-input" id="account-modal-current-password" type="password" autocomplete="current-password" required><label class="helix-modal-label" for="account-modal-new-password">New password</label><input class="helix-modal-input" id="account-modal-new-password" type="password" autocomplete="new-password" minlength="6" required>`
                 : `<p class="helix-confirmation-copy">This will end every active Helix session for this account.</p>`;
 
-    accountModalTitle.textContent = action === "email" ? "Link Gmail"
+    accountModalTitle.textContent = action === "username" ? "Change username"
+        : action === "email" ? "Link Gmail"
         : action === "phone" ? "Add phone"
             : action === "password" ? "Change password" : "End all sessions";
     accountModalDescription.textContent = action === "sessions"
@@ -857,6 +881,7 @@ document.querySelectorAll("[data-modal-close]").forEach((element) => {
     element.addEventListener("click", closeAccountModal);
 });
 
+document.getElementById("change-username-btn")?.addEventListener("click", () => openAccountModal("username"));
 document.getElementById("link-email-btn")?.addEventListener("click", () => openAccountModal("email"));
 document.getElementById("add-phone-btn")?.addEventListener("click", () => openAccountModal("phone"));
 document.getElementById("change-password-btn")?.addEventListener("click", () => openAccountModal("password"));
@@ -866,7 +891,38 @@ accountModalForm?.addEventListener("submit", (event) => {
     event.preventDefault();
     accountModalError.textContent = "";
 
-    if (activeAccountAction === "email") {
+    if (activeAccountAction === "username") {
+        const newUsername = document.getElementById("account-modal-username").value.trim();
+        const users = JSON.parse(localStorage.getItem("helixUsers")) || {};
+
+        if (newUsername.length < 3) {
+            accountModalError.textContent = "Username must be at least 3 characters.";
+            return;
+        }
+
+        if (!/^[a-zA-Z0-9_.-]+$/.test(newUsername)) {
+            accountModalError.textContent = "Use only letters, numbers, dots, underscores or hyphens.";
+            return;
+        }
+
+        if (newUsername !== loggedInUser && users[newUsername]) {
+            accountModalError.textContent = "That username already exists.";
+            return;
+        }
+
+        const account = users[loggedInUser];
+        if (!account) {
+            accountModalError.textContent = "Account record could not be found.";
+            return;
+        }
+
+        users[newUsername] = account;
+        delete users[loggedInUser];
+        localStorage.setItem("helixUsers", JSON.stringify(users));
+        localStorage.setItem("helixLoggedIn", newUsername);
+        loggedInUser = newUsername;
+
+    } else if (activeAccountAction === "email") {
         localStorage.setItem("helixEmail", document.getElementById("account-modal-email").value.trim());
     } else if (activeAccountAction === "phone") {
         const phone = document.getElementById("account-modal-phone").value.trim();
