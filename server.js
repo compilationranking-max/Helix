@@ -100,54 +100,72 @@ function networkState(username) {
     return { friends, incoming, outgoing };
 }
 
-function createUniqueAccountId(data, preferredId = "") {
-    const cleanPreferredId = typeof preferredId === "string"
-        ? preferredId.trim()
-        : "";
+function normalizeAccountId(value) {
+    return typeof value === "string" ? value.trim().toLowerCase() : "";
+}
 
-    const accountIdTaken = (candidate) =>
-        Object.values(data.users).some((user) => user?.accountId === candidate);
+function validAccountId(value) {
+    return /^[a-z0-9][a-z0-9_.-]{2,31}$/.test(value);
+}
 
-    if (cleanPreferredId && /^hx_[a-z0-9_-]{8,64}$/i.test(cleanPreferredId) && !accountIdTaken(cleanPreferredId)) {
-        return cleanPreferredId;
-    }
+function findAccountIdOwner(data, accountId) {
+    const normalized = normalizeAccountId(accountId);
 
+    return Object.entries(data.users).find(([, user]) =>
+        normalizeAccountId(user?.accountId) === normalized
+    )?.[0] || null;
+}
+
+function createFallbackAccountId(data) {
     let candidate = "";
     do {
         candidate = `hx_${require("crypto").randomBytes(8).toString("hex")}`;
-    } while (accountIdTaken(candidate));
+    } while (findAccountIdOwner(data, candidate));
 
     return candidate;
 }
 
 app.post("/api/network/sync", (req, res) => {
     const username = normalizeUsername(req.body?.username);
-    const requestedAccountId = normalizeUsername(req.body?.accountId);
+    const requestedAccountId = normalizeAccountId(req.body?.accountId);
 
     if (!validUsername(username)) {
         return res.status(400).json({ error: "Invalid username." });
+    }
+
+    if (requestedAccountId && !validAccountId(requestedAccountId)) {
+        return res.status(400).json({
+            error: "Account ID must be 3–32 characters using only letters, numbers, dots, underscores or hyphens."
+        });
     }
 
     const data = loadNetworkData();
     const existingUser = data.users[username];
 
     if (!existingUser) {
+        const owner = requestedAccountId
+            ? findAccountIdOwner(data, requestedAccountId)
+            : null;
+
+        if (owner && owner !== username) {
+            return res.status(409).json({ error: "That Account ID is already taken." });
+        }
+
         data.users[username] = {
             username,
-            accountId: createUniqueAccountId(data, requestedAccountId),
+            accountId: requestedAccountId || createFallbackAccountId(data),
             createdAt: new Date().toISOString()
         };
-    } else if (!existingUser.accountId || (requestedAccountId && existingUser.accountId !== requestedAccountId)) {
-        const preferred = existingUser.accountId || requestedAccountId;
-        existingUser.accountId = createUniqueAccountId(
-            {
-                ...data,
-                users: Object.fromEntries(
-                    Object.entries(data.users).filter(([name]) => name !== username)
-                )
-            },
-            preferred
-        );
+    } else if (requestedAccountId && normalizeAccountId(existingUser.accountId) !== requestedAccountId) {
+        const owner = findAccountIdOwner(data, requestedAccountId);
+
+        if (owner && owner !== username) {
+            return res.status(409).json({ error: "That Account ID is already taken." });
+        }
+
+        existingUser.accountId = requestedAccountId;
+    } else if (!existingUser.accountId) {
+        existingUser.accountId = createFallbackAccountId(data);
     }
 
     saveNetworkData(data);
@@ -157,6 +175,42 @@ app.post("/api/network/sync", (req, res) => {
         username,
         accountId: data.users[username].accountId,
         ...networkState(username)
+    });
+});
+
+app.post("/api/network/account-id", (req, res) => {
+    const username = normalizeUsername(req.body?.username);
+    const accountId = normalizeAccountId(req.body?.accountId);
+
+    if (!validUsername(username)) {
+        return res.status(400).json({ error: "Invalid username." });
+    }
+
+    if (!validAccountId(accountId)) {
+        return res.status(400).json({
+            error: "Account ID must be 3–32 characters using only letters, numbers, dots, underscores or hyphens."
+        });
+    }
+
+    const data = loadNetworkData();
+    const account = data.users[username];
+
+    if (!account) {
+        return res.status(404).json({ error: "Helix account was not found on the server." });
+    }
+
+    const owner = findAccountIdOwner(data, accountId);
+    if (owner && owner !== username) {
+        return res.status(409).json({ error: "That Account ID is already taken." });
+    }
+
+    account.accountId = accountId;
+    saveNetworkData(data);
+
+    res.json({
+        ok: true,
+        username,
+        accountId: account.accountId
     });
 });
 
