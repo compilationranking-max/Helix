@@ -7480,3 +7480,35 @@ body::before {
         display: none;
     }
 }
+
+
+/* Privacy & Safety */
+.settings-subsection {
+    margin-top: 22px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.045);
+}
+
+.settings-subsection-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.settings-subsection-heading .account-label {
+    margin-bottom: 0;
+}
+
+.settings-subsection-count {
+    min-width: 24px;
+    padding: 4px 7px;
+    border: 1px solid rgba(0, 229, 255, 0.16);
+    border-radius: 999px;
+    background: rgba(0, 229, 255, 0.05);
+    color: var(--cyan-soft);
+    font-size: 9px;
+    font-weight: 800;
+    text-align: center;
+}
