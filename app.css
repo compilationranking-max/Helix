@@ -7512,3 +7512,85 @@ body::before {
     font-weight: 800;
     text-align: center;
 }
+
+
+/* =========================================================
+   APPEARANCE SETTINGS
+   ========================================================= */
+
+body.helix-soft-mode {
+    filter: saturate(.92) brightness(1.035);
+}
+
+body.helix-accent-medium {
+    --cyan: #55d9e8;
+    --cyan-soft: #75e8f2;
+}
+
+body.helix-accent-low {
+    --cyan: #36b9c8;
+    --cyan-soft: #55cbd6;
+}
+
+body.helix-accent-medium .nav-item.active,
+body.helix-accent-low .nav-item.active {
+    box-shadow: inset 3px 0 0 var(--cyan);
+}
+
+body.helix-compact-mode .navigation {
+    gap: 3px;
+}
+
+body.helix-compact-mode .nav-item {
+    padding-top: 8px;
+    padding-bottom: 8px;
+}
+
+body.helix-compact-mode .settings-option-row {
+    padding-top: 12px;
+    padding-bottom: 12px;
+}
+
+body.helix-density-compact .sidebar {
+    padding-left: 11px;
+    padding-right: 11px;
+}
+
+body.helix-density-compact .nav-item {
+    gap: 9px;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+body.helix-density-spacious .sidebar {
+    padding-left: 21px;
+    padding-right: 21px;
+}
+
+body.helix-density-spacious .navigation {
+    gap: 11px;
+}
+
+body.helix-density-spacious .nav-item {
+    padding-top: 15px;
+    padding-bottom: 15px;
+}
+
+body.helix-animation-subtle * {
+    animation-duration: .65s !important;
+    transition-duration: .18s !important;
+}
+
+body.helix-animation-minimal * {
+    animation-duration: .25s !important;
+    transition-duration: .08s !important;
+}
+
+body.helix-reduced-motion *,
+body.helix-reduced-motion *::before,
+body.helix-reduced-motion *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.001ms !important;
+}
