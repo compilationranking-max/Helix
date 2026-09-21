@@ -1150,42 +1150,81 @@ accountModalForm?.addEventListener("submit", async (event) => {
     accountModalError.textContent = "";
 
     if (activeAccountAction === "account-id") {
-        const newAccountId = document
-            .getElementById("account-modal-account-id")
-            .value
-            .trim()
-            .toLowerCase();
+        const field = document.getElementById("account-modal-account-id");
+        const newAccountId = (field?.value || "").trim().toLowerCase();
+        const users = JSON.parse(localStorage.getItem("helixUsers")) || {};
+        const localAccount = users[loggedInUser];
+
+        if (!localAccount) {
+            accountModalError.textContent = "Your local account could not be found. Log out and sign in again.";
+            return;
+        }
 
         if (!/^[a-z0-9][a-z0-9_.-]{2,31}$/.test(newAccountId)) {
-            accountModalError.textContent = "Account ID must be 3–32 characters using letters, numbers, dots, underscores or hyphens.";
+            accountModalError.textContent = "Change it to 3–32 characters using only letters, numbers, dots, underscores or hyphens.";
             return;
         }
 
-        const response = await fetch("/api/network/account-id", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                username: loggedInUser,
-                accountId: newAccountId
-            })
-        });
-
-        const data = await response.json().catch(() => ({}));
-
-        if (!response.ok) {
-            accountModalError.textContent = data.error || "Could not update Account ID.";
+        if (newAccountId === String(localAccount.accountId || "").trim().toLowerCase()) {
+            accountModalError.textContent = "That is already your current Account ID.";
             return;
         }
 
-        const users = JSON.parse(localStorage.getItem("helixUsers")) || {};
-        if (!users[loggedInUser]) {
-            accountModalError.textContent = "Account record could not be found.";
-            return;
+        accountModalSubmit.disabled = true;
+        accountModalSubmit.textContent = "Checking...";
+
+        const accountIdEndpoint = (
+            ["localhost", "127.0.0.1"].includes(window.location.hostname) &&
+            window.location.port !== "3000"
+        )
+            ? "http://localhost:3000/api/network/account-id"
+            : "/api/network/account-id";
+
+        try {
+            const response = await fetch(accountIdEndpoint, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username: loggedInUser, accountId: newAccountId })
+            });
+
+            const data = await response.json().catch(() => ({}));
+
+            if (response.status === 409) {
+                accountModalError.textContent = "That Account ID is already taken. Try a different one.";
+                return;
+            }
+
+            if (response.status === 400) {
+                accountModalError.textContent = data.error || "Use 3–32 letters, numbers, dots, underscores or hyphens.";
+                return;
+            }
+
+            if (response.status === 404) {
+                accountModalError.textContent = "Your account is not registered on the Helix backend yet. Refresh the app and try again.";
+                return;
+            }
+
+            if (!response.ok) {
+                accountModalError.textContent = data.error || "Helix could not save that Account ID. Try again.";
+                return;
+            }
+
+            localAccount.accountId = data.accountId || newAccountId;
+            users[loggedInUser] = localAccount;
+            localStorage.setItem("helixUsers", JSON.stringify(users));
+
+            updateProfileView();
+            closeAccountModal();
+
+            if (profileActionMessage) {
+                profileActionMessage.textContent = "Account ID changed to " + localAccount.accountId + ".";
+            }
+        } catch (error) {
+            accountModalError.textContent = "Cannot reach the Helix backend. Run the backend on port 3000 and try again.";
+        } finally {
+            accountModalSubmit.disabled = false;
+            accountModalSubmit.textContent = "Save changes";
         }
-
-        users[loggedInUser].accountId = data.accountId || newAccountId;
-        localStorage.setItem("helixUsers", JSON.stringify(users));
-
     } else if (activeAccountAction === "username") {
         const newUsername = document.getElementById("account-modal-username").value.trim();
         const users = JSON.parse(localStorage.getItem("helixUsers")) || {};
