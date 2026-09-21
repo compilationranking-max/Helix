@@ -909,16 +909,43 @@
                                 <span class="settings-option-icon">?</span>
                                 <span class="settings-option-copy">
                                     <strong>Help Center</strong>
-                                    <small>Find answers to common Helix questions.</small>
+                                    <small>Browse common questions and guidance for using Helix.</small>
+                                </span>
+                                <span class="settings-option-arrow">›</span>
+                            </button>
+
+                            <button class="settings-option-row" type="button" data-settings-action="faq">
+                                <span class="settings-option-icon">Q</span>
+                                <span class="settings-option-copy">
+                                    <strong>FAQ</strong>
+                                    <small>Quick answers about accounts, messaging, friends and settings.</small>
+                                </span>
+                                <span class="settings-option-arrow">›</span>
+                            </button>
+
+                            <button class="settings-option-row" type="button" data-settings-action="bug-report">
+                                <span class="settings-option-icon">!</span>
+                                <span class="settings-option-copy">
+                                    <strong>Bug reports</strong>
+                                    <small>Tell Helix about a technical issue you found.</small>
                                 </span>
                                 <span class="settings-option-arrow">›</span>
                             </button>
 
                             <button class="settings-option-row" type="button" data-settings-action="report">
-                                <span class="settings-option-icon">!</span>
+                                <span class="settings-option-icon">⚑</span>
                                 <span class="settings-option-copy">
-                                    <strong>Report a problem</strong>
-                                    <small>Send feedback about something that isn't working.</small>
+                                    <strong>User / content reports</strong>
+                                    <small>Report an account, post, Reel or other content for review.</small>
+                                </span>
+                                <span class="settings-option-arrow">›</span>
+                            </button>
+
+                            <button class="settings-option-row" type="button" data-settings-action="contact-support">
+                                <span class="settings-option-icon">↗</span>
+                                <span class="settings-option-copy">
+                                    <strong>Contact support</strong>
+                                    <small>Send a support request from inside Helix.</small>
                                 </span>
                                 <span class="settings-option-arrow">›</span>
                             </button>
@@ -940,6 +967,17 @@
                 </div>
 
             </section>
+
+            <div class="helix-modal helix-help-modal" id="help-support-modal" hidden>
+                <div class="helix-modal-backdrop" data-help-modal-close></div>
+                <section class="helix-modal-panel" role="dialog" aria-modal="true" aria-labelledby="help-support-modal-title">
+                    <button class="helix-modal-close" type="button" aria-label="Close dialog" data-help-modal-close>×</button>
+                    <p class="system-label">HELIX / SUPPORT</p>
+                    <h2 id="help-support-modal-title">Help &amp; Support</h2>
+                    <p class="helix-modal-description" id="help-support-modal-description"></p>
+                    <div id="help-support-modal-body" class="help-support-modal-body"></div>
+                </section>
+            </div>
 
             <div class="helix-modal" id="account-modal" hidden>
                 <div class="helix-modal-backdrop" data-modal-close></div>
