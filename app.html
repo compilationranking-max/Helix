@@ -626,43 +626,93 @@
                             <div class="settings-section-heading">
                                 <div>
                                     <span class="account-label">NOTIFICATIONS</span>
-                                    <h2>Stay in the loop</h2>
+                                    <h2>Choose what reaches you</h2>
                                 </div>
                                 <span class="settings-section-index">02</span>
                             </div>
 
-                            <button class="settings-option-row" type="button" data-settings-action="message-notifications">
+                            <button class="settings-option-row" type="button" data-notification-setting="dm-alerts">
                                 <span class="settings-option-icon">✦</span>
                                 <span class="settings-option-copy">
-                                    <strong>Message notifications</strong>
-                                    <small>Alerts for new direct messages.</small>
+                                    <strong>DM alerts</strong>
+                                    <small>Notifications for new direct messages.</small>
                                 </span>
                                 <span class="settings-option-state">ON</span>
                                 <span class="settings-option-arrow">›</span>
                             </button>
 
-                            <button class="settings-option-row" type="button" data-settings-action="friend-notifications">
+                            <button class="settings-option-row" type="button" data-notification-setting="friend-requests">
                                 <span class="settings-option-icon">♢</span>
                                 <span class="settings-option-copy">
                                     <strong>Friend requests</strong>
-                                    <small>Get notified when someone sends a request.</small>
+                                    <small>Alerts when someone sends you a friend request.</small>
                                 </span>
                                 <span class="settings-option-state">ON</span>
                                 <span class="settings-option-arrow">›</span>
                             </button>
 
-                            <button class="settings-option-row" type="button" data-settings-action="post-notifications">
+                            <button class="settings-option-row" type="button" data-notification-setting="accepted-requests">
+                                <span class="settings-option-icon">✓</span>
+                                <span class="settings-option-copy">
+                                    <strong>Accepted requests</strong>
+                                    <small>Alerts when a friend request is accepted.</small>
+                                </span>
+                                <span class="settings-option-state">ON</span>
+                                <span class="settings-option-arrow">›</span>
+                            </button>
+
+                            <button class="settings-option-row" type="button" data-notification-setting="likes">
+                                <span class="settings-option-icon">♡</span>
+                                <span class="settings-option-copy">
+                                    <strong>Likes</strong>
+                                    <small>Alerts when people like your posts or content.</small>
+                                </span>
+                                <span class="settings-option-state">ON</span>
+                                <span class="settings-option-arrow">›</span>
+                            </button>
+
+                            <button class="settings-option-row" type="button" data-notification-setting="comments">
                                 <span class="settings-option-icon">◇</span>
                                 <span class="settings-option-copy">
-                                    <strong>Post activity</strong>
-                                    <small>Alerts for likes and comments on your posts.</small>
+                                    <strong>Comments</strong>
+                                    <small>Alerts when people comment on your posts.</small>
+                                </span>
+                                <span class="settings-option-state">ON</span>
+                                <span class="settings-option-arrow">›</span>
+                            </button>
+
+                            <button class="settings-option-row" type="button" data-notification-setting="mentions">
+                                <span class="settings-option-icon">@</span>
+                                <span class="settings-option-copy">
+                                    <strong>Mentions</strong>
+                                    <small>Alerts when someone mentions you.</small>
+                                </span>
+                                <span class="settings-option-state">ON</span>
+                                <span class="settings-option-arrow">›</span>
+                            </button>
+
+                            <button class="settings-option-row" type="button" data-notification-setting="follows">
+                                <span class="settings-option-icon">+</span>
+                                <span class="settings-option-copy">
+                                    <strong>Follows</strong>
+                                    <small>Alerts when someone follows your account.</small>
+                                </span>
+                                <span class="settings-option-state">ON</span>
+                                <span class="settings-option-arrow">›</span>
+                            </button>
+
+                            <button class="settings-option-row" type="button" data-notification-setting="system-announcements">
+                                <span class="settings-option-icon">!</span>
+                                <span class="settings-option-copy">
+                                    <strong>System announcements</strong>
+                                    <small>Important Helix updates, service notices and announcements.</small>
                                 </span>
                                 <span class="settings-option-state">ON</span>
                                 <span class="settings-option-arrow">›</span>
                             </button>
                         </section>
 
-                        <section class="settings-extra-section" id="settings-appearance" data-settings-section>
+<section class="settings-extra-section" id="settings-appearance" data-settings-section>
                             <div class="settings-section-heading">
                                 <div>
                                     <span class="account-label">APPEARANCE</span>
