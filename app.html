@@ -32,6 +32,19 @@
         <div class="helix-intro-scanline"></div>
     </div>
 
+    <div class="digital-detox-lock" id="digital-detox-lock" hidden aria-modal="true" role="dialog" aria-labelledby="digital-detox-lock-title">
+        <div class="digital-detox-lock-glow"></div>
+        <div class="digital-detox-lock-card">
+            <div class="digital-detox-lock-icon" aria-hidden="true">
+                <svg viewBox="0 0 64 64"><path d="M19 8h26M19 56h26" fill="none"/><path d="M21 9c0 12 8 14 11 20-3 6-11 8-11 26M43 9c0 12-8 14-11 20 3 6 11 8 11 26" fill="none"/><path d="M24 34h16" fill="none"/></svg>
+            </div>
+            <span class="system-label">HELIX / DIGITAL DETOX</span>
+            <h2 id="digital-detox-lock-title">TIME FOR A BREAK</h2>
+            <div class="digital-detox-countdown" id="digital-detox-countdown">01:30</div>
+            <p>Digital Detox is active. Helix will unlock automatically when the break ends.</p>
+        </div>
+    </div>
+
 <div class="helix-app">
 
         <!-- ==========================================
@@ -511,6 +524,11 @@
                             <span>Appearance</span>
                         </button>
 
+                        <button class="profile-settings-item" type="button" data-settings-target="settings-detox">
+                            <svg class="settings-icon-svg" viewBox="0 0 48 48" aria-hidden="true"><path d="M14 7h20M14 41h20" fill="none"/><path d="M16 8c0 7 4 9 8 12-4 3-8 5-8 12M32 8c0 7-4 9-8 12 4 3 8 5 8 12" fill="none"/><path d="M18 25h12" fill="none"/></svg>
+                            <span>Digital Detox</span>
+                        </button>
+
                         <button class="profile-settings-item" type="button" data-settings-target="settings-activity">
                             <svg class="settings-icon-svg" viewBox="0 0 48 48" aria-hidden="true"><path d="M9 34c4-1 6-4 7-8 1-4 2-8 6-8 3 0 5 2 5 5 0 5-3 9-7 10" fill="none"/><path d="M24 29c2-2 3-5 5-8 1-2 3-3 5-2 3 2 2 6 1 9" fill="none"/><path d="M31 30h11M36 25v10" fill="none"/></svg>
                             <span>Your Activity</span>
@@ -852,13 +870,68 @@
                             </button>
                         </section>
 
-<section class="settings-extra-section" id="settings-activity" data-settings-section>
+<section class="settings-extra-section settings-detox-section" id="settings-detox" data-settings-section>
+                            <div class="settings-section-heading">
+                                <div>
+                                    <span class="account-label">DIGITAL DETOX</span>
+                                    <h2>Take a break from Helix</h2>
+                                </div>
+                                <span class="settings-section-index">04</span>
+                            </div>
+
+                            <div class="detox-option-panel">
+                                <div class="detox-option-heading">
+                                    <div>
+                                        <strong>Detox timer</strong>
+                                        <small>After continuous active use for your chosen time, Helix locks for 1 minute 30 seconds.</small>
+                                    </div>
+                                    <span class="detox-status-pill" id="detox-status-pill">OFF</span>
+                                </div>
+
+                                <div class="detox-choice-grid" role="group" aria-label="Digital Detox duration">
+                                    <button type="button" class="detox-choice" data-detox-duration="off">OFF</button>
+                                    <button type="button" class="detox-choice" data-detox-duration="15">15M</button>
+                                    <button type="button" class="detox-choice" data-detox-duration="30">30M</button>
+                                    <button type="button" class="detox-choice" data-detox-duration="60">1HR</button>
+                                    <button type="button" class="detox-choice" data-detox-duration="custom">CUSTOM</button>
+                                </div>
+
+                                <div class="detox-custom-row" id="detox-custom-row" hidden>
+                                    <label for="detox-custom-minutes">Custom time (minutes)</label>
+                                    <input id="detox-custom-minutes" type="number" inputmode="numeric" min="1" max="1440" step="1" placeholder="e.g. 45">
+                                    <button type="button" class="profile-secondary-button" id="detox-custom-save">Set custom time</button>
+                                </div>
+                            </div>
+
+                            <div class="detox-status-card">
+                                <div class="detox-status-item">
+                                    <span>STATUS</span>
+                                    <strong id="detox-status-detail">Disabled</strong>
+                                </div>
+                                <div class="detox-status-item">
+                                    <span>BREAK</span>
+                                    <strong>01:30</strong>
+                                </div>
+                                <div class="detox-status-item">
+                                    <span>NEXT BREAK</span>
+                                    <strong id="detox-next-break">Not scheduled</strong>
+                                </div>
+                            </div>
+
+                            <div class="detox-progress-track" aria-hidden="true">
+                                <span id="detox-progress-bar"></span>
+                            </div>
+
+                            <p class="detox-feedback" id="detox-feedback" role="status" aria-live="polite"></p>
+                        </section>
+
+                        <section class="settings-extra-section" id="settings-activity" data-settings-section>
                             <div class="settings-section-heading">
                                 <div>
                                     <span class="account-label">YOUR ACTIVITY</span>
                                     <h2>Review your Helix footprint</h2>
                                 </div>
-                                <span class="settings-section-index">04</span>
+                                <span class="settings-section-index">05</span>
                             </div>
 
                             <div class="activity-stat-grid">
@@ -911,7 +984,7 @@
                                     <span class="account-label">DATA &amp; DOWNLOADS</span>
                                     <h2>Manage your information</h2>
                                 </div>
-                                <span class="settings-section-index">06</span>
+                                <span class="settings-section-index">07</span>
                             </div>
 
                             <div class="settings-data-grid">
