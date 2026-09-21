@@ -1302,6 +1302,58 @@ document.querySelectorAll("[data-settings-action]").forEach((button) => {
 
 
 // =========================================================
+// NOTIFICATION CONTROLS
+// =========================================================
+
+(() => {
+    const notificationDefaults = {
+        "dm-alerts": true,
+        "friend-requests": true,
+        "accepted-requests": true,
+        "likes": true,
+        "comments": true,
+        "mentions": true,
+        "follows": true,
+        "system-announcements": true
+    };
+
+    const notificationStorageKey = "helixNotificationSettings";
+    let notificationSettings = {
+        ...notificationDefaults,
+        ...(JSON.parse(localStorage.getItem(notificationStorageKey) || "{}"))
+    };
+
+    function saveNotificationSettings() {
+        localStorage.setItem(notificationStorageKey, JSON.stringify(notificationSettings));
+    }
+
+    function renderNotificationSettings() {
+        document.querySelectorAll("[data-notification-setting]").forEach((button) => {
+            const key = button.dataset.notificationSetting;
+            const state = button.querySelector(".settings-option-state");
+            if (!state) return;
+            state.textContent = notificationSettings[key] ? "ON" : "OFF";
+            button.classList.toggle("is-disabled", !notificationSettings[key]);
+        });
+    }
+
+    document.querySelectorAll("[data-notification-setting]").forEach((button) => {
+        button.addEventListener("click", () => {
+            const key = button.dataset.notificationSetting;
+            notificationSettings[key] = !notificationSettings[key];
+            saveNotificationSettings();
+            renderNotificationSettings();
+
+            const status = document.getElementById("profile-action-message");
+            if (status) status.textContent = "Notification settings saved.";
+        });
+    });
+
+    renderNotificationSettings();
+})();
+
+
+// =========================================================
 // PRIVACY & SAFETY CONTROLS
 // =========================================================
 
