@@ -7,7 +7,7 @@
 // AUTHENTICATION CHECK
 // =========================================================
 
-const loggedInUser = localStorage.getItem("helixLoggedIn");
+let loggedInUser = localStorage.getItem("helixLoggedIn");
 
 if (!loggedInUser) {
     window.location.href = "index.html";
