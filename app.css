@@ -8593,3 +8593,50 @@ body.helix-reduced-motion *::after {
         width: 100%;
     }
 }
+
+
+/* SETTINGS SIDEBAR — LINE ART ICONS */
+#profile-view .profile-settings-item .settings-icon-svg {
+    width: 28px;
+    height: 28px;
+    flex: 0 0 28px;
+    color: #57efff;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    filter: drop-shadow(0 0 7px rgba(0, 229, 255, 0.25));
+}
+
+#profile-view .profile-settings-item .settings-icon-svg * {
+    vector-effect: non-scaling-stroke;
+}
+
+#profile-view .profile-settings-item {
+    min-height: 46px;
+    gap: 10px;
+}
+
+#profile-view .profile-settings-item > span:last-child {
+    min-width: 0;
+}
+
+#profile-view .profile-settings-item:hover .settings-icon-svg,
+#profile-view .profile-settings-item.active .settings-icon-svg {
+    color: #7cf5ff;
+    filter:
+        drop-shadow(0 0 7px rgba(0, 229, 255, 0.45))
+        drop-shadow(0 0 15px rgba(0, 229, 255, 0.16));
+}
+
+#profile-view .settings-icon-help {
+    stroke-width: 1.7;
+}
+
+@media (max-width: 650px) {
+    #profile-view .profile-settings-item .settings-icon-svg {
+        width: 30px;
+        height: 30px;
+        flex-basis: 30px;
+    }
+}
