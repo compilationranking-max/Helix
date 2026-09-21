@@ -791,26 +791,39 @@
                                 <span class="settings-section-index">04</span>
                             </div>
 
+                            <div class="activity-stat-grid">
+                                <div class="activity-stat-card"><strong id="activity-posts-count">0</strong><span>Posts</span></div>
+                                <div class="activity-stat-card"><strong id="activity-comments-count">0</strong><span>Comments</span></div>
+                                <div class="activity-stat-card"><strong id="activity-likes-count">0</strong><span>Likes</span></div>
+                                <div class="activity-stat-card"><strong id="activity-saved-posts-count">0</strong><span>Saved posts</span></div>
+                                <div class="activity-stat-card"><strong id="activity-saved-reels-count">0</strong><span>Saved Reels</span></div>
+                                <div class="activity-stat-card"><strong id="activity-viewed-count">0</strong><span>Recently viewed</span></div>
+                            </div>
+
                             <button class="settings-option-row" type="button" data-settings-action="activity-log">
                                 <span class="settings-option-icon">◌</span>
                                 <span class="settings-option-copy">
-                                    <strong>Activity log</strong>
-                                    <small>Review your recent account activity.</small>
+                                    <strong>Account activity</strong>
+                                    <small>Review sign-ins and other activity recorded by Helix.</small>
                                 </span>
                                 <span class="settings-option-arrow">›</span>
                             </button>
 
-                            <button class="settings-option-row" type="button" data-settings-action="saved">
-                                <span class="settings-option-icon">☆</span>
-                                <span class="settings-option-copy">
-                                    <strong>Saved content</strong>
-                                    <small>Manage posts and content you've saved.</small>
-                                </span>
-                                <span class="settings-option-arrow">›</span>
-                            </button>
+                            <div class="settings-subsection">
+                                <div class="settings-subsection-heading">
+                                    <span class="account-label">ACTIVITY BREAKDOWN</span>
+                                </div>
+                                <div class="settings-empty-card" id="activity-breakdown">
+                                    <span>◎</span>
+                                    <div>
+                                        <strong>No activity recorded yet</strong>
+                                        <small>Your posts, comments, likes, saved content and recently viewed items will appear here as you use Helix.</small>
+                                    </div>
+                                </div>
+                            </div>
                         </section>
 
-                        <section class="settings-extra-section" id="settings-blocked" data-settings-section>
+<section class="settings-extra-section" id="settings-blocked" data-settings-section>
                             <div class="settings-section-heading">
                                 <div>
                                     <span class="account-label">SAFETY</span>
