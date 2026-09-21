@@ -181,54 +181,110 @@
             <section class="friends-view" id="friends-view" data-main-section="friends" hidden>
                 <div class="friends-shell">
                     <header class="friends-header">
-                        <div>
+                        <div class="friends-title-wrap">
                             <p class="system-label">HELIX / NETWORK</p>
                             <h1>Friends</h1>
-                            <p>Connect with real Helix users and manage your requests.</p>
+                            <p>Discover people, manage requests, and keep your Helix network organized.</p>
                         </div>
-                        <span class="friends-live"><span class="status-dot"></span> NETWORK LIVE</span>
+                        <div class="friends-header-actions">
+                            <span class="friends-live"><span class="status-dot"></span> NETWORK LIVE</span>
+                            <button class="friends-refresh-button" id="friends-refresh-button" type="button" title="Refresh network">
+                                <span aria-hidden="true">↻</span> Refresh
+                            </button>
+                        </div>
                     </header>
 
+                    <section class="friends-command-deck" aria-label="Friends network overview">
+                        <div class="friends-stat-card">
+                            <span class="friends-stat-icon">◎</span>
+                            <div><strong id="friends-stat-total">0</strong><small>Friends</small></div>
+                        </div>
+                        <div class="friends-stat-card friends-stat-cyan">
+                            <span class="friends-stat-icon">↓</span>
+                            <div><strong id="friends-stat-incoming">0</strong><small>Incoming</small></div>
+                        </div>
+                        <div class="friends-stat-card friends-stat-violet">
+                            <span class="friends-stat-icon">↑</span>
+                            <div><strong id="friends-stat-outgoing">0</strong><small>Sent</small></div>
+                        </div>
+                        <div class="friends-stat-card friends-stat-network">
+                            <span class="friends-stat-icon">✦</span>
+                            <div><strong id="friends-stat-network">0</strong><small>Network signals</small></div>
+                        </div>
+                    </section>
+
+                    <div class="friends-filter-bar" role="tablist" aria-label="Friend sections">
+                        <button class="friends-filter-button active" type="button" data-friends-filter="all" role="tab" aria-selected="true">All</button>
+                        <button class="friends-filter-button" type="button" data-friends-filter="friends" role="tab" aria-selected="false">Friends</button>
+                        <button class="friends-filter-button" type="button" data-friends-filter="requests" role="tab" aria-selected="false">Requests <span id="friends-filter-request-badge">0</span></button>
+                        <button class="friends-filter-button" type="button" data-friends-filter="sent" role="tab" aria-selected="false">Sent <span id="friends-filter-sent-badge">0</span></button>
+                    </div>
+
                     <div class="friends-grid">
-                        <section class="friends-card friends-search-card">
+                        <section class="friends-card friends-search-card" data-friends-panel="discover">
                             <div class="friends-card-heading">
                                 <div>
-                                    <p class="system-label">DISCOVER</p>
+                                    <p class="system-label">DISCOVER / 01</p>
                                     <h2>Find people</h2>
                                 </div>
+                                <span class="friends-card-signal">SEARCH</span>
                             </div>
                             <div class="friends-search-box">
                                 <span>⌕</span>
                                 <input id="friends-search-input" type="search" placeholder="Search by username..." autocomplete="off" maxlength="32">
+                                <button id="friends-search-clear" type="button" aria-label="Clear friend search" title="Clear search">×</button>
                             </div>
                             <div id="friends-search-results" class="friends-list">
-                                <div class="friends-empty">Search for a username to find people on Helix.</div>
+                                <div class="friends-empty"><span class="friends-empty-mark">⌕</span><strong>Search the network</strong><small>Type a username to discover people on Helix.</small></div>
                             </div>
                         </section>
 
-                        <section class="friends-card">
+                        <section class="friends-card friends-requests-card" data-friends-panel="requests">
                             <div class="friends-card-heading">
                                 <div>
-                                    <p class="system-label">INCOMING</p>
+                                    <p class="system-label">INCOMING / 02</p>
                                     <h2>Friend requests</h2>
                                 </div>
                                 <span class="friends-count" id="friends-request-count">0</span>
                             </div>
                             <div id="friends-request-list" class="friends-list">
-                                <div class="friends-empty">No pending requests.</div>
+                                <div class="friends-empty"><span class="friends-empty-mark">↓</span><strong>No incoming requests</strong><small>New connection requests will appear here.</small></div>
                             </div>
                         </section>
 
-                        <section class="friends-card friends-full-card">
+                        <section class="friends-card friends-sent-card" data-friends-panel="sent">
                             <div class="friends-card-heading">
                                 <div>
-                                    <p class="system-label">CONNECTED</p>
+                                    <p class="system-label">OUTGOING / 03</p>
+                                    <h2>Sent requests</h2>
+                                </div>
+                                <span class="friends-count friends-count-violet" id="friends-sent-count">0</span>
+                            </div>
+                            <div id="friends-sent-list" class="friends-list">
+                                <div class="friends-empty"><span class="friends-empty-mark">↑</span><strong>No sent requests</strong><small>Requests you send will be tracked here.</small></div>
+                            </div>
+                        </section>
+
+                        <section class="friends-card friends-full-card" data-friends-panel="friends">
+                            <div class="friends-card-heading friends-list-heading">
+                                <div>
+                                    <p class="system-label">CONNECTED / 04</p>
                                     <h2>Your friends</h2>
                                 </div>
-                                <span class="friends-count" id="friends-count">0</span>
+                                <div class="friends-list-tools">
+                                    <label class="friends-mini-search">
+                                        <span>⌕</span>
+                                        <input id="friends-filter-input" type="search" placeholder="Filter friends..." autocomplete="off">
+                                    </label>
+                                    <select id="friends-sort-select" aria-label="Sort friends">
+                                        <option value="az">A → Z</option>
+                                        <option value="za">Z → A</option>
+                                    </select>
+                                    <span class="friends-count" id="friends-count">0</span>
+                                </div>
                             </div>
                             <div id="friends-list" class="friends-list">
-                                <div class="friends-empty">You have no friends yet. Find someone above to get started.</div>
+                                <div class="friends-empty"><span class="friends-empty-mark">◎</span><strong>Your network is empty</strong><small>Discover someone above and send your first friend request.</small></div>
                             </div>
                         </section>
                     </div>
