@@ -1302,6 +1302,84 @@ document.querySelectorAll("[data-settings-action]").forEach((button) => {
 
 
 // =========================================================
+// APPEARANCE CONTROLS
+// =========================================================
+
+(() => {
+    const defaults = {
+        theme: "DARK",
+        "accent-intensity": "HIGH",
+        "compact-mode": false,
+        "animation-intensity": "FULL",
+        "reduced-motion": false,
+        "layout-density": "COMFORTABLE"
+    };
+
+    const storageKey = "helixAppearanceSettings";
+    let settings = {
+        ...defaults,
+        ...(JSON.parse(localStorage.getItem(storageKey) || "{}"))
+    };
+
+    const cycleValues = {
+        theme: ["DARK", "SOFT"],
+        "accent-intensity": ["HIGH", "MEDIUM", "LOW"],
+        "animation-intensity": ["FULL", "SUBTLE", "MINIMAL"],
+        "layout-density": ["COMFORTABLE", "COMPACT", "SPACIOUS"]
+    };
+
+    function save() {
+        localStorage.setItem(storageKey, JSON.stringify(settings));
+    }
+
+    function apply() {
+        const body = document.body;
+
+        body.classList.toggle("helix-soft-mode", settings.theme === "SOFT");
+        body.classList.toggle("helix-compact-mode", settings["compact-mode"]);
+        body.classList.toggle("helix-reduced-motion", settings["reduced-motion"]);
+        body.classList.remove("helix-accent-high", "helix-accent-medium", "helix-accent-low");
+        body.classList.add(`helix-accent-${settings["accent-intensity"].toLowerCase()}`);
+        body.classList.remove("helix-animation-full", "helix-animation-subtle", "helix-animation-minimal");
+        body.classList.add(`helix-animation-${settings["animation-intensity"].toLowerCase()}`);
+        body.classList.remove("helix-density-comfortable", "helix-density-compact", "helix-density-spacious");
+        body.classList.add(`helix-density-${settings["layout-density"].toLowerCase()}`);
+
+        document.querySelectorAll("[data-appearance-setting]").forEach((button) => {
+            const key = button.dataset.appearanceSetting;
+            const state = button.querySelector(".settings-option-state");
+            if (!state) return;
+            state.textContent = key === "compact-mode"
+                ? (settings[key] ? "ON" : "OFF")
+                : settings[key];
+        });
+    }
+
+    document.querySelectorAll("[data-appearance-setting]").forEach((button) => {
+        button.addEventListener("click", () => {
+            const key = button.dataset.appearanceSetting;
+
+            if (key === "compact-mode" || key === "reduced-motion") {
+                settings[key] = !settings[key];
+            } else if (cycleValues[key]) {
+                const values = cycleValues[key];
+                const current = values.indexOf(settings[key]);
+                settings[key] = values[(current + 1) % values.length];
+            }
+
+            save();
+            apply();
+
+            const status = document.getElementById("profile-action-message");
+            if (status) status.textContent = "Appearance settings saved.";
+        });
+    });
+
+    apply();
+})();
+
+
+// =========================================================
 // NOTIFICATION CONTROLS
 // =========================================================
 
