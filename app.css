@@ -8640,3 +8640,41 @@ body.helix-reduced-motion *::after {
         flex-basis: 30px;
     }
 }
+
+
+/* PRIVACY & SAFETY — LINE ART ICONS */
+#profile-view .settings-option-icon {
+    display: grid;
+    place-items: center;
+    color: #57efff;
+    overflow: visible;
+}
+
+#profile-view .settings-option-svg {
+    width: 25px;
+    height: 25px;
+    display: block;
+    color: #57efff;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    fill: none;
+    filter:
+        drop-shadow(0 0 5px rgba(0,229,255,.28))
+        drop-shadow(0 0 10px rgba(0,229,255,.08));
+}
+
+#profile-view .settings-option-row:hover .settings-option-svg,
+#profile-view .settings-option-row:focus-visible .settings-option-svg {
+    color: #7cf5ff;
+    filter:
+        drop-shadow(0 0 6px rgba(0,229,255,.42))
+        drop-shadow(0 0 14px rgba(0,229,255,.14));
+}
+
+#profile-view .settings-option-row:hover .settings-option-icon,
+#profile-view .settings-option-row:focus-visible .settings-option-icon {
+    border-color: rgba(0,229,255,.34);
+    background: rgba(0,229,255,.075);
+}
