@@ -557,28 +557,72 @@
                                 <span class="settings-section-index">01</span>
                             </div>
 
-                            <button class="settings-option-row" type="button" data-settings-action="private">
+                            <button class="settings-option-row" type="button" data-privacy-setting="private-account">
                                 <span class="settings-option-icon">◉</span>
                                 <span class="settings-option-copy">
                                     <strong>Private account</strong>
-                                    <small>Choose who can view and connect with you.</small>
+                                    <small>Only people you approve can view your account activity.</small>
                                 </span>
                                 <span class="settings-option-state">OFF</span>
                                 <span class="settings-option-arrow">›</span>
                             </button>
 
-                            <button class="settings-option-row" type="button" data-settings-action="activity-status">
-                                <span class="settings-option-icon">◌</span>
+                            <button class="settings-option-row" type="button" data-privacy-setting="friend-requests">
+                                <span class="settings-option-icon">♢</span>
                                 <span class="settings-option-copy">
-                                    <strong>Activity status</strong>
-                                    <small>Show when you're active on Helix.</small>
+                                    <strong>Friend requests</strong>
+                                    <small>Choose who can send you friend requests.</small>
                                 </span>
-                                <span class="settings-option-state">ON</span>
+                                <span class="settings-option-state">EVERYONE</span>
                                 <span class="settings-option-arrow">›</span>
                             </button>
+
+                            <button class="settings-option-row" type="button" data-privacy-setting="direct-messages">
+                                <span class="settings-option-icon">✦</span>
+                                <span class="settings-option-copy">
+                                    <strong>Direct messages</strong>
+                                    <small>Choose who can start a DM conversation with you.</small>
+                                </span>
+                                <span class="settings-option-state">EVERYONE</span>
+                                <span class="settings-option-arrow">›</span>
+                            </button>
+
+                            <button class="settings-option-row" type="button" data-privacy-setting="mentions-tags">
+                                <span class="settings-option-icon">@</span>
+                                <span class="settings-option-copy">
+                                    <strong>Mentions &amp; tags</strong>
+                                    <small>Choose who can mention or tag you in Helix.</small>
+                                </span>
+                                <span class="settings-option-state">EVERYONE</span>
+                                <span class="settings-option-arrow">›</span>
+                            </button>
+
+                            <button class="settings-option-row" type="button" data-privacy-setting="activity-visibility">
+                                <span class="settings-option-icon">◌</span>
+                                <span class="settings-option-copy">
+                                    <strong>Activity visibility</strong>
+                                    <small>Control whether your active status is visible to others.</small>
+                                </span>
+                                <span class="settings-option-state">VISIBLE</span>
+                                <span class="settings-option-arrow">›</span>
+                            </button>
+
+                            <div class="settings-subsection">
+                                <div class="settings-subsection-heading">
+                                    <span class="account-label">BLOCKED USERS</span>
+                                    <span class="settings-subsection-count" id="privacy-blocked-count">0</span>
+                                </div>
+                                <div class="settings-empty-card" id="privacy-blocked-users">
+                                    <span>⊘</span>
+                                    <div>
+                                        <strong>No blocked users</strong>
+                                        <small>Blocked accounts will be listed here. You can manage them from Blocked Accounts.</small>
+                                    </div>
+                                </div>
+                            </div>
                         </section>
 
-                        <section class="settings-extra-section" id="settings-notifications" data-settings-section>
+<section class="settings-extra-section" id="settings-notifications" data-settings-section>
                             <div class="settings-section-heading">
                                 <div>
                                     <span class="account-label">NOTIFICATIONS</span>
