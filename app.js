@@ -1302,6 +1302,71 @@ document.querySelectorAll("[data-settings-action]").forEach((button) => {
 
 
 // =========================================================
+// YOUR ACTIVITY
+// =========================================================
+
+(() => {
+    const keys = {
+        posts: "helixActivityPosts",
+        comments: "helixActivityComments",
+        likes: "helixActivityLikes",
+        savedPosts: "helixSavedPosts",
+        savedReels: "helixSavedReels",
+        viewed: "helixRecentlyViewed"
+    };
+
+    function read(key) {
+        try {
+            const value = JSON.parse(localStorage.getItem(key));
+            return Array.isArray(value) ? value : [];
+        } catch {
+            return [];
+        }
+    }
+
+    function renderActivity() {
+        const counts = {
+            posts: read(keys.posts).length,
+            comments: read(keys.comments).length,
+            likes: read(keys.likes).length,
+            savedPosts: read(keys.savedPosts).length,
+            savedReels: read(keys.savedReels).length,
+            viewed: read(keys.viewed).length
+        };
+
+        Object.entries(counts).forEach(([key, count]) => {
+            const element = document.getElementById(`activity-${key.replace("savedPosts", "saved-posts").replace("savedReels", "saved-reels")}-count`);
+            if (element) element.textContent = count;
+        });
+
+        const breakdown = document.getElementById("activity-breakdown");
+        if (!breakdown) return;
+
+        const total = Object.values(counts).reduce((sum, value) => sum + value, 0);
+
+        breakdown.innerHTML = total
+            ? `
+                <span>◎</span>
+                <div>
+                    <strong>${total} activity items recorded</strong>
+                    <small>Posts, comments, likes, saved content and recently viewed content are tracked locally in this Helix prototype.</small>
+                </div>
+            `
+            : `
+                <span>◎</span>
+                <div>
+                    <strong>No activity recorded yet</strong>
+                    <small>Your posts, comments, likes, saved content and recently viewed items will appear here as you use Helix.</small>
+                </div>
+            `;
+    }
+
+    renderActivity();
+    window.helixRenderActivity = renderActivity;
+})();
+
+
+// =========================================================
 // APPEARANCE CONTROLS
 // =========================================================
 
