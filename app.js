@@ -1145,7 +1145,7 @@ document.getElementById("add-phone-btn")?.addEventListener("click", () => openAc
 document.getElementById("change-password-btn")?.addEventListener("click", () => openAccountModal("password"));
 logoutAllSessionsButton?.addEventListener("click", () => openAccountModal("sessions"));
 
-accountModalForm?.addEventListener("submit", (event) => {
+accountModalForm?.addEventListener("submit", async (event) => {
     event.preventDefault();
     accountModalError.textContent = "";
 
