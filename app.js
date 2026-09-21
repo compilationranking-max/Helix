@@ -1590,6 +1590,7 @@ document.querySelectorAll("[data-settings-action]").forEach((button) => {
     });
 
     renderPrivacySettings();
+    window.helixRenderPrivacy = renderPrivacySettings;
 })();
 
 // =========================================================
