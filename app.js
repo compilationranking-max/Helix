@@ -1399,6 +1399,141 @@ function clearHelixLocalData() {
     window.location.href = "index.html";
 }
 
+function openHelpSupportModal(action) {
+    const modal = document.getElementById("help-support-modal");
+    const title = document.getElementById("help-support-modal-title");
+    const description = document.getElementById("help-support-modal-description");
+    const body = document.getElementById("help-support-modal-body");
+    if (!modal || !title || !description || !body) return;
+
+    const closeModal = () => {
+        modal.hidden = true;
+        body.innerHTML = "";
+    };
+
+    const renderForm = (heading, copy, fields, submitLabel = "Save request") => {
+        body.innerHTML = `
+            <div class="help-support-copy">
+                <strong>${heading}</strong>
+                <p>${copy}</p>
+            </div>
+            <form class="help-support-form" id="help-support-form">
+                ${fields}
+                <div class="helix-modal-actions">
+                    <button class="profile-secondary-button" type="button" data-help-modal-close>Cancel</button>
+                    <button class="profile-primary-button" type="submit">${submitLabel}</button>
+                </div>
+            </form>
+        `;
+
+        body.querySelectorAll("[data-help-modal-close]").forEach((button) => {
+            button.addEventListener("click", closeModal);
+        });
+
+        body.querySelector("form")?.addEventListener("submit", (event) => {
+            event.preventDefault();
+            const formData = new FormData(event.currentTarget);
+            const requests = readLocalJSON("helixSupportRequests", []);
+            requests.push({
+                type: action,
+                username: loggedInUser || null,
+                createdAt: new Date().toISOString(),
+                details: Object.fromEntries(formData.entries())
+            });
+            localStorage.setItem("helixSupportRequests", JSON.stringify(requests));
+            body.innerHTML = `
+                <div class="help-support-success">
+                    <strong>Request saved</strong>
+                    <p>This prototype stored your request locally in this browser. A server-side Helix support system can be connected later.</p>
+                    <button class="profile-primary-button" type="button" data-help-modal-close>Close</button>
+                </div>
+            `;
+            body.querySelector("[data-help-modal-close]")?.addEventListener("click", closeModal);
+        });
+    };
+
+    if (action === "help") {
+        title.textContent = "Help Center";
+        description.textContent = "Quick guidance for the main Helix features.";
+        body.innerHTML = `
+            <div class="help-support-card-list">
+                <article><strong>Account & settings</strong><p>Use Profile → Settings to manage your account, privacy, notifications, appearance, activity and local data.</p></article>
+                <article><strong>Friends & messages</strong><p>Use Friends to find connections and Direct Messages to view conversations.</p></article>
+                <article><strong>Helix AI & Reels</strong><p>Open Helix AI for conversations with the assistant and Reels to browse the video area.</p></article>
+            </div>
+        `;
+    } else if (action === "faq") {
+        title.textContent = "FAQ";
+        description.textContent = "Common questions about the current Helix prototype.";
+        body.innerHTML = `
+            <div class="help-support-faq">
+                <details open><summary>Where are my settings saved?</summary><p>Most current settings in this prototype are stored in your browser's local storage.</p></details>
+                <details><summary>Can I export my Helix data?</summary><p>Yes. Data & Downloads provides account-data and content-export JSON downloads.</p></details>
+                <details><summary>What happens if I clear local data?</summary><p>Helix clears browser-stored local and session data and signs you out.</p></details>
+                <details><summary>Can I permanently delete my account?</summary><p>Not yet. Account deletion is marked as coming soon until secure server-side account management is available.</p></details>
+            </div>
+        `;
+    } else if (action === "bug-report") {
+        title.textContent = "Bug report";
+        description.textContent = "Describe a technical problem so it can be reviewed later.";
+        renderForm(
+            "Report a bug",
+            "Include enough detail to reproduce the issue.",
+            `
+                <label>What happened<input name="title" required maxlength="120" placeholder="Short description"></label>
+                <label>Details<textarea name="details" required maxlength="2000" rows="5" placeholder="Steps, expected result and what you saw..."></textarea></label>
+            `,
+            "Save bug report"
+        );
+    } else if (action === "report") {
+        title.textContent = "User / content report";
+        description.textContent = "Record a report about an account or piece of content.";
+        renderForm(
+            "Submit a report",
+            "Choose what you are reporting and provide the relevant details.",
+            `
+                <label>Report type<select name="reportType" required><option value="user">User</option><option value="post">Post</option><option value="reel">Reel</option><option value="other">Other content</option></select></label>
+                <label>Username or content reference<input name="reference" maxlength="160" placeholder="@username or content reference"></label>
+                <label>Reason<textarea name="reason" required maxlength="1200" rows="4" placeholder="Explain the issue..."></textarea></label>
+            `,
+            "Save report"
+        );
+    } else if (action === "contact-support") {
+        title.textContent = "Contact support";
+        description.textContent = "Send a support request from the Helix settings area.";
+        renderForm(
+            "Contact Helix support",
+            "Add a subject and message. The current prototype stores the request locally.",
+            `
+                <label>Subject<input name="subject" required maxlength="120" placeholder="How can we help?"></label>
+                <label>Message<textarea name="message" required maxlength="2000" rows="6" placeholder="Describe your request..."></textarea></label>
+            `,
+            "Save support request"
+        );
+    } else {
+        title.textContent = "About Helix";
+        description.textContent = "Project information for the current Helix build.";
+        body.innerHTML = `
+            <div class="help-support-about">
+                <div><span>Platform</span><strong>HELIX</strong></div>
+                <div><span>Build</span><strong>Futuristic social + communication prototype</strong></div>
+                <div><span>Support</span><strong>Help &amp; Support workspace</strong></div>
+                <p>Helix combines social communication, profiles, friends, Direct Messages, Reels and Helix AI in one interface.</p>
+            </div>
+        `;
+    }
+
+    modal.hidden = false;
+    modal.querySelector("[data-help-modal-close]")?.addEventListener("click", closeModal);
+}
+
+document.querySelectorAll("[data-help-modal-close]").forEach((button) => {
+    button.addEventListener("click", () => {
+        const modal = document.getElementById("help-support-modal");
+        if (modal) modal.hidden = true;
+    });
+});
+
 document.querySelectorAll("[data-settings-action]").forEach((button) => {
     button.addEventListener("click", () => {
         const action = button.dataset.settingsAction;
@@ -1440,11 +1575,13 @@ document.querySelectorAll("[data-settings-action]").forEach((button) => {
         const messages = {
             "activity-log": "Activity log is ready for the database-backed activity system.",
             "saved": "Saved content will appear here as your saved posts are added.",
-            "deactivate": "Account deactivation will be connected to the secure account system.",
-            "help": "Help Center is being prepared for the public Helix release.",
-            "report": "Problem reporting will be connected to Helix support.",
-            "about": "Helix — your communication and community workspace."
+            "deactivate": "Account deactivation will be connected to the secure account system."
         };
+
+        if (["help", "faq", "bug-report", "report", "contact-support", "about"].includes(action)) {
+            openHelpSupportModal(action);
+            return;
+        }
 
         if (messages[action]) {
             const status = document.getElementById("profile-action-message");
