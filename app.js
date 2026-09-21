@@ -391,13 +391,15 @@ function renderAIChatHistory(query = "") {
     if (!history) return;
 
     const normalizedQuery = query.trim().toLowerCase();
-    const sessions = aiChatSessions.filter((chat) => (
-        !chat.archived &&
-        (
-            !normalizedQuery ||
-            chat.title.toLowerCase().includes(normalizedQuery)
-        )
-    ));
+    const sessions = aiChatSessions.filter((chat) => {
+        const matchesQuery = !normalizedQuery || chat.title.toLowerCase().includes(normalizedQuery);
+
+        // Archived chats stay hidden from normal history, but searching
+        // for an archived chat by name makes it discoverable and openable.
+        if (chat.archived) return Boolean(normalizedQuery && matchesQuery);
+
+        return matchesQuery;
+    });
 
     if (!sessions.length) {
         history.innerHTML = '<div class="ai-chat-history-empty">No previous chats yet.</div>';
@@ -410,7 +412,7 @@ function renderAIChatHistory(query = "") {
                 <span class="ai-chat-history-icon" aria-hidden="true">◌</span>
                 <span class="ai-chat-history-copy">
                     <strong>${escapeHTML(chat.title)}</strong>
-                    <small>${new Date(chat.updatedAt || Date.now()).toLocaleDateString([], { month: "short", day: "numeric" })}</small>
+                    <small>${chat.archived ? "Archived · " : ""}${new Date(chat.updatedAt || Date.now()).toLocaleDateString([], { month: "short", day: "numeric" })}</small>
                 </span>
             </button>
             <button class="ai-chat-history-menu-button" type="button" data-ai-chat-menu="${escapeHTML(chat.id)}" aria-label="More options for ${escapeHTML(chat.title)}" aria-expanded="false" title="More options">
