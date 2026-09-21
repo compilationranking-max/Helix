@@ -890,7 +890,6 @@ document.getElementById("ai-chat-action-modal")?.addEventListener("click", (even
 });
 
 document.getElementById("nav-ai")?.addEventListener("click", () => {
-    playAIWelcomeDragon();
     renderAIChatHistory();
 });
 
