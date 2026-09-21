@@ -1300,6 +1300,103 @@ document.querySelectorAll("[data-settings-action]").forEach((button) => {
 });
 
 
+
+// =========================================================
+// PRIVACY & SAFETY CONTROLS
+// =========================================================
+
+(() => {
+    const privacyDefaults = {
+        "private-account": false,
+        "friend-requests": "EVERYONE",
+        "direct-messages": "EVERYONE",
+        "mentions-tags": "EVERYONE",
+        "activity-visibility": "VISIBLE"
+    };
+
+    const privacyStorageKey = "helixPrivacySettings";
+    let privacySettings = {
+        ...privacyDefaults,
+        ...(JSON.parse(localStorage.getItem(privacyStorageKey) || "{}"))
+    };
+
+    const cycleValues = {
+        "friend-requests": ["EVERYONE", "FRIENDS", "NOBODY"],
+        "direct-messages": ["EVERYONE", "FRIENDS", "NOBODY"],
+        "mentions-tags": ["EVERYONE", "FRIENDS", "NOBODY"]
+    };
+
+    function savePrivacySettings() {
+        localStorage.setItem(privacyStorageKey, JSON.stringify(privacySettings));
+    }
+
+    function renderPrivacySettings() {
+        document.querySelectorAll("[data-privacy-setting]").forEach((button) => {
+            const key = button.dataset.privacySetting;
+            const state = button.querySelector(".settings-option-state");
+            if (!state) return;
+
+            const value = privacySettings[key];
+            state.textContent = key === "private-account"
+                ? (value ? "ON" : "OFF")
+                : value;
+        });
+
+        const blocked = JSON.parse(localStorage.getItem("helixBlockedUsers") || "[]");
+        const count = document.getElementById("privacy-blocked-count");
+        const list = document.getElementById("privacy-blocked-users");
+
+        if (count) count.textContent = String(blocked.length);
+
+        if (list) {
+            if (!blocked.length) {
+                list.innerHTML = `
+                    <span>⊘</span>
+                    <div>
+                        <strong>No blocked users</strong>
+                        <small>Blocked accounts will be listed here. You can manage them from Blocked Accounts.</small>
+                    </div>
+                `;
+            } else {
+                list.innerHTML = `
+                    <span>⊘</span>
+                    <div>
+                        <strong>${blocked.length} blocked user${blocked.length === 1 ? "" : "s"}</strong>
+                        <small>Manage blocked accounts from the Blocked Accounts section.</small>
+                    </div>
+                `;
+            }
+        }
+    }
+
+    document.querySelectorAll("[data-privacy-setting]").forEach((button) => {
+        button.addEventListener("click", () => {
+            const key = button.dataset.privacySetting;
+
+            if (key === "private-account") {
+                privacySettings[key] = !privacySettings[key];
+            } else if (key === "activity-visibility") {
+                privacySettings[key] =
+                    privacySettings[key] === "VISIBLE" ? "HIDDEN" : "VISIBLE";
+            } else if (cycleValues[key]) {
+                const values = cycleValues[key];
+                const currentIndex = values.indexOf(privacySettings[key]);
+                privacySettings[key] = values[(currentIndex + 1) % values.length];
+            }
+
+            savePrivacySettings();
+            renderPrivacySettings();
+
+            const status = document.getElementById("profile-action-message");
+            if (status) {
+                status.textContent = "Privacy & Safety settings saved.";
+            }
+        });
+    });
+
+    renderPrivacySettings();
+})();
+
 // =========================================================
 // INITIALIZATION
 // =========================================================
