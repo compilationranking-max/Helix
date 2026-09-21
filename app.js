@@ -361,8 +361,11 @@ function saveCurrentAIChatSession() {
     const existingIndex = aiChatSessions.findIndex((chat) => chat.id === currentAIChatId);
     const session = {
         id: currentAIChatId,
-        title: getAIChatTitle(aiConversation),
+        title: existingIndex >= 0 && aiChatSessions[existingIndex].title
+            ? aiChatSessions[existingIndex].title
+            : getAIChatTitle(aiConversation),
         messages: aiConversation,
+        archived: existingIndex >= 0 ? Boolean(aiChatSessions[existingIndex].archived) : false,
         updatedAt: now,
         createdAt: existingIndex >= 0 ? aiChatSessions[existingIndex].createdAt : now
     };
@@ -389,8 +392,11 @@ function renderAIChatHistory(query = "") {
 
     const normalizedQuery = query.trim().toLowerCase();
     const sessions = aiChatSessions.filter((chat) => (
-        !normalizedQuery ||
-        chat.title.toLowerCase().includes(normalizedQuery)
+        !chat.archived &&
+        (
+            !normalizedQuery ||
+            chat.title.toLowerCase().includes(normalizedQuery)
+        )
     ));
 
     if (!sessions.length) {
@@ -399,14 +405,219 @@ function renderAIChatHistory(query = "") {
     }
 
     history.innerHTML = sessions.map((chat) => `
-        <button class="ai-chat-history-item${chat.id === currentAIChatId ? " active" : ""}" type="button" data-ai-chat-id="${escapeHTML(chat.id)}">
-            <span class="ai-chat-history-icon" aria-hidden="true">◌</span>
-            <span class="ai-chat-history-copy">
-                <strong>${escapeHTML(chat.title)}</strong>
-                <small>${new Date(chat.updatedAt || Date.now()).toLocaleDateString([], { month: "short", day: "numeric" })}</small>
-            </span>
-        </button>
+        <div class="ai-chat-history-item${chat.id === currentAIChatId ? " active" : ""}" data-ai-chat-id="${escapeHTML(chat.id)}">
+            <button class="ai-chat-history-open" type="button" data-ai-chat-open="${escapeHTML(chat.id)}">
+                <span class="ai-chat-history-icon" aria-hidden="true">◌</span>
+                <span class="ai-chat-history-copy">
+                    <strong>${escapeHTML(chat.title)}</strong>
+                    <small>${new Date(chat.updatedAt || Date.now()).toLocaleDateString([], { month: "short", day: "numeric" })}</small>
+                </span>
+            </button>
+            <button class="ai-chat-history-menu-button" type="button" data-ai-chat-menu="${escapeHTML(chat.id)}" aria-label="More options for ${escapeHTML(chat.title)}" aria-expanded="false" title="More options">
+                <span aria-hidden="true">⋮</span>
+            </button>
+            <div class="ai-chat-history-menu" data-ai-chat-menu-panel="${escapeHTML(chat.id)}" hidden>
+                <button type="button" data-ai-chat-action="rename" data-ai-chat-id="${escapeHTML(chat.id)}"><span>✎</span>Rename</button>
+                <button type="button" data-ai-chat-action="share" data-ai-chat-id="${escapeHTML(chat.id)}"><span>↗</span>Share</button>
+                <button type="button" data-ai-chat-action="archive" data-ai-chat-id="${escapeHTML(chat.id)}"><span>▣</span>Archive</button>
+                <button type="button" class="danger" data-ai-chat-action="delete" data-ai-chat-id="${escapeHTML(chat.id)}"><span>⌫</span>Delete</button>
+            </div>
+        </div>
     `).join("");
+}
+
+function showAIChatToast(message) {
+    const existing = document.getElementById("ai-chat-action-toast");
+    existing?.remove();
+
+    const toast = document.createElement("div");
+    toast.className = "ai-chat-action-toast";
+    toast.id = "ai-chat-action-toast";
+    toast.textContent = message;
+    document.body.appendChild(toast);
+
+    requestAnimationFrame(() => toast.classList.add("is-visible"));
+    window.setTimeout(() => {
+        toast.classList.remove("is-visible");
+        window.setTimeout(() => toast.remove(), 220);
+    }, 2600);
+}
+
+function closeAIChatActionModal() {
+    const modal = document.getElementById("ai-chat-action-modal");
+    if (modal) modal.hidden = true;
+}
+
+function openAIChatActionModal(mode, chatId) {
+    const modal = document.getElementById("ai-chat-action-modal");
+    const title = document.getElementById("ai-chat-action-modal-title");
+    const description = document.getElementById("ai-chat-action-modal-description");
+    const body = document.getElementById("ai-chat-action-modal-body");
+    const chat = aiChatSessions.find((session) => session.id === chatId);
+
+    if (!modal || !title || !description || !body || !chat) return;
+
+    if (mode === "rename") {
+        title.textContent = "Rename chat";
+        description.textContent = "Give this Helix AI conversation a name you can recognize later.";
+        body.innerHTML = `
+            <form class="ai-chat-action-form" id="ai-chat-rename-form">
+                <label for="ai-chat-rename-input">Chat name</label>
+                <input id="ai-chat-rename-input" type="text" maxlength="60" value="${escapeHTML(chat.title)}" autocomplete="off">
+                <div class="ai-chat-action-form-actions">
+                    <button type="button" class="profile-secondary-button" data-ai-chat-modal-close>Cancel</button>
+                    <button type="submit" class="profile-primary-button">Save name</button>
+                </div>
+            </form>
+        `;
+        document.getElementById("ai-chat-rename-form")?.addEventListener("submit", (event) => {
+            event.preventDefault();
+            const input = document.getElementById("ai-chat-rename-input");
+            const nextTitle = input?.value.trim();
+            if (!nextTitle) {
+                input?.focus();
+                return;
+            }
+
+            chat.title = nextTitle.slice(0, 60);
+            chat.updatedAt = new Date().toISOString();
+            saveAIChatSessions();
+            renderAIChatHistory(document.getElementById("ai-chat-search-input")?.value || "");
+            closeAIChatActionModal();
+            showAIChatToast("Chat renamed.");
+        });
+    }
+
+    if (mode === "share") {
+        const transcript = chat.messages
+            .map((message) => `${message.role === "user" ? "You" : "Helix AI"}: ${message.content}`)
+            .join("\n\n");
+
+        title.textContent = "Share chat";
+        description.textContent = "Share this conversation from Helix AI.";
+        body.innerHTML = `
+            <div class="ai-chat-share-card">
+                <span class="ai-chat-share-mark">↗</span>
+                <div>
+                    <strong>${escapeHTML(chat.title)}</strong>
+                    <small>${chat.messages.length} message${chat.messages.length === 1 ? "" : "s"} ready to share.</small>
+                </div>
+            </div>
+            <div class="ai-chat-action-form-actions">
+                <button type="button" class="profile-secondary-button" data-ai-chat-modal-close>Cancel</button>
+                <button type="button" class="profile-primary-button" id="ai-chat-share-confirm">Share chat</button>
+            </div>
+        `;
+
+        document.getElementById("ai-chat-share-confirm")?.addEventListener("click", async () => {
+            const shareText = `Helix AI — ${chat.title}\n\n${transcript}`;
+
+            try {
+                if (navigator.share) {
+                    await navigator.share({
+                        title: `Helix AI — ${chat.title}`,
+                        text: shareText
+                    });
+                    closeAIChatActionModal();
+                    showAIChatToast("Chat shared.");
+                    return;
+                }
+
+                await navigator.clipboard.writeText(shareText);
+                closeAIChatActionModal();
+                showAIChatToast("Chat copied to your clipboard.");
+            } catch (error) {
+                if (error?.name === "AbortError") return;
+
+                try {
+                    const helper = document.createElement("textarea");
+                    helper.value = shareText;
+                    helper.style.position = "fixed";
+                    helper.style.opacity = "0";
+                    document.body.appendChild(helper);
+                    helper.select();
+                    document.execCommand("copy");
+                    helper.remove();
+                    closeAIChatActionModal();
+                    showAIChatToast("Chat copied to your clipboard.");
+                } catch {
+                    showAIChatToast("Sharing is unavailable in this browser.");
+                }
+            }
+        });
+    }
+
+    if (mode === "delete") {
+        title.textContent = "Delete chat";
+        description.textContent = "This action permanently removes this saved Helix AI chat from this browser.";
+        body.innerHTML = `
+            <div class="ai-chat-delete-warning">
+                <span>!</span>
+                <div>
+                    <strong>Are you sure you want to delete “${escapeHTML(chat.title)}”?</strong>
+                    <small>This cannot be undone.</small>
+                </div>
+            </div>
+            <div class="ai-chat-action-form-actions">
+                <button type="button" class="profile-secondary-button" data-ai-chat-modal-close>No</button>
+                <button type="button" class="profile-danger-button" id="ai-chat-delete-confirm">Yes, delete</button>
+            </div>
+        `;
+
+        document.getElementById("ai-chat-delete-confirm")?.addEventListener("click", () => {
+            aiChatSessions = aiChatSessions.filter((session) => session.id !== chat.id);
+            saveAIChatSessions();
+
+            if (currentAIChatId === chat.id) {
+                currentAIChatId = createAIChatId();
+                sessionStorage.setItem(`helixCurrentAIChat:${loggedInUser || "User"}`, currentAIChatId);
+                aiConversation = [];
+                localStorage.removeItem(aiStorageKey);
+                aiMessages?.replaceChildren();
+                document.getElementById("ai-welcome")?.removeAttribute("hidden");
+                updateAIChatState();
+            }
+
+            closeAIChatActionModal();
+            renderAIChatHistory(document.getElementById("ai-chat-search-input")?.value || "");
+            showAIChatToast("Chat deleted.");
+        });
+    }
+
+    modal.hidden = false;
+
+    if (mode === "rename") {
+        window.setTimeout(() => document.getElementById("ai-chat-rename-input")?.focus(), 0);
+    }
+}
+
+function handleAIChatAction(action, chatId) {
+    const chat = aiChatSessions.find((session) => session.id === chatId);
+    if (!chat) return;
+
+    if (action === "rename" || action === "share" || action === "delete") {
+        openAIChatActionModal(action, chatId);
+        return;
+    }
+
+    if (action === "archive") {
+        chat.archived = true;
+        chat.updatedAt = new Date().toISOString();
+        saveAIChatSessions();
+
+        if (currentAIChatId === chatId) {
+            currentAIChatId = createAIChatId();
+            sessionStorage.setItem(`helixCurrentAIChat:${loggedInUser || "User"}`, currentAIChatId);
+            aiConversation = [];
+            localStorage.removeItem(aiStorageKey);
+            aiMessages?.replaceChildren();
+            document.getElementById("ai-welcome")?.removeAttribute("hidden");
+            updateAIChatState();
+        }
+
+        renderAIChatHistory(document.getElementById("ai-chat-search-input")?.value || "");
+        showAIChatToast("Chat archived.");
+    }
 }
 
 function loadAIChatSession(chatId) {
@@ -630,9 +841,50 @@ document.getElementById("ai-chat-search-input")?.addEventListener("input", (even
 });
 
 document.getElementById("ai-chat-history")?.addEventListener("click", (event) => {
-    const button = event.target.closest("[data-ai-chat-id]");
-    if (!button) return;
-    loadAIChatSession(button.dataset.aiChatId);
+    const menuButton = event.target.closest("[data-ai-chat-menu]");
+    if (menuButton) {
+        event.stopPropagation();
+
+        const chatId = menuButton.dataset.aiChatMenu;
+        const panel = document.querySelector(`[data-ai-chat-menu-panel="${CSS.escape(chatId)}"]`);
+        if (!panel) return;
+
+        document.querySelectorAll(".ai-chat-history-menu").forEach((menu) => {
+            if (menu !== panel) menu.hidden = true;
+        });
+        document.querySelectorAll(".ai-chat-history-menu-button").forEach((button) => {
+            if (button !== menuButton) button.setAttribute("aria-expanded", "false");
+        });
+
+        panel.hidden = !panel.hidden;
+        menuButton.setAttribute("aria-expanded", String(!panel.hidden));
+        return;
+    }
+
+    const actionButton = event.target.closest("[data-ai-chat-action]");
+    if (actionButton) {
+        event.stopPropagation();
+        document.querySelectorAll(".ai-chat-history-menu").forEach((menu) => menu.hidden = true);
+        document.querySelectorAll(".ai-chat-history-menu-button").forEach((button) => button.setAttribute("aria-expanded", "false"));
+        handleAIChatAction(actionButton.dataset.aiChatAction, actionButton.dataset.aiChatId);
+        return;
+    }
+
+    const openButton = event.target.closest("[data-ai-chat-open]");
+    if (!openButton) return;
+    loadAIChatSession(openButton.dataset.aiChatOpen);
+});
+
+document.addEventListener("click", (event) => {
+    if (event.target.closest(".ai-chat-history-item")) return;
+    document.querySelectorAll(".ai-chat-history-menu").forEach((menu) => menu.hidden = true);
+    document.querySelectorAll(".ai-chat-history-menu-button").forEach((button) => button.setAttribute("aria-expanded", "false"));
+});
+
+document.getElementById("ai-chat-action-modal")?.addEventListener("click", (event) => {
+    if (event.target.closest("[data-ai-chat-modal-close]")) {
+        closeAIChatActionModal();
+    }
 });
 
 document.getElementById("nav-ai")?.addEventListener("click", () => {
