@@ -844,23 +844,56 @@
                                 <span class="settings-section-index">06</span>
                             </div>
 
-                            <button class="settings-option-row" type="button" data-settings-action="download-data">
-                                <span class="settings-option-icon">⇩</span>
-                                <span class="settings-option-copy">
-                                    <strong>Download your information</strong>
-                                    <small>Export account data from Helix.</small>
-                                </span>
-                                <span class="settings-option-arrow">›</span>
-                            </button>
+                            <div class="settings-data-grid">
+                                <button class="settings-option-row" type="button" data-settings-action="download-data">
+                                    <span class="settings-option-icon">⇩</span>
+                                    <span class="settings-option-copy">
+                                        <strong>Download account data</strong>
+                                        <small>Download a JSON copy of your Helix account information and saved local data.</small>
+                                    </span>
+                                    <span class="settings-option-arrow">›</span>
+                                </button>
 
-                            <button class="settings-option-row danger-option" type="button" data-settings-action="deactivate">
-                                <span class="settings-option-icon">!</span>
-                                <span class="settings-option-copy">
-                                    <strong>Deactivate account</strong>
-                                    <small>Temporarily disable your Helix account.</small>
-                                </span>
-                                <span class="settings-option-arrow">›</span>
-                            </button>
+                                <button class="settings-option-row" type="button" data-settings-action="export-content">
+                                    <span class="settings-option-icon">⇱</span>
+                                    <span class="settings-option-copy">
+                                        <strong>Export profile, posts &amp; media</strong>
+                                        <small>Export your profile details, locally stored posts, activity and media references.</small>
+                                    </span>
+                                    <span class="settings-option-arrow">›</span>
+                                </button>
+
+                                <button class="settings-option-row danger-option" type="button" data-settings-action="clear-local-data">
+                                    <span class="settings-option-icon">⌫</span>
+                                    <span class="settings-option-copy">
+                                        <strong>Clear local data</strong>
+                                        <small>Remove Helix data stored in this browser. This will also sign you out.</small>
+                                    </span>
+                                    <span class="settings-option-arrow">›</span>
+                                </button>
+
+                                <button class="settings-option-row danger-option settings-disabled-row" type="button" data-settings-action="delete-account" disabled aria-disabled="true">
+                                    <span class="settings-option-icon">!</span>
+                                    <span class="settings-option-copy">
+                                        <strong>Delete account</strong>
+                                        <small>Permanent account deletion will be available when Helix has a secure server-side account system.</small>
+                                    </span>
+                                    <span class="settings-option-state">COMING SOON</span>
+                                </button>
+                            </div>
+
+                            <div class="settings-subsection">
+                                <div class="settings-subsection-heading">
+                                    <span class="account-label">EXPORT STATUS</span>
+                                </div>
+                                <div class="settings-empty-card settings-data-status-card" id="data-download-status" role="status" aria-live="polite">
+                                    <span>⇩</span>
+                                    <div>
+                                        <strong>Ready when you are</strong>
+                                        <small>Your exports are generated directly in your browser; nothing is uploaded by these controls.</small>
+                                    </div>
+                                </div>
+                            </div>
                         </section>
 
                         <section class="settings-extra-section" id="settings-help" data-settings-section>
