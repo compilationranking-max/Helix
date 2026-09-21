@@ -3911,7 +3911,14 @@ async function syncHelixNetworkUser() {
     try {
         const users = JSON.parse(localStorage.getItem("helixUsers")) || {};
         const account = users[loggedInUser] || {};
-        const response = await fetch("/api/network/sync", {
+        const syncEndpoint = (
+            ["localhost", "127.0.0.1"].includes(window.location.hostname) &&
+            window.location.port !== "3000"
+        )
+            ? "http://localhost:3000/api/network/sync"
+            : "/api/network/sync";
+
+        const response = await fetch(syncEndpoint, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
