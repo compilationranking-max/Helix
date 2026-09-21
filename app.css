@@ -7594,3 +7594,43 @@ body.helix-reduced-motion *::after {
     scroll-behavior: auto !important;
     transition-duration: 0.001ms !important;
 }
+
+
+/* Your Activity */
+.activity-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin: 18px 0 6px;
+}
+
+.activity-stat-card {
+    min-height: 76px;
+    padding: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.055);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.018);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+}
+
+.activity-stat-card strong {
+    color: var(--text-primary);
+    font-size: 20px;
+    line-height: 1;
+}
+
+.activity-stat-card span {
+    color: var(--text-muted);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+}
+
+@media (max-width: 700px) {
+    .activity-stat-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
