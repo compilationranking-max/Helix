@@ -64,7 +64,12 @@ function clearMessage() {
 // ================================
 
 function getUsers() {
-    return JSON.parse(localStorage.getItem("helixUsers")) || {};
+    try {
+        const users = JSON.parse(localStorage.getItem("helixUsers") || "{}");
+        return users && typeof users === "object" && !Array.isArray(users) ? users : {};
+    } catch {
+        return {};
+    }
 }
 
 
@@ -110,9 +115,9 @@ signupBtn.addEventListener("click", () => {
     }
 
 
-    // Username length
-    if (username.length < 3) {
-        showMessage("Username must be at least 3 characters.");
+    // Username validation
+    if (!/^[a-zA-Z0-9_.-]{3,32}$/.test(username)) {
+        showMessage("Username must be 3–32 characters using letters, numbers, dots, underscores or hyphens.");
         return;
     }
 
