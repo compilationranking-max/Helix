@@ -27,9 +27,9 @@ if (!process.env.OPENAI_API_KEY) {
     console.warn("WARNING: OPENAI_API_KEY is not configured. Helix AI requests will fail until it is set in .env.");
 }
 
-const client = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY
-});
+const client = process.env.OPENAI_API_KEY
+    ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+    : null;
 
 app.use(cors());
 app.use(express.json({ limit: "1mb" }));
@@ -68,7 +68,36 @@ function normalizeUsername(value) {
 }
 
 function validUsername(value) {
-    return value.length >= 3 && value.length <= 32;
+    return /^[A-Za-z0-9_.-]{3,32}$/.test(value);
+}
+
+function migrateUsername(data, previousUsername, nextUsername) {
+    if (!previousUsername || previousUsername === nextUsername) return;
+
+    const oldUser = data.users[previousUsername];
+    const newUser = data.users[nextUsername];
+
+    if (!oldUser) return;
+
+    if (newUser && previousUsername !== nextUsername) {
+        throw new Error("That username is already registered on the Helix network.");
+    }
+
+    data.users[nextUsername] = {
+        ...oldUser,
+        username: nextUsername
+    };
+    delete data.users[previousUsername];
+
+    data.requests.forEach((request) => {
+        if (request.from === previousUsername) request.from = nextUsername;
+        if (request.to === previousUsername) request.to = nextUsername;
+    });
+
+    data.friends.forEach((friend) => {
+        if (friend.a === previousUsername) friend.a = nextUsername;
+        if (friend.b === previousUsername) friend.b = nextUsername;
+    });
 }
 
 function samePair(a, b, x, y) {
@@ -127,6 +156,7 @@ function createFallbackAccountId(data) {
 
 app.post("/api/network/sync", (req, res) => {
     const username = normalizeUsername(req.body?.username);
+    const previousUsername = normalizeUsername(req.body?.previousUsername);
     const requestedAccountId = normalizeAccountId(req.body?.accountId);
 
     if (!validUsername(username)) {
@@ -140,6 +170,19 @@ app.post("/api/network/sync", (req, res) => {
     }
 
     const data = loadNetworkData();
+
+    if (previousUsername && previousUsername !== username) {
+        if (!validUsername(previousUsername)) {
+            return res.status(400).json({ error: "Invalid previous username." });
+        }
+
+        try {
+            migrateUsername(data, previousUsername, username);
+        } catch (error) {
+            return res.status(409).json({ error: error.message });
+        }
+    }
+
     const existingUser = data.users[username];
 
     if (!existingUser) {
@@ -399,7 +442,7 @@ app.post("/api/chat", async (req, res) => {
             });
         }
 
-        if (!process.env.OPENAI_API_KEY) {
+        if (!process.env.OPENAI_API_KEY || !client) {
             return res.status(503).json({
                 error: "Helix AI is not configured on this server."
             });
@@ -430,7 +473,7 @@ app.get("/api", (req, res) => {
     res.json({ name: "Helix", status: "online" });
 });
 
-app.get("*", (req, res) => {
+app.use((req, res) => {
     if (req.path.startsWith("/api/")) {
         return res.status(404).json({ error: "API route not found." });
     }
