@@ -2,12 +2,11 @@ require("dotenv").config();
 
 const express = require("express");
 const cors = require("cors");
-const OpenAI = require("openai");
 const path = require("path");
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
-const MODEL = process.env.HELIX_AI_MODEL || "gpt-5.6-sol";
+const MODEL = process.env.GEMINI_MODEL || "gemini-3.8-flash";
 const MAX_HISTORY_MESSAGES = 20;
 
 const HELIX_AI_INSTRUCTIONS = `
@@ -23,13 +22,11 @@ If the user says you are Helix AI, acknowledge it naturally rather than correcti
 In normal conversation, refer to yourself as Helix AI or Helix.
 `;
 
-if (!process.env.OPENAI_API_KEY) {
-    console.warn("WARNING: OPENAI_API_KEY is not configured. Helix AI requests will fail until it is set in .env.");
+if (!process.env.GEMINI_API_KEY) {
+    console.warn("WARNING: GEMINI_API_KEY is not configured. Helix AI requests will fail until it is set.");
 }
 
-const client = process.env.OPENAI_API_KEY
-    ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
-    : null;
+const GEMINI_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models";
 
 app.use(cors());
 app.use(express.json({ limit: "1mb" }));
@@ -391,22 +388,61 @@ function buildConversationInput(history, message) {
     }
 
     return recentHistory.slice(-MAX_HISTORY_MESSAGES).map(({ role, content }) => ({
-        role,
-        content
+        role: role === "assistant" ? "model" : "user",
+        parts: [{ text: content }]
     }));
+}
+
+async function generateGeminiResponse(contents) {
+    const url = `${GEMINI_ENDPOINT}/${encodeURIComponent(MODEL)}:generateContent`;
+
+    const response = await fetch(url, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "x-goog-api-key": process.env.GEMINI_API_KEY
+        },
+        body: JSON.stringify({
+            systemInstruction: {
+                parts: [{ text: HELIX_AI_INSTRUCTIONS }]
+            },
+            contents
+        })
+    });
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+        const error = new Error(
+            data?.error?.message ||
+            `Gemini API request failed with HTTP ${response.status}`
+        );
+        error.status = response.status;
+        throw error;
+    }
+
+    const reply = data?.candidates?.[0]?.content?.parts
+        ?.map((part) => part?.text || "")
+        .join("")
+        .trim();
+
+    return reply || "Helix AI returned an empty response.";
 }
 
 app.get("/api/health", (req, res) => {
     res.json({
         ok: true,
-        aiConfigured: Boolean(process.env.OPENAI_API_KEY),
+        aiConfigured: Boolean(process.env.GEMINI_API_KEY),
+        provider: "gemini",
         model: MODEL
     });
 });
 
 app.post("/api/chat", async (req, res) => {
     try {
-        const message = typeof req.body.message === "string" ? req.body.message.trim() : "";
+        const message = typeof req.body.message === "string"
+            ? req.body.message.trim()
+            : "";
         const input = buildConversationInput(req.body.history, message);
 
         if (!input.length) {
@@ -415,32 +451,35 @@ app.post("/api/chat", async (req, res) => {
             });
         }
 
-        if (!process.env.OPENAI_API_KEY || !client) {
+        if (!process.env.GEMINI_API_KEY) {
             return res.status(503).json({
-                error: "Helix AI is not configured on this server."
+                error: "Helix AI is not configured. Add GEMINI_API_KEY to the server environment."
             });
         }
 
-        const response = await client.responses.create({
-            model: MODEL,
-            instructions: HELIX_AI_INSTRUCTIONS,
-            input
-        });
-
-        res.json({
-            reply: response.output_text || "Helix AI returned an empty response."
-        });
+        const reply = await generateGeminiResponse(input);
+        res.json({ reply });
     } catch (error) {
         console.error("Helix AI request failed:", error);
 
-        const status = error.status === 429 ? 429 : 500;
-        res.status(status).json({
-            error: status === 429
-                ? "Helix AI is rate-limited right now. Please try again shortly."
-                : "Helix AI failed to respond. Please try again shortly."
+        if (error.status === 429) {
+            return res.status(429).json({
+                error: "Gemini is temporarily rate-limited. Please try again shortly."
+            });
+        }
+
+        if (error.status === 401 || error.status === 403) {
+            return res.status(error.status).json({
+                error: "The Gemini API key was rejected. Check GEMINI_API_KEY in Render."
+            });
+        }
+
+        res.status(500).json({
+            error: "Helix AI failed to respond. Please try again shortly."
         });
     }
 });
+
 
 app.get("/api", (req, res) => {
     res.json({ name: "Helix", status: "online" });
