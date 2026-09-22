@@ -188,7 +188,20 @@ app.use((req, res, next) => {
     next();
 });
 
-app.use(require("cookie-parser")());
+function parseCookies(req) {
+    const header = req.headers.cookie || "";
+    return Object.fromEntries(header.split(";").filter(Boolean).map((part) => {
+        const index = part.indexOf("=");
+        const key = index >= 0 ? part.slice(0, index).trim() : part.trim();
+        const value = index >= 0 ? part.slice(index + 1).trim() : "";
+        return [key, decodeURIComponent(value)];
+    }));
+}
+
+app.use((req, res, next) => {
+    req.cookies = parseCookies(req);
+    next();
+});
 app.use(express.json({ limit: "100kb" }));
 app.use((req, res, next) => {
     if (["POST", "PUT", "PATCH", "DELETE"].includes(req.method)) return requireSameOrigin(req, res, next);
