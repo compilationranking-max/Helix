@@ -1,165 +1,14 @@
 require("dotenv").config();
 
 const express = require("express");
+const cors = require("cors");
 const OpenAI = require("openai");
 const path = require("path");
-const crypto = require("crypto");
-const { promisify } = require("util");
-const scrypt = promisify(crypto.scrypt);
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 const MODEL = process.env.HELIX_AI_MODEL || "gpt-5.6-sol";
 const MAX_HISTORY_MESSAGES = 20;
-const MAX_CHAT_CONTENT_LENGTH = 4000;
-const MAX_SEARCH_LENGTH = 64;
-const RATE_WINDOW_MS = 60 * 1000;
-const RATE_LIMITS = {
-    general: 120,
-    chat: 20,
-    network: 60,
-    auth: 10
-};
-const SESSION_TTL_MS = 8 * 60 * 60 * 1000;
-const SESSION_COOKIE = "helix_session";
-const sessions = new Map();
-
-
-const rateBuckets = new Map();
-
-const LOCAL_DEV_ORIGINS = new Set([
-    "http://localhost:3000",
-    "http://localhost:5500",
-    "http://localhost:5501",
-    "http://localhost:8000",
-    "http://localhost:8080",
-    "http://127.0.0.1:3000",
-    "http://127.0.0.1:5500",
-    "http://127.0.0.1:5501",
-    "http://127.0.0.1:8000",
-    "http://127.0.0.1:8080"
-]);
-
-
-function createSession(username) {
-    const token = crypto.randomBytes(32).toString("base64url");
-    sessions.set(token, { username, createdAt: Date.now(), lastSeenAt: Date.now() });
-    return token;
-}
-
-function getSession(req) {
-    const token = req.cookies?.[SESSION_COOKIE];
-    if (!token) return null;
-    const session = sessions.get(token);
-    if (!session) return null;
-    if (Date.now() - session.lastSeenAt > SESSION_TTL_MS) {
-        sessions.delete(token);
-        return null;
-    }
-    session.lastSeenAt = Date.now();
-    return { token, ...session };
-}
-
-function setSessionCookie(res, token) {
-    const secure = process.env.NODE_ENV === "production";
-    res.cookie(SESSION_COOKIE, token, {
-        httpOnly: true,
-        secure,
-        sameSite: "strict",
-        path: "/",
-        maxAge: SESSION_TTL_MS
-    });
-}
-
-function clearSessionCookie(res) {
-    res.clearCookie(SESSION_COOKIE, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
-        path: "/"
-    });
-}
-
-function requireAuth(req, res, next) {
-    const session = getSession(req);
-    if (!session) {
-        return res.status(401).json({ error: "Authentication required." });
-    }
-    req.user = session.username;
-    req.sessionToken = session.token;
-    next();
-}
-
-function sameOrigin(req) {
-    const origin = req.get("origin");
-    if (!origin) return true;
-
-    const expected = `${req.protocol}://${req.get("host")}`;
-    if (origin === expected) return true;
-
-    try {
-        const parsed = new URL(origin);
-        const isLocalHost = parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1";
-        return isLocalHost && parsed.protocol === "http:";
-    } catch {
-        return false;
-    }
-}
-
-function requireSameOrigin(req, res, next) {
-    if (!sameOrigin(req)) {
-        return res.status(403).json({ error: "Cross-origin request blocked." });
-    }
-    next();
-}
-
-async function hashPassword(password, salt = crypto.randomBytes(16).toString("hex")) {
-    const derivedKey = await scrypt(password, salt, 64);
-    return { salt, hash: derivedKey.toString("hex") };
-}
-
-async function verifyPassword(password, salt, expectedHash) {
-    const derivedKey = await scrypt(password, salt, 64);
-    const expected = Buffer.from(expectedHash, "hex");
-    return expected.length === derivedKey.length && crypto.timingSafeEqual(derivedKey, expected);
-}
-
-
-function getClientAddress(req) {
-    return req.ip || req.socket?.remoteAddress || "unknown";
-}
-
-function rateLimit(kind) {
-    const limit = RATE_LIMITS[kind] || RATE_LIMITS.general;
-
-    return (req, res, next) => {
-        const now = Date.now();
-        const key = `${kind}:${getClientAddress(req)}`;
-        const existing = rateBuckets.get(key);
-
-        if (!existing || now - existing.startedAt >= RATE_WINDOW_MS) {
-            rateBuckets.set(key, { startedAt: now, count: 1 });
-            return next();
-        }
-
-        existing.count += 1;
-
-        if (existing.count > limit) {
-            const retryAfter = Math.max(1, Math.ceil((RATE_WINDOW_MS - (now - existing.startedAt)) / 1000));
-            res.set("Retry-After", String(retryAfter));
-            return res.status(429).json({ error: "Too many requests. Please try again shortly." });
-        }
-
-        next();
-    };
-}
-
-setInterval(() => {
-    const cutoff = Date.now() - RATE_WINDOW_MS;
-    for (const [key, bucket] of rateBuckets) {
-        if (bucket.startedAt < cutoff) rateBuckets.delete(key);
-    }
-}, RATE_WINDOW_MS).unref();
 
 const HELIX_AI_INSTRUCTIONS = `
 You are HELIX AI, the built-in AI assistant of the Helix platform.
@@ -182,121 +31,9 @@ const client = process.env.OPENAI_API_KEY
     ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
     : null;
 
-app.disable("x-powered-by");
-
-app.use((req, res, next) => {
-    const origin = req.get("origin");
-    let localOrigin = false;
-    if (origin) {
-        try {
-            const parsed = new URL(origin);
-            localOrigin =
-                (parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1") &&
-                parsed.protocol === "http:";
-        } catch {
-            localOrigin = false;
-        }
-    }
-
-    if (origin && (LOCAL_DEV_ORIGINS.has(origin) || localOrigin)) {
-        res.setHeader("Access-Control-Allow-Origin", origin);
-        res.setHeader("Access-Control-Allow-Credentials", "true");
-        res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-        res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
-        res.setHeader("Vary", "Origin");
-    }
-    if (req.method === "OPTIONS") return res.sendStatus(204);
-    next();
-});
-app.use((req, res, next) => {
-    res.setHeader("X-Content-Type-Options", "nosniff");
-    res.setHeader("X-Frame-Options", "DENY");
-    res.setHeader("Referrer-Policy", "no-referrer");
-    res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()");
-    res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
-    res.setHeader("Cross-Origin-Resource-Policy", "same-origin");
-    res.setHeader(
-        "Content-Security-Policy",
-        "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; " +
-        "script-src 'self'; style-src 'self'; img-src 'self' data: blob:; " +
-        "font-src 'self' data:; connect-src 'self' http://localhost:3000 http://127.0.0.1:3000; form-action 'self'"
-    );
-
-    if (req.path.startsWith("/api/")) {
-        res.setHeader("Cache-Control", "no-store");
-        res.setHeader("Pragma", "no-cache");
-    }
-
-    if (process.env.NODE_ENV === "production" && req.secure) {
-        res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
-    }
-
-    next();
-});
-
-app.use((req, res, next) => {
-    if (req.path === "/data" || req.path.startsWith("/data/")) {
-        return res.status(404).end();
-    }
-    next();
-});
-
-function parseCookies(req) {
-    const header = req.headers.cookie || "";
-    return Object.fromEntries(header.split(";").filter(Boolean).map((part) => {
-        const index = part.indexOf("=");
-        const key = index >= 0 ? part.slice(0, index).trim() : part.trim();
-        const value = index >= 0 ? part.slice(index + 1).trim() : "";
-        return [key, decodeURIComponent(value)];
-    }));
-}
-
-app.use((req, res, next) => {
-    req.cookies = parseCookies(req);
-    next();
-});
-app.use(express.json({ limit: "100kb" }));
-app.use((req, res, next) => {
-    if (["POST", "PUT", "PATCH", "DELETE"].includes(req.method)) return requireSameOrigin(req, res, next);
-    next();
-});
-app.use(rateLimit("general"));
-
-const PUBLIC_FILES = new Set([
-    "/",
-    "/index.html",
-    "/app.html",
-    "/app.js",
-    "/script.js",
-    "/app.css",
-    "/style.css",
-    "/dragon-intro-transparent.svg",
-    "/dragon-intro.png",
-    "/reels-icon.png"
-]);
-
-function isPublicAssetPath(requestPath) {
-    if (PUBLIC_FILES.has(requestPath)) return true;
-    return /^\/images\/[A-Za-z0-9._-]+\.(?:png|jpe?g|webp|gif|svg|ico)$/i.test(requestPath);
-}
-
-app.use((req, res, next) => {
-    if (req.path.startsWith("/api/") || req.path === "/api") {
-        return next();
-    }
-
-    if (!isPublicAssetPath(req.path)) {
-        return res.status(404).end();
-    }
-
-    next();
-});
-
-app.use(express.static(__dirname, {
-    dotfiles: "ignore",
-    index: false,
-    fallthrough: true
-}));
+app.use(cors());
+app.use(express.json({ limit: "1mb" }));
+app.use(express.static(__dirname));
 
 const networkDataDir = path.join(__dirname, "data");
 const networkDataFile = path.join(networkDataDir, "helix-network.json");
@@ -307,8 +44,17 @@ function loadNetworkData() {
             return { users: {}, requests: [], friends: [] };
         }
         const parsed = JSON.parse(require("fs").readFileSync(networkDataFile, "utf8"));
+        const users = parsed.users && typeof parsed.users === "object" ? parsed.users : {};
+
+        Object.values(users).forEach((user) => {
+            if (user && typeof user === "object") {
+                delete user.accountId;
+                if (!user.displayName) user.displayName = user.username;
+            }
+        });
+
         return {
-            users: parsed.users && typeof parsed.users === "object" ? parsed.users : {},
+            users,
             requests: Array.isArray(parsed.requests) ? parsed.requests : [],
             friends: Array.isArray(parsed.friends) ? parsed.friends : []
         };
@@ -326,37 +72,61 @@ function saveNetworkData(data) {
     fs.renameSync(tempFile, networkDataFile);
 }
 
-function getUserRecord(data, username) {
-    return data.users[username] || null;
-}
-
-function sanitizePublicUser(user) {
-    return {
-        username: user.username,
-        displayName: user.displayName || user.username,
-        createdAt: user.createdAt
-    };
-}
-
 function normalizeUsername(value) {
     return typeof value === "string" ? value.trim() : "";
+}
+
+function normalizeDisplayName(value) {
+    return typeof value === "string" ? value.trim().replace(/\s+/g, " ") : "";
+}
+
+function validDisplayName(value) {
+    return value.length >= 1 && value.length <= 50 && !/[\u0000-\u001F\u007F]/.test(value);
+}
+
+function publicUser(data, username) {
+    const user = data.users[username];
+    return {
+        username,
+        displayName: user?.displayName || username
+    };
 }
 
 function validUsername(value) {
     return /^[A-Za-z0-9_.-]{3,32}$/.test(value);
 }
 
-function samePair(a, b, x, y) {
-    return (a === x && b === y) || (a === y && b === x);
+function migrateUsername(data, previousUsername, nextUsername) {
+    if (!previousUsername || previousUsername === nextUsername) return;
+
+    const oldUser = data.users[previousUsername];
+    const newUser = data.users[nextUsername];
+
+    if (!oldUser) return;
+
+    if (newUser && previousUsername !== nextUsername) {
+        throw new Error("That username is already registered on the Helix network.");
+    }
+
+    data.users[nextUsername] = {
+        ...oldUser,
+        username: nextUsername
+    };
+    delete data.users[previousUsername];
+
+    data.requests.forEach((request) => {
+        if (request.from === previousUsername) request.from = nextUsername;
+        if (request.to === previousUsername) request.to = nextUsername;
+    });
+
+    data.friends.forEach((friend) => {
+        if (friend.a === previousUsername) friend.a = nextUsername;
+        if (friend.b === previousUsername) friend.b = nextUsername;
+    });
 }
 
-function publicNetworkProfile(data, username) {
-    const user = data.users[username];
-
-    return {
-        username,
-        displayName: user?.displayName || username
-    };
+function samePair(a, b, x, y) {
+    return (a === x && b === y) || (a === y && b === x);
 }
 
 function networkState(username) {
@@ -364,9 +134,7 @@ function networkState(username) {
 
     const friends = data.friends
         .filter((friend) => friend.a === username || friend.b === username)
-        .map((friend) =>
-            publicNetworkProfile(data, friend.a === username ? friend.b : friend.a)
-        );
+        .map((friend) => publicUser(data, friend.a === username ? friend.b : friend.a));
 
     const incoming = data.requests
         .filter((request) => request.to === username && request.status === "pending")
@@ -389,174 +157,86 @@ function networkState(username) {
     return { friends, incoming, outgoing };
 }
 
-function normalizeDisplayName(value) {
-    return typeof value === "string"
-        ? value.trim().replace(/\s+/g, " ")
-        : "";
-}
-
-function validDisplayName(value) {
-    return value.length >= 1 && value.length <= 50 && !/[\u0000-\u001F\u007F]/.test(value);
-}
-
-app.post("/api/auth/register", rateLimit("auth"), async (req, res) => {
-    try {
-        const username = normalizeUsername(req.body?.username);
-        const displayName = normalizeDisplayName(req.body?.displayName);
-        const password = typeof req.body?.password === "string" ? req.body.password : "";
-
-        if (!validUsername(username) || !validDisplayName(displayName) || password.length < 8) {
-            return res.status(400).json({
-                error: "Use a unique username, a display name (1–50 characters), and a password of at least 8 characters."
-            });
-        }
-
-        const data = loadNetworkData();
-        if (data.users[username]) {
-            return res.status(409).json({
-                error: "That username already exists. Please choose another username."
-            });
-        }
-
-        const credentials = await hashPassword(password);
-        data.users[username] = {
-            username,
-            displayName,
-            createdAt: new Date().toISOString(),
-            passwordSalt: credentials.salt,
-            passwordHash: credentials.hash
-        };
-
-        saveNetworkData(data);
-
-        const token = createSession(username);
-        setSessionCookie(res, token);
-        res.status(201).json({
-            ok: true,
-            user: sanitizePublicUser(data.users[username])
-        });
-    } catch (error) {
-        console.error("Registration failed:", error.message);
-        res.status(500).json({ error: "Unable to create the account right now." });
-    }
-});
-
-app.post("/api/auth/login", rateLimit("auth"), async (req, res) => {
-    try {
-        const username = normalizeUsername(req.body?.username);
-        const password = typeof req.body?.password === "string" ? req.body.password : "";
-        if (!validUsername(username) || !password) {
-            return res.status(400).json({ error: "Enter a valid username and password." });
-        }
-
-        const data = loadNetworkData();
-        const user = getUserRecord(data, username);
-
-        if (!user || !user.passwordHash || !user.passwordSalt) {
-            return res.status(401).json({ error: "Invalid username or password. Existing prototype accounts must be securely re-created." });
-        }
-
-        const valid = await verifyPassword(password, user.passwordSalt, user.passwordHash);
-        if (!valid) return res.status(401).json({ error: "Invalid username or password." });
-
-        const token = createSession(username);
-        setSessionCookie(res, token);
-        res.json({ ok: true, user: sanitizePublicUser(user) });
-    } catch (error) {
-        console.error("Login failed:", error.message);
-        res.status(500).json({ error: "Unable to log in right now." });
-    }
-});
-
-app.get("/api/auth/session", (req, res) => {
-    const session = getSession(req);
-    if (!session) return res.status(401).json({ authenticated: false });
-    const data = loadNetworkData();
-    const user = getUserRecord(data, session.username);
-    if (!user) {
-        sessions.delete(session.token);
-        clearSessionCookie(res);
-        return res.status(401).json({ authenticated: false });
-    }
-    res.json({ authenticated: true, user: sanitizePublicUser(user) });
-});
-
-app.post("/api/auth/logout", requireAuth, (req, res) => {
-    sessions.delete(req.sessionToken);
-    clearSessionCookie(res);
-    res.json({ ok: true });
-});
-
-app.post("/api/profile/display-name", requireAuth, rateLimit("network"), (req, res) => {
-    const username = req.user;
+app.post("/api/network/sync", (req, res) => {
+    const username = normalizeUsername(req.body?.username);
     const displayName = normalizeDisplayName(req.body?.displayName);
 
-    if (!validDisplayName(displayName)) {
-        return res.status(400).json({
-            error: "Display name must be 1–50 characters and cannot contain control characters."
-        });
+    if (!validUsername(username)) {
+        return res.status(400).json({ error: "Invalid username." });
     }
 
     const data = loadNetworkData();
-    const account = data.users[username];
 
-    if (!account) {
-        return res.status(404).json({ error: "Helix account was not found." });
-    }
+    if (!data.users[username]) {
+        data.users[username] = {
+            username,
+            displayName: validDisplayName(displayName) ? displayName : username,
+            createdAt: new Date().toISOString()
+        };
+    } else {
+        data.users[username].username = username;
 
-    account.displayName = displayName;
-    account.username = username;
-    saveNetworkData(data);
-
-    res.json({
-        ok: true,
-        user: sanitizePublicUser(account)
-    });
-});
-
-app.post("/api/network/sync", requireAuth, rateLimit("network"), (req, res) => {
-    const username = req.user;
-    const requestedDisplayName = normalizeDisplayName(req.body?.displayName);
-    const data = loadNetworkData();
-    const account = data.users[username];
-
-    if (!account) {
-        return res.status(404).json({ error: "Helix account was not found." });
-    }
-
-    if (requestedDisplayName) {
-        if (!validDisplayName(requestedDisplayName)) {
-            return res.status(400).json({
-                error: "Display name must be 1–50 characters."
-            });
+        if (displayName) {
+            if (!validDisplayName(displayName)) {
+                return res.status(400).json({ error: "Display name must be 1–50 characters." });
+            }
+            data.users[username].displayName = displayName;
+        } else if (!data.users[username].displayName) {
+            data.users[username].displayName = username;
         }
-        account.displayName = requestedDisplayName;
     }
 
-    account.username = username;
-    if (!account.displayName) account.displayName = username;
-
+    delete data.users[username].accountId;
     saveNetworkData(data);
 
     res.json({
         ok: true,
         username,
-        displayName: account.displayName,
+        displayName: data.users[username].displayName,
         ...networkState(username)
     });
 });
 
+app.post("/api/profile/display-name", (req, res) => {
+    const username = normalizeUsername(req.body?.username);
+    const displayName = normalizeDisplayName(req.body?.displayName);
 
-app.get("/api/network/search", requireAuth, rateLimit("network"), (req, res) => {
-    const username = req.user;
-    const query = normalizeUsername(req.query.q).slice(0, MAX_SEARCH_LENGTH).toLowerCase();
+    if (!validUsername(username)) {
+        return res.status(400).json({ error: "Invalid username." });
+    }
+
+    if (!validDisplayName(displayName)) {
+        return res.status(400).json({ error: "Display name must be 1–50 characters." });
+    }
+
+    const data = loadNetworkData();
+    const user = data.users[username];
+
+    if (!user) {
+        return res.status(404).json({ error: "Helix account was not found." });
+    }
+
+    user.displayName = displayName;
+    saveNetworkData(data);
+
+    res.json({ ok: true, user: publicUser(data, username) });
+});
+
+
+app.get("/api/network/search", (req, res) => {
+    const username = normalizeUsername(req.query.username);
+    const query = normalizeUsername(req.query.q).slice(0, 64).toLowerCase();
+
+    if (!validUsername(username)) {
+        return res.status(400).json({ error: "Invalid username." });
+    }
 
     const data = loadNetworkData();
     const state = networkState(username);
 
     const blockedNames = new Set([
         username,
-        ...state.friends.map((user) => user.username),
+        ...state.friends.map((user) => typeof user === "string" ? user : user.username),
         ...state.incoming.map((item) => item.from),
         ...state.outgoing.map((item) => item.to)
     ]);
@@ -564,27 +244,27 @@ app.get("/api/network/search", requireAuth, rateLimit("network"), (req, res) => 
     const results = Object.values(data.users)
         .filter((user) => user && validUsername(user.username))
         .filter((user) => !blockedNames.has(user.username))
-        .filter((user) => (
+        .filter((user) =>
             !query ||
             user.username.toLowerCase().includes(query) ||
             String(user.displayName || user.username).toLowerCase().includes(query)
-        ))
+        )
         .slice(0, 20)
-        .map((user) => publicNetworkProfile(data, user.username));
+        .map((user) => publicUser(data, user.username));
 
     res.json({ results });
 });
 
-app.get("/api/network/state", requireAuth, rateLimit("network"), (req, res) => {
-    const username = req.user;
+app.get("/api/network/state", (req, res) => {
+    const username = normalizeUsername(req.query.username);
     if (!validUsername(username)) {
         return res.status(400).json({ error: "Invalid username." });
     }
     res.json(networkState(username));
 });
 
-app.post("/api/network/request", requireAuth, rateLimit("network"), (req, res) => {
-    const from = req.user;
+app.post("/api/network/request", (req, res) => {
+    const from = normalizeUsername(req.body?.from);
     const to = normalizeUsername(req.body?.to);
 
     if (!validUsername(from) || !validUsername(to) || from === to) {
@@ -622,8 +302,8 @@ app.post("/api/network/request", requireAuth, rateLimit("network"), (req, res) =
     res.status(201).json({ ok: true, request });
 });
 
-app.delete("/api/network/request/:id", requireAuth, rateLimit("network"), (req, res) => {
-    const username = req.user;
+app.delete("/api/network/request/:id", (req, res) => {
+    const username = normalizeUsername(req.body?.username);
     if (!validUsername(username)) {
         return res.status(400).json({ error: "Invalid username." });
     }
@@ -644,8 +324,8 @@ app.delete("/api/network/request/:id", requireAuth, rateLimit("network"), (req, 
     res.json({ ok: true, ...networkState(username) });
 });
 
-app.post("/api/network/request/:id/respond", requireAuth, rateLimit("network"), (req, res) => {
-    const username = req.user;
+app.post("/api/network/request/:id/respond", (req, res) => {
+    const username = normalizeUsername(req.body?.username);
     const action = req.body?.action;
 
     if (!validUsername(username) || !["accept", "decline"].includes(action)) {
@@ -679,8 +359,8 @@ app.post("/api/network/request/:id/respond", requireAuth, rateLimit("network"), 
     res.json({ ok: true, ...networkState(username) });
 });
 
-app.delete("/api/network/friend", requireAuth, rateLimit("network"), (req, res) => {
-    const username = req.user;
+app.delete("/api/network/friend", (req, res) => {
+    const username = normalizeUsername(req.body?.username);
     const friend = normalizeUsername(req.body?.friend);
 
     if (!validUsername(username) || !validUsername(friend)) {
@@ -700,10 +380,7 @@ function buildConversationInput(history, message) {
             (item.role === "user" || item.role === "assistant") &&
             typeof item.content === "string" &&
             item.content.trim()
-        )).map((item) => ({
-            role: item.role,
-            content: item.content.trim().slice(0, MAX_CHAT_CONTENT_LENGTH)
-        }))
+        ))
         : [];
 
     const recentHistory = validHistory.slice(-MAX_HISTORY_MESSAGES);
@@ -727,9 +404,9 @@ app.get("/api/health", (req, res) => {
     });
 });
 
-app.post("/api/chat", requireAuth, rateLimit("chat"), async (req, res) => {
+app.post("/api/chat", async (req, res) => {
     try {
-        const message = typeof req.body.message === "string" ? req.body.message.trim().slice(0, MAX_CHAT_CONTENT_LENGTH) : "";
+        const message = typeof req.body.message === "string" ? req.body.message.trim() : "";
         const input = buildConversationInput(req.body.history, message);
 
         if (!input.length) {
@@ -773,27 +450,7 @@ app.use((req, res) => {
     if (req.path.startsWith("/api/")) {
         return res.status(404).json({ error: "API route not found." });
     }
-
-    if (req.path === "/" || req.path === "/index.html") {
-        return res.sendFile(path.join(__dirname, "index.html"));
-    }
-
-    if (req.path === "/app.html") {
-        return res.sendFile(path.join(__dirname, "app.html"));
-    }
-
-    return res.status(404).end();
-});
-
-app.use((error, req, res, next) => {
-    if (error?.type === "entity.too.large" || error?.status === 413) {
-        return res.status(413).json({ error: "Request body is too large." });
-    }
-
-    console.error("Unhandled server error:", error?.message || error);
-    if (res.headersSent) return next(error);
-
-    res.status(500).json({ error: "Helix server encountered an unexpected error." });
+    res.sendFile(path.join(__dirname, "index.html"));
 });
 
 app.listen(PORT, () => {
