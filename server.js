@@ -1,14 +1,60 @@
 require("dotenv").config();
 
 const express = require("express");
-const cors = require("cors");
 const OpenAI = require("openai");
 const path = require("path");
+const crypto = require("crypto");
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 const MODEL = process.env.HELIX_AI_MODEL || "gpt-5.6-sol";
 const MAX_HISTORY_MESSAGES = 20;
+const MAX_CHAT_CONTENT_LENGTH = 4000;
+const MAX_SEARCH_LENGTH = 64;
+const RATE_WINDOW_MS = 60 * 1000;
+const RATE_LIMITS = {
+    general: 120,
+    chat: 20,
+    network: 60
+};
+
+const rateBuckets = new Map();
+
+function getClientAddress(req) {
+    return req.ip || req.socket?.remoteAddress || "unknown";
+}
+
+function rateLimit(kind) {
+    const limit = RATE_LIMITS[kind] || RATE_LIMITS.general;
+
+    return (req, res, next) => {
+        const now = Date.now();
+        const key = `${kind}:${getClientAddress(req)}`;
+        const existing = rateBuckets.get(key);
+
+        if (!existing || now - existing.startedAt >= RATE_WINDOW_MS) {
+            rateBuckets.set(key, { startedAt: now, count: 1 });
+            return next();
+        }
+
+        existing.count += 1;
+
+        if (existing.count > limit) {
+            const retryAfter = Math.max(1, Math.ceil((RATE_WINDOW_MS - (now - existing.startedAt)) / 1000));
+            res.set("Retry-After", String(retryAfter));
+            return res.status(429).json({ error: "Too many requests. Please try again shortly." });
+        }
+
+        next();
+    };
+}
+
+setInterval(() => {
+    const cutoff = Date.now() - RATE_WINDOW_MS;
+    for (const [key, bucket] of rateBuckets) {
+        if (bucket.startedAt < cutoff) rateBuckets.delete(key);
+    }
+}, RATE_WINDOW_MS).unref();
 
 const HELIX_AI_INSTRUCTIONS = `
 You are HELIX AI, the built-in AI assistant of the Helix platform.
@@ -31,9 +77,41 @@ const client = process.env.OPENAI_API_KEY
     ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
     : null;
 
-app.use(cors());
-app.use(express.json({ limit: "1mb" }));
-app.use(express.static(__dirname));
+app.disable("x-powered-by");
+
+app.use((req, res, next) => {
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("X-Frame-Options", "DENY");
+    res.setHeader("Referrer-Policy", "no-referrer");
+    res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()");
+    res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+    res.setHeader("Cross-Origin-Resource-Policy", "same-origin");
+
+    if (req.path.startsWith("/api/")) {
+        res.setHeader("Cache-Control", "no-store");
+        res.setHeader("Pragma", "no-cache");
+    }
+
+    if (process.env.NODE_ENV === "production" && req.secure) {
+        res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+    }
+
+    next();
+});
+
+app.use((req, res, next) => {
+    if (req.path === "/data" || req.path.startsWith("/data/")) {
+        return res.status(404).end();
+    }
+    next();
+});
+
+app.use(express.json({ limit: "100kb" }));
+app.use(rateLimit("general"));
+app.use(express.static(__dirname, {
+    dotfiles: "ignore",
+    index: false
+}));
 
 const networkDataDir = path.join(__dirname, "data");
 const networkDataFile = path.join(networkDataDir, "helix-network.json");
@@ -154,7 +232,7 @@ function createFallbackAccountId(data) {
     return candidate;
 }
 
-app.post("/api/network/sync", (req, res) => {
+app.post("/api/network/sync", rateLimit("network"), (req, res) => {
     const username = normalizeUsername(req.body?.username);
     const previousUsername = normalizeUsername(req.body?.previousUsername);
     const requestedAccountId = normalizeAccountId(req.body?.accountId);
@@ -221,7 +299,7 @@ app.post("/api/network/sync", (req, res) => {
     });
 });
 
-app.post("/api/network/account-id", (req, res) => {
+app.post("/api/network/account-id", rateLimit("network"), (req, res) => {
     const username = normalizeUsername(req.body?.username);
     const accountId = normalizeAccountId(req.body?.accountId);
 
@@ -257,9 +335,9 @@ app.post("/api/network/account-id", (req, res) => {
     });
 });
 
-app.get("/api/network/search", (req, res) => {
+app.get("/api/network/search", rateLimit("network"), (req, res) => {
     const username = normalizeUsername(req.query.username);
-    const query = normalizeUsername(req.query.q).toLowerCase();
+    const query = normalizeUsername(req.query.q).slice(0, MAX_SEARCH_LENGTH).toLowerCase();
 
     if (!validUsername(username)) {
         return res.status(400).json({ error: "Invalid username." });
@@ -282,7 +360,7 @@ app.get("/api/network/search", (req, res) => {
     res.json({ results });
 });
 
-app.get("/api/network/state", (req, res) => {
+app.get("/api/network/state", rateLimit("network"), (req, res) => {
     const username = normalizeUsername(req.query.username);
     if (!validUsername(username)) {
         return res.status(400).json({ error: "Invalid username." });
@@ -290,7 +368,7 @@ app.get("/api/network/state", (req, res) => {
     res.json(networkState(username));
 });
 
-app.post("/api/network/request", (req, res) => {
+app.post("/api/network/request", rateLimit("network"), (req, res) => {
     const from = normalizeUsername(req.body?.from);
     const to = normalizeUsername(req.body?.to);
 
@@ -329,7 +407,7 @@ app.post("/api/network/request", (req, res) => {
     res.status(201).json({ ok: true, request });
 });
 
-app.delete("/api/network/request/:id", (req, res) => {
+app.delete("/api/network/request/:id", rateLimit("network"), (req, res) => {
     const username = normalizeUsername(req.body?.username);
     if (!validUsername(username)) {
         return res.status(400).json({ error: "Invalid username." });
@@ -351,7 +429,7 @@ app.delete("/api/network/request/:id", (req, res) => {
     res.json({ ok: true, ...networkState(username) });
 });
 
-app.post("/api/network/request/:id/respond", (req, res) => {
+app.post("/api/network/request/:id/respond", rateLimit("network"), (req, res) => {
     const username = normalizeUsername(req.body?.username);
     const action = req.body?.action;
 
@@ -386,7 +464,7 @@ app.post("/api/network/request/:id/respond", (req, res) => {
     res.json({ ok: true, ...networkState(username) });
 });
 
-app.delete("/api/network/friend", (req, res) => {
+app.delete("/api/network/friend", rateLimit("network"), (req, res) => {
     const username = normalizeUsername(req.body?.username);
     const friend = normalizeUsername(req.body?.friend);
 
@@ -407,7 +485,10 @@ function buildConversationInput(history, message) {
             (item.role === "user" || item.role === "assistant") &&
             typeof item.content === "string" &&
             item.content.trim()
-        ))
+        )).map((item) => ({
+            role: item.role,
+            content: item.content.trim().slice(0, MAX_CHAT_CONTENT_LENGTH)
+        }))
         : [];
 
     const recentHistory = validHistory.slice(-MAX_HISTORY_MESSAGES);
@@ -431,9 +512,9 @@ app.get("/api/health", (req, res) => {
     });
 });
 
-app.post("/api/chat", async (req, res) => {
+app.post("/api/chat", rateLimit("chat"), async (req, res) => {
     try {
-        const message = typeof req.body.message === "string" ? req.body.message.trim() : "";
+        const message = typeof req.body.message === "string" ? req.body.message.trim().slice(0, MAX_CHAT_CONTENT_LENGTH) : "";
         const input = buildConversationInput(req.body.history, message);
 
         if (!input.length) {
@@ -478,6 +559,17 @@ app.use((req, res) => {
         return res.status(404).json({ error: "API route not found." });
     }
     res.sendFile(path.join(__dirname, "index.html"));
+});
+
+app.use((error, req, res, next) => {
+    if (error?.type === "entity.too.large" || error?.status === 413) {
+        return res.status(413).json({ error: "Request body is too large." });
+    }
+
+    console.error("Unhandled server error:", error?.message || error);
+    if (res.headersSent) return next(error);
+
+    res.status(500).json({ error: "Helix server encountered an unexpected error." });
 });
 
 app.listen(PORT, () => {
