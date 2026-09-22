@@ -4,6 +4,8 @@ const express = require("express");
 const OpenAI = require("openai");
 const path = require("path");
 const crypto = require("crypto");
+const { promisify } = require("util");
+const scrypt = promisify(crypto.scrypt);
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -15,10 +17,90 @@ const RATE_WINDOW_MS = 60 * 1000;
 const RATE_LIMITS = {
     general: 120,
     chat: 20,
-    network: 60
+    network: 60,
+    auth: 10
 };
+const SESSION_TTL_MS = 8 * 60 * 60 * 1000;
+const SESSION_COOKIE = "helix_session";
+const sessions = new Map();
+
 
 const rateBuckets = new Map();
+
+function createSession(username) {
+    const token = crypto.randomBytes(32).toString("base64url");
+    sessions.set(token, { username, createdAt: Date.now(), lastSeenAt: Date.now() });
+    return token;
+}
+
+function getSession(req) {
+    const token = req.cookies?.[SESSION_COOKIE];
+    if (!token) return null;
+    const session = sessions.get(token);
+    if (!session) return null;
+    if (Date.now() - session.lastSeenAt > SESSION_TTL_MS) {
+        sessions.delete(token);
+        return null;
+    }
+    session.lastSeenAt = Date.now();
+    return { token, ...session };
+}
+
+function setSessionCookie(res, token) {
+    const secure = process.env.NODE_ENV === "production";
+    res.cookie(SESSION_COOKIE, token, {
+        httpOnly: true,
+        secure,
+        sameSite: "strict",
+        path: "/",
+        maxAge: SESSION_TTL_MS
+    });
+}
+
+function clearSessionCookie(res) {
+    res.clearCookie(SESSION_COOKIE, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        path: "/"
+    });
+}
+
+function requireAuth(req, res, next) {
+    const session = getSession(req);
+    if (!session) {
+        return res.status(401).json({ error: "Authentication required." });
+    }
+    req.user = session.username;
+    req.sessionToken = session.token;
+    next();
+}
+
+function sameOrigin(req) {
+    const origin = req.get("origin");
+    if (!origin) return true;
+    const expected = `${req.protocol}://${req.get("host")}`;
+    return origin === expected;
+}
+
+function requireSameOrigin(req, res, next) {
+    if (!sameOrigin(req)) {
+        return res.status(403).json({ error: "Cross-origin request blocked." });
+    }
+    next();
+}
+
+async function hashPassword(password, salt = crypto.randomBytes(16).toString("hex")) {
+    const derivedKey = await scrypt(password, salt, 64);
+    return { salt, hash: derivedKey.toString("hex") };
+}
+
+async function verifyPassword(password, salt, expectedHash) {
+    const derivedKey = await scrypt(password, salt, 64);
+    const expected = Buffer.from(expectedHash, "hex");
+    return expected.length === derivedKey.length && crypto.timingSafeEqual(derivedKey, expected);
+}
+
 
 function getClientAddress(req) {
     return req.ip || req.socket?.remoteAddress || "unknown";
@@ -106,7 +188,12 @@ app.use((req, res, next) => {
     next();
 });
 
+app.use(require("cookie-parser")());
 app.use(express.json({ limit: "100kb" }));
+app.use((req, res, next) => {
+    if (["POST", "PUT", "PATCH", "DELETE"].includes(req.method)) return requireSameOrigin(req, res, next);
+    next();
+});
 app.use(rateLimit("general"));
 app.use(express.static(__dirname, {
     dotfiles: "ignore",
@@ -139,6 +226,18 @@ function saveNetworkData(data) {
     const tempFile = `${networkDataFile}.tmp`;
     fs.writeFileSync(tempFile, JSON.stringify(data, null, 2), "utf8");
     fs.renameSync(tempFile, networkDataFile);
+}
+
+function getUserRecord(data, username) {
+    return data.users[username] || null;
+}
+
+function sanitizePublicUser(user) {
+    return {
+        username: user.username,
+        accountId: user.accountId,
+        createdAt: user.createdAt
+    };
 }
 
 function normalizeUsername(value) {
@@ -232,9 +331,98 @@ function createFallbackAccountId(data) {
     return candidate;
 }
 
-app.post("/api/network/sync", rateLimit("network"), (req, res) => {
-    const username = normalizeUsername(req.body?.username);
-    const previousUsername = normalizeUsername(req.body?.previousUsername);
+app.post("/api/auth/register", rateLimit("auth"), async (req, res) => {
+    try {
+        const username = normalizeUsername(req.body?.username);
+        const accountId = normalizeAccountId(req.body?.accountId);
+        const password = typeof req.body?.password === "string" ? req.body.password : "";
+
+        if (!validUsername(username) || !validAccountId(accountId) || password.length < 8) {
+            return res.status(400).json({ error: "Use a valid username, Account ID and a password of at least 8 characters." });
+        }
+
+        const data = loadNetworkData();
+        if (data.users[username]) {
+            return res.status(409).json({ error: "That username already exists. Please choose another username." });
+        }
+        const owner = findAccountIdOwner(data, accountId);
+        if (owner) {
+            return res.status(409).json({ error: "That Account ID is already taken." });
+        }
+
+        const credentials = await hashPassword(password);
+        data.users[username] = {
+            username,
+            accountId,
+            createdAt: new Date().toISOString(),
+            passwordSalt: credentials.salt,
+            passwordHash: credentials.hash
+        };
+        saveNetworkData(data);
+
+        const token = createSession(username);
+        setSessionCookie(res, token);
+        res.status(201).json({ ok: true, user: sanitizePublicUser(data.users[username]) });
+    } catch (error) {
+        console.error("Registration failed:", error.message);
+        res.status(500).json({ error: "Unable to create the account right now." });
+    }
+});
+
+app.post("/api/auth/login", rateLimit("auth"), async (req, res) => {
+    try {
+        const username = normalizeUsername(req.body?.username);
+        const password = typeof req.body?.password === "string" ? req.body.password : "";
+        if (!validUsername(username) || !password) {
+            return res.status(400).json({ error: "Enter a valid username and password." });
+        }
+
+        const data = loadNetworkData();
+        const user = getUserRecord(data, username);
+
+        if (!user || !user.passwordHash || !user.passwordSalt) {
+            return res.status(401).json({ error: "Invalid username or password. Existing prototype accounts must be securely re-created." });
+        }
+
+        const valid = await verifyPassword(password, user.passwordSalt, user.passwordHash);
+        if (!valid) return res.status(401).json({ error: "Invalid username or password." });
+
+        const token = createSession(username);
+        setSessionCookie(res, token);
+        res.json({ ok: true, user: sanitizePublicUser(user) });
+    } catch (error) {
+        console.error("Login failed:", error.message);
+        res.status(500).json({ error: "Unable to log in right now." });
+    }
+});
+
+app.get("/api/auth/session", (req, res) => {
+    const session = getSession(req);
+    if (!session) return res.status(401).json({ authenticated: false });
+    const data = loadNetworkData();
+    const user = getUserRecord(data, session.username);
+    if (!user) {
+        sessions.delete(session.token);
+        clearSessionCookie(res);
+        return res.status(401).json({ authenticated: false });
+    }
+    res.json({ authenticated: true, user: sanitizePublicUser(user) });
+});
+
+app.post("/api/auth/logout", requireAuth, (req, res) => {
+    sessions.delete(req.sessionToken);
+    clearSessionCookie(res);
+    res.json({ ok: true });
+});
+
+app.post("/api/network/sync", requireAuth, rateLimit("network"), (req, res) => {
+    const currentUsername = req.user;
+    const username = normalizeUsername(req.body?.username) || currentUsername;
+    const previousUsername = normalizeUsername(req.body?.previousUsername) || currentUsername;
+
+    if (previousUsername !== currentUsername) {
+        return res.status(403).json({ error: "You can only change your own username." });
+    }
     const requestedAccountId = normalizeAccountId(req.body?.accountId);
 
     if (!validUsername(username)) {
@@ -299,8 +487,8 @@ app.post("/api/network/sync", rateLimit("network"), (req, res) => {
     });
 });
 
-app.post("/api/network/account-id", rateLimit("network"), (req, res) => {
-    const username = normalizeUsername(req.body?.username);
+app.post("/api/network/account-id", requireAuth, rateLimit("network"), (req, res) => {
+    const username = req.user;
     const accountId = normalizeAccountId(req.body?.accountId);
 
     if (!validUsername(username)) {
@@ -335,8 +523,8 @@ app.post("/api/network/account-id", rateLimit("network"), (req, res) => {
     });
 });
 
-app.get("/api/network/search", rateLimit("network"), (req, res) => {
-    const username = normalizeUsername(req.query.username);
+app.get("/api/network/search", requireAuth, rateLimit("network"), (req, res) => {
+    const username = req.user;
     const query = normalizeUsername(req.query.q).slice(0, MAX_SEARCH_LENGTH).toLowerCase();
 
     if (!validUsername(username)) {
@@ -360,16 +548,16 @@ app.get("/api/network/search", rateLimit("network"), (req, res) => {
     res.json({ results });
 });
 
-app.get("/api/network/state", rateLimit("network"), (req, res) => {
-    const username = normalizeUsername(req.query.username);
+app.get("/api/network/state", requireAuth, rateLimit("network"), (req, res) => {
+    const username = req.user;
     if (!validUsername(username)) {
         return res.status(400).json({ error: "Invalid username." });
     }
     res.json(networkState(username));
 });
 
-app.post("/api/network/request", rateLimit("network"), (req, res) => {
-    const from = normalizeUsername(req.body?.from);
+app.post("/api/network/request", requireAuth, rateLimit("network"), (req, res) => {
+    const from = req.user;
     const to = normalizeUsername(req.body?.to);
 
     if (!validUsername(from) || !validUsername(to) || from === to) {
@@ -407,8 +595,8 @@ app.post("/api/network/request", rateLimit("network"), (req, res) => {
     res.status(201).json({ ok: true, request });
 });
 
-app.delete("/api/network/request/:id", rateLimit("network"), (req, res) => {
-    const username = normalizeUsername(req.body?.username);
+app.delete("/api/network/request/:id", requireAuth, rateLimit("network"), (req, res) => {
+    const username = req.user;
     if (!validUsername(username)) {
         return res.status(400).json({ error: "Invalid username." });
     }
@@ -429,8 +617,8 @@ app.delete("/api/network/request/:id", rateLimit("network"), (req, res) => {
     res.json({ ok: true, ...networkState(username) });
 });
 
-app.post("/api/network/request/:id/respond", rateLimit("network"), (req, res) => {
-    const username = normalizeUsername(req.body?.username);
+app.post("/api/network/request/:id/respond", requireAuth, rateLimit("network"), (req, res) => {
+    const username = req.user;
     const action = req.body?.action;
 
     if (!validUsername(username) || !["accept", "decline"].includes(action)) {
@@ -464,8 +652,8 @@ app.post("/api/network/request/:id/respond", rateLimit("network"), (req, res) =>
     res.json({ ok: true, ...networkState(username) });
 });
 
-app.delete("/api/network/friend", rateLimit("network"), (req, res) => {
-    const username = normalizeUsername(req.body?.username);
+app.delete("/api/network/friend", requireAuth, rateLimit("network"), (req, res) => {
+    const username = req.user;
     const friend = normalizeUsername(req.body?.friend);
 
     if (!validUsername(username) || !validUsername(friend)) {
@@ -512,7 +700,7 @@ app.get("/api/health", (req, res) => {
     });
 });
 
-app.post("/api/chat", rateLimit("chat"), async (req, res) => {
+app.post("/api/chat", requireAuth, rateLimit("chat"), async (req, res) => {
     try {
         const message = typeof req.body.message === "string" ? req.body.message.trim().slice(0, MAX_CHAT_CONTENT_LENGTH) : "";
         const input = buildConversationInput(req.body.history, message);
