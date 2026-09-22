@@ -4,6 +4,3 @@ data/
 
 # Environment files (including nested deployment folders)
 **/.env
-
-# Local development encryption key
-.helix-data-key
