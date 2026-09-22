@@ -286,8 +286,8 @@ const aiInput = document.getElementById("ai-input");
 const aiMessages = document.getElementById("ai-messages");
 const aiTyping = document.getElementById("ai-typing");
 const aiSendButton = document.getElementById("ai-send-button");
-const aiStorageKey = `helixAIConversation:${loggedInUser || "User"}`;
-const aiChatsKey = `helixAIChats:${loggedInUser || "User"}`;
+let aiStorageKey = `helixAIConversation:${loggedInUser || "User"}`;
+let aiChatsKey = `helixAIChats:${loggedInUser || "User"}`;
 const AI_HISTORY_LIMIT = 20;
 const AI_CHAT_LIST_LIMIT = 50;
 let aiConversation = loadAIConversation();
@@ -1273,11 +1273,39 @@ accountModalForm?.addEventListener("submit", async (event) => {
             }
         }
 
+        const previousUsername = loggedInUser;
+
         users[newUsername] = account;
-        delete users[loggedInUser];
+        delete users[previousUsername];
         localStorage.setItem("helixUsers", JSON.stringify(users));
         localStorage.setItem("helixLoggedIn", newUsername);
+
+        // Keep user-scoped local data attached to the renamed account.
+        [
+            ["helixAIConversation:", localStorage],
+            ["helixAIChats:", localStorage],
+            ["helixProfilePhoto:", localStorage]
+        ].forEach(([prefix, storage]) => {
+            const oldKey = prefix + previousUsername;
+            const newKey = prefix + newUsername;
+            const value = storage.getItem(oldKey);
+            if (value !== null) {
+                storage.setItem(newKey, value);
+                storage.removeItem(oldKey);
+            }
+        });
+
+        const oldCurrentChatKey = "helixCurrentAIChat:" + previousUsername;
+        const newCurrentChatKey = "helixCurrentAIChat:" + newUsername;
+        const currentChatId = sessionStorage.getItem(oldCurrentChatKey);
+        if (currentChatId) {
+            sessionStorage.setItem(newCurrentChatKey, currentChatId);
+            sessionStorage.removeItem(oldCurrentChatKey);
+        }
+
         loggedInUser = newUsername;
+        aiStorageKey = "helixAIConversation:" + newUsername;
+        aiChatsKey = "helixAIChats:" + newUsername;
 
     } else if (activeAccountAction === "email" || activeAccountAction === "phone") {
         const email = document.getElementById("account-modal-email")?.value.trim() || "";
@@ -4310,7 +4338,7 @@ async function syncHelixNetworkUser() {
     if (!loggedInUser) return;
 
     try {
-        const users = JSON.parse(localStorage.getItem("helixUsers")) || {};
+        const users = readLocalJSON("helixUsers", {});
         const account = users[loggedInUser] || {};
         const syncEndpoint = (
             ["localhost", "127.0.0.1"].includes(window.location.hostname) &&
