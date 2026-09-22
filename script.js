@@ -86,185 +86,105 @@ function saveUsers(users) {
 // SIGN UP
 // ================================
 
-signupBtn.addEventListener("click", () => {
+signupBtn.addEventListener("click", async () => {
+    const username = document.getElementById("signup-username").value.trim();
+    const accountId = document.getElementById("signup-account-id").value.trim().toLowerCase();
+    const password = document.getElementById("signup-password").value;
+    const confirmPassword = document.getElementById("signup-confirm-password").value;
 
-    const username = document
-        .getElementById("signup-username")
-        .value
-        .trim();
-
-    const accountId = document
-        .getElementById("signup-account-id")
-        .value
-        .trim()
-        .toLowerCase();
-
-    const password = document
-        .getElementById("signup-password")
-        .value;
-
-    const confirmPassword = document
-        .getElementById("signup-confirm-password")
-        .value;
-
-
-    // Empty fields
-    if (!username || !password || !confirmPassword) {
+    if (!username || !password || !confirmPassword || !accountId) {
         showMessage("Please fill in all fields.");
         return;
     }
-
-
-    // Username validation
     if (!/^[a-zA-Z0-9_.-]{3,32}$/.test(username)) {
         showMessage("Username must be 3–32 characters using letters, numbers, dots, underscores or hyphens.");
         return;
     }
-
-
-    // Account ID validation
     if (!/^[a-z0-9][a-z0-9_.-]{2,31}$/.test(accountId)) {
         showMessage("Account ID must be 3–32 characters using letters, numbers, dots, underscores or hyphens.");
         return;
     }
-
-    // Password length
-    if (password.length < 6) {
-        showMessage("Password must be at least 6 characters.");
+    if (password.length < 8) {
+        showMessage("Password must be at least 8 characters.");
         return;
     }
-
-
-    // Password match
     if (password !== confirmPassword) {
         showMessage("Passwords do not match.");
         return;
     }
 
+    signupBtn.disabled = true;
+    try {
+        const response = await fetch("/api/auth/register", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "same-origin",
+            body: JSON.stringify({ username, accountId, password })
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || "Could not create the account.");
 
-    const users = getUsers();
-
-
-    // Username already exists
-    if (users[username]) {
-        showMessage("That username already exists.");
-        return;
-    }
-
-
-    // Create account with the user's chosen unique ID.
-    const createLocalAccount = () => {
+        const users = getUsers();
         users[username] = {
-            password: password,
-            createdAt: new Date().toISOString(),
-            accountId
+            createdAt: data.user.createdAt,
+            accountId: data.user.accountId
         };
         saveUsers(users);
-    };
 
-    // When the server is reachable, it is the source of truth for ID uniqueness.
-    // Offline/local prototype mode still allows the account to be created and synced later.
-    fetch("/api/network/sync", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, accountId })
-    })
-        .then(async (response) => {
-            const data = await response.json().catch(() => ({}));
-            if (response.status === 409) {
-                throw new Error(data.error || "That Account ID is already taken.");
-            }
-            if (!response.ok) {
-                createLocalAccount();
-                return;
-            }
+        showMessage("Account created successfully!", "success");
+        document.getElementById("signup-username").value = "";
+        document.getElementById("signup-account-id").value = "";
+        document.getElementById("signup-password").value = "";
+        document.getElementById("signup-confirm-password").value = "";
 
-            users[username] = {
-                password,
-                createdAt: new Date().toISOString(),
-                accountId: data.accountId || accountId
-            };
-            saveUsers(users);
-        })
-        .catch((error) => {
-            if (error.message.includes("already taken")) {
-                throw error;
-            }
-            createLocalAccount();
-        })
-        .then(() => {
-            showMessage("Account created successfully!", "success");
-
-            document.getElementById("signup-username").value = "";
-            document.getElementById("signup-account-id").value = "";
-            document.getElementById("signup-password").value = "";
-            document.getElementById("signup-confirm-password").value = "";
-
-            setTimeout(() => {
-                signupForm.classList.add("hidden");
-                loginForm.classList.remove("hidden");
-                clearMessage();
-            }, 1000);
-        })
-        .catch((error) => {
-            showMessage(error.message || "Could not create the account.");
-        });
-
-    return;
-
-
+        localStorage.setItem("helixLoggedIn", username);
+        sessionStorage.setItem("helixShowIntro", "1");
+        setTimeout(() => { window.location.href = "app.html"; }, 500);
+    } catch (error) {
+        showMessage(error.message || "Could not create the account.");
+    } finally {
+        signupBtn.disabled = false;
+    }
 });
-
 
 // ================================
 // LOGIN
 // ================================
 
-loginBtn.addEventListener("click", () => {
+loginBtn.addEventListener("click", async () => {
+    const username = document.getElementById("login-username").value.trim();
+    const password = document.getElementById("login-password").value;
 
-    const username = document
-        .getElementById("login-username")
-        .value
-        .trim();
-
-    const password = document
-        .getElementById("login-password")
-        .value;
-
-
-    // Empty fields
     if (!username || !password) {
         showMessage("Please enter your username and password.");
         return;
     }
 
+    loginBtn.disabled = true;
+    try {
+        const response = await fetch("/api/auth/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "same-origin",
+            body: JSON.stringify({ username, password })
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || "Invalid username or password.");
 
-    const users = getUsers();
+        const users = getUsers();
+        users[username] = {
+            createdAt: data.user.createdAt,
+            accountId: data.user.accountId
+        };
+        saveUsers(users);
 
-
-    // User doesn't exist
-    if (!users[username]) {
-        showMessage("Username not found.");
-        return;
+        showMessage("Login successful!", "success");
+        localStorage.setItem("helixLoggedIn", username);
+        sessionStorage.setItem("helixShowIntro", "1");
+        setTimeout(() => { window.location.href = "app.html"; }, 500);
+    } catch (error) {
+        showMessage(error.message || "Unable to log in.");
+    } finally {
+        loginBtn.disabled = false;
     }
-
-
-    // Wrong password
-    if (users[username].password !== password) {
-        showMessage("Incorrect password.");
-        return;
-    }
-
-
-// Successful login
-showMessage("Login successful!", "success");
-
-localStorage.setItem("helixLoggedIn", username);
-sessionStorage.setItem("helixShowIntro", "1");
-
-// Open the Helix app
-setTimeout(() => {
-    window.location.href = "app.html";
-}, 500);
-
 });
