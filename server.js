@@ -488,7 +488,6 @@ app.post("/api/network/sync", requireAuth, rateLimit("network"), (req, res) => {
 
     account.username = username;
     if (!account.displayName) account.displayName = username;
-    delete account.accountId;
 
     saveNetworkData(data);
 
