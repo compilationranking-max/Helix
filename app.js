@@ -1151,7 +1151,7 @@ accountModalForm?.addEventListener("submit", async (event) => {
     if (activeAccountAction === "account-id") {
         const field = document.getElementById("account-modal-account-id");
         const newAccountId = (field?.value || "").trim().toLowerCase();
-        const users = JSON.parse(localStorage.getItem("helixUsers")) || {};
+        const users = readLocalJSON("helixUsers", {});
         const localAccount = users[loggedInUser];
 
         if (!localAccount) {
@@ -1226,7 +1226,7 @@ accountModalForm?.addEventListener("submit", async (event) => {
         }
     } else if (activeAccountAction === "username") {
         const newUsername = document.getElementById("account-modal-username").value.trim();
-        const users = JSON.parse(localStorage.getItem("helixUsers")) || {};
+        const users = readLocalJSON("helixUsers", {});
 
         if (newUsername.length < 3) {
             accountModalError.textContent = "Username must be at least 3 characters.";
@@ -1343,7 +1343,7 @@ accountModalForm?.addEventListener("submit", async (event) => {
     } else if (activeAccountAction === "password") {
         const currentPassword = document.getElementById("account-modal-current-password").value;
         const newPassword = document.getElementById("account-modal-new-password").value;
-        const users = JSON.parse(localStorage.getItem("helixUsers")) || {};
+        const users = readLocalJSON("helixUsers", {});
         const user = users[loggedInUser];
 
         if (!user || user.password !== currentPassword) {
