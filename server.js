@@ -168,6 +168,12 @@ app.use((req, res, next) => {
     res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()");
     res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
     res.setHeader("Cross-Origin-Resource-Policy", "same-origin");
+    res.setHeader(
+        "Content-Security-Policy",
+        "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; " +
+        "script-src 'self'; style-src 'self'; img-src 'self' data: blob:; " +
+        "font-src 'self' data:; connect-src 'self'; form-action 'self'"
+    );
 
     if (req.path.startsWith("/api/")) {
         res.setHeader("Cache-Control", "no-store");
@@ -208,9 +214,41 @@ app.use((req, res, next) => {
     next();
 });
 app.use(rateLimit("general"));
+
+const PUBLIC_FILES = new Set([
+    "/",
+    "/index.html",
+    "/app.html",
+    "/app.js",
+    "/script.js",
+    "/app.css",
+    "/style.css",
+    "/dragon-intro-transparent.svg",
+    "/dragon-intro.png",
+    "/reels-icon.png"
+]);
+
+function isPublicAssetPath(requestPath) {
+    if (PUBLIC_FILES.has(requestPath)) return true;
+    return /^\/images\/[A-Za-z0-9._-]+\\.(?:png|jpe?g|webp|gif|svg|ico)$/i.test(requestPath);
+}
+
+app.use((req, res, next) => {
+    if (req.path.startsWith("/api/") || req.path === "/api") {
+        return next();
+    }
+
+    if (!isPublicAssetPath(req.path)) {
+        return res.status(404).end();
+    }
+
+    next();
+});
+
 app.use(express.static(__dirname, {
     dotfiles: "ignore",
-    index: false
+    index: false,
+    fallthrough: true
 }));
 
 const networkDataDir = path.join(__dirname, "data");
@@ -759,7 +797,16 @@ app.use((req, res) => {
     if (req.path.startsWith("/api/")) {
         return res.status(404).json({ error: "API route not found." });
     }
-    res.sendFile(path.join(__dirname, "index.html"));
+
+    if (req.path === "/" || req.path === "/index.html") {
+        return res.sendFile(path.join(__dirname, "index.html"));
+    }
+
+    if (req.path === "/app.html") {
+        return res.sendFile(path.join(__dirname, "app.html"));
+    }
+
+    return res.status(404).end();
 });
 
 app.use((error, req, res, next) => {
