@@ -19,8 +19,7 @@ if (!loggedInUser) {
         })
         .then((data) => {
             if (data?.user?.username) {
-                loggedInUser = data.user.username;
-                localStorage.setItem("helixLoggedIn", loggedInUser);
+                setCurrentProfileUser(data.user);
                 updateLoggedInUser();
             }
         })
@@ -75,31 +74,90 @@ playHelixIntro();
 // USER DISPLAY
 // =========================================================
 
+let currentDisplayName = "";
+
+function getLocalAccount() {
+    const users = readLocalJSON("helixUsers", {});
+    return users && typeof users === "object" && !Array.isArray(users)
+        ? (users[loggedInUser] || null)
+        : null;
+}
+
+function getCurrentDisplayName() {
+    const account = getLocalAccount();
+    return (
+        currentDisplayName ||
+        account?.displayName ||
+        localStorage.getItem("helixDisplayName") ||
+        loggedInUser ||
+        "User"
+    );
+}
+
+function setCurrentProfileUser(user) {
+    if (!user) return;
+
+    if (user.username) {
+        loggedInUser = user.username;
+        localStorage.setItem("helixLoggedIn", loggedInUser);
+    }
+
+    currentDisplayName = user.displayName || user.username || "User";
+    localStorage.setItem("helixDisplayName", currentDisplayName);
+
+    const users = readLocalJSON("helixUsers", {});
+    if (users && typeof users === "object" && !Array.isArray(users) && loggedInUser) {
+        users[loggedInUser] = {
+            ...(users[loggedInUser] || {}),
+            displayName: currentDisplayName,
+            createdAt: user.createdAt || users[loggedInUser]?.createdAt || new Date().toISOString()
+        };
+        delete users[loggedInUser].accountId;
+        localStorage.setItem("helixUsers", JSON.stringify(users));
+    }
+}
+
+function formatPublicUserName(userOrUsername, maybeUsername = "") {
+    if (typeof userOrUsername === "string") {
+        return {
+            displayName: userOrUsername,
+            username: userOrUsername
+        };
+    }
+
+    return {
+        displayName: userOrUsername?.displayName || maybeUsername || "User",
+        username: userOrUsername?.username || maybeUsername || "user"
+    };
+}
+
 function updateLoggedInUser() {
     const usernameElements = document.querySelectorAll("[data-user]:not(.conversation)");
     const avatarElements = document.querySelectorAll("[data-avatar]");
-    const username = loggedInUser || "User";
-    const photo = localStorage.getItem(`helixProfilePhoto:${loggedInUser}`);
+    const displayName = getCurrentDisplayName();
     const welcomeMessage = document.getElementById("ai-welcome-message");
 
     usernameElements.forEach((element) => {
-        element.textContent = username;
+        element.textContent = displayName;
     });
 
     if (welcomeMessage) {
-        welcomeMessage.textContent = `Welcome back ${username}!`;
+        welcomeMessage.textContent = `Welcome back ${displayName}!`;
     }
 
     avatarElements.forEach((element) => {
-        element.textContent = username.slice(0, 2).toUpperCase();
+        element.textContent = displayName.slice(0, 2).toUpperCase();
+        const photo = localStorage.getItem(`helixProfilePhoto:${loggedInUser}`);
         if (photo) {
             element.style.backgroundImage = `url("${photo}")`;
             element.style.backgroundSize = "cover";
             element.style.color = "transparent";
+        } else {
+            element.style.backgroundImage = "";
+            element.style.color = "";
         }
     });
 }
-
 
 // =========================================================
 // LOGOUT
@@ -1049,21 +1107,29 @@ function setNavigationSection(id) {
 }
 
 function updateProfileView() {
+    const profileDisplayName = document.getElementById("profile-display-name");
     const profileUsername = document.getElementById("profile-account-username");
     const profileCreated = document.getElementById("profile-account-created");
-    const profileAccountId = document.getElementById("profile-account-id");
     const profileEmail = document.getElementById("profile-account-email");
     const profilePhone = document.getElementById("profile-account-phone");
     const profilePhotoPreview = document.getElementById("profile-photo-preview");
     const profilePhotoInitials = document.getElementById("profile-photo-initials");
 
     const users = readLocalJSON("helixUsers", {});
-    const account = users[loggedInUser];
+    const account = users[loggedInUser] || {};
+    const displayName = account.displayName || currentDisplayName || loggedInUser || "User";
 
-    if (account && !account.accountId) {
-        account.accountId = `hx_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
-        users[loggedInUser] = account;
+    currentDisplayName = displayName;
+    localStorage.setItem("helixDisplayName", displayName);
+
+    if (users[loggedInUser]) {
+        delete users[loggedInUser].accountId;
+        users[loggedInUser].displayName = displayName;
         localStorage.setItem("helixUsers", JSON.stringify(users));
+    }
+
+    if (profileDisplayName) {
+        profileDisplayName.textContent = displayName;
     }
 
     if (profileUsername) {
@@ -1072,12 +1138,12 @@ function updateProfileView() {
 
     if (profileCreated) {
         profileCreated.textContent = account?.createdAt
-            ? new Date(account.createdAt).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })
+            ? new Date(account.createdAt).toLocaleDateString(undefined, {
+                year: "numeric",
+                month: "long",
+                day: "numeric"
+            })
             : "Not recorded";
-    }
-
-    if (profileAccountId) {
-        profileAccountId.textContent = account?.accountId || "Not available";
     }
 
     if (profileEmail) {
@@ -1095,8 +1161,10 @@ function updateProfileView() {
     }
 
     if (profilePhotoInitials) {
-        profilePhotoInitials.textContent = (loggedInUser || "User").slice(0, 2).toUpperCase();
+        profilePhotoInitials.textContent = displayName.slice(0, 2).toUpperCase();
     }
+
+    updateLoggedInUser();
 }
 
 function formatPhone(phone) {
@@ -1125,26 +1193,29 @@ function openAccountModal(action) {
 
     activeAccountAction = action;
     accountModalError.textContent = "";
-    accountModalFields.innerHTML = action === "username"
-        ? `<label class="helix-modal-label" for="account-modal-username">New username</label><input class="helix-modal-input" id="account-modal-username" type="text" autocomplete="username" value="${loggedInUser || ""}" minlength="3" maxlength="30" required>`
-        : action === "account-id"
-        ? `<label class="helix-modal-label" for="account-modal-account-id">Account ID</label><input class="helix-modal-input" id="account-modal-account-id" type="text" autocomplete="off" value="${document.getElementById("profile-account-id")?.textContent?.trim() || ""}" minlength="3" maxlength="32" pattern="[A-Za-z0-9_.-]+" required><p class="helix-confirmation-copy">Choose a unique ID using letters, numbers, dots, underscores or hyphens.</p>`
-        : action === "email"
-        ? `<label class="helix-modal-label" for="account-modal-email">Gmail address</label><input class="helix-modal-input" id="account-modal-email" type="email" autocomplete="email" placeholder="you@gmail.com" required>`
-        : action === "phone"
-            ? `<label class="helix-modal-label" for="account-modal-phone">Phone number</label><input class="helix-modal-input" id="account-modal-phone" type="tel" autocomplete="tel" placeholder="+1 555 010 2048" required>`
-            : action === "password"
-                ? `<label class="helix-modal-label" for="account-modal-current-password">Current password</label><input class="helix-modal-input" id="account-modal-current-password" type="password" autocomplete="current-password" required><label class="helix-modal-label" for="account-modal-new-password">New password</label><input class="helix-modal-input" id="account-modal-new-password" type="password" autocomplete="new-password" minlength="6" required>`
-                : `<p class="helix-confirmation-copy">This will end every active Helix session for this account.</p>`;
 
-    accountModalTitle.textContent = action === "username" ? "Change username"
-        : action === "account-id" ? "Change Account ID"
+    accountModalFields.innerHTML = action === "display-name"
+        ? `<label class="helix-modal-label" for="account-modal-display-name">Display name</label>
+           <input class="helix-modal-input" id="account-modal-display-name" type="text" autocomplete="name" value="${escapeHTML(getCurrentDisplayName())}" maxlength="50" required>
+           <p class="helix-confirmation-copy">This is the name people will see. Your username stays permanent.</p>`
+        : action === "email"
+            ? `<label class="helix-modal-label" for="account-modal-email">Gmail address</label><input class="helix-modal-input" id="account-modal-email" type="email" autocomplete="email" placeholder="you@gmail.com" required>`
+            : action === "phone"
+                ? `<label class="helix-modal-label" for="account-modal-phone">Phone number</label><input class="helix-modal-input" id="account-modal-phone" type="tel" autocomplete="tel" placeholder="+1 555 010 2048" required>`
+                : action === "password"
+                    ? `<label class="helix-modal-label" for="account-modal-current-password">Current password</label><input class="helix-modal-input" id="account-modal-current-password" type="password" autocomplete="current-password" required><label class="helix-modal-label" for="account-modal-new-password">New password</label><input class="helix-modal-input" id="account-modal-new-password" type="password" autocomplete="new-password" minlength="8" required>`
+                    : `<p class="helix-confirmation-copy">This will end every active Helix session for this account.</p>`;
+
+    accountModalTitle.textContent = action === "display-name" ? "Change display name"
         : action === "email" ? "Link Gmail"
         : action === "phone" ? "Add phone"
-            : action === "password" ? "Change password" : "End all sessions";
+        : action === "password" ? "Change password"
+        : "End all sessions";
+
     accountModalDescription.textContent = action === "sessions"
         ? "Confirm network-wide session termination."
-        : "Update your encrypted identity record.";
+        : "Update your Helix identity settings.";
+
     accountModalSubmit.textContent = action === "sessions" ? "Log out everywhere" : "Save changes";
     accountModalSubmit.classList.toggle("profile-danger-button", action === "sessions");
     accountModal.hidden = false;
@@ -1162,8 +1233,7 @@ document.querySelectorAll("[data-modal-close]").forEach((element) => {
     element.addEventListener("click", closeAccountModal);
 });
 
-document.getElementById("change-username-btn")?.addEventListener("click", () => openAccountModal("username"));
-document.getElementById("change-account-id-btn")?.addEventListener("click", () => openAccountModal("account-id"));
+document.getElementById("change-display-name-btn")?.addEventListener("click", () => openAccountModal("display-name"));
 document.getElementById("link-email-btn")?.addEventListener("click", () => openAccountModal("email"));
 document.getElementById("add-phone-btn")?.addEventListener("click", () => openAccountModal("phone"));
 document.getElementById("change-password-btn")?.addEventListener("click", () => openAccountModal("password"));
@@ -1173,166 +1243,60 @@ accountModalForm?.addEventListener("submit", async (event) => {
     event.preventDefault();
     accountModalError.textContent = "";
 
-    if (activeAccountAction === "account-id") {
-        const field = document.getElementById("account-modal-account-id");
-        const newAccountId = (field?.value || "").trim().toLowerCase();
-        const users = readLocalJSON("helixUsers", {});
-        const localAccount = users[loggedInUser];
+    if (activeAccountAction === "display-name") {
+        const field = document.getElementById("account-modal-display-name");
+        const displayName = (field?.value || "").trim().replace(/\s+/g, " ");
 
-        if (!localAccount) {
-            accountModalError.textContent = "Your local account could not be found. Log out and sign in again.";
-            return;
-        }
-
-        if (!/^[a-z0-9][a-z0-9_.-]{2,31}$/.test(newAccountId)) {
-            accountModalError.textContent = "Change it to 3–32 characters using only letters, numbers, dots, underscores or hyphens.";
-            return;
-        }
-
-        if (newAccountId === String(localAccount.accountId || "").trim().toLowerCase()) {
-            accountModalError.textContent = "That is already your current Account ID.";
+        if (!displayName || displayName.length > 50 || /[\u0000-\u001F\u007F]/.test(displayName)) {
+            accountModalError.textContent = "Choose a display name from 1–50 characters without control characters.";
             return;
         }
 
         accountModalSubmit.disabled = true;
-        accountModalSubmit.textContent = "Checking...";
-
-        const accountIdEndpoint = (
-            ["localhost", "127.0.0.1"].includes(window.location.hostname) &&
-            window.location.port !== "3000"
-        )
-            ? "http://localhost:3000/api/network/account-id"
-            : "/api/network/account-id";
+        accountModalSubmit.textContent = "Saving...";
 
         try {
-            const response = await fetch(accountIdEndpoint, {
+            const response = await fetch("/api/profile/display-name", {
                 method: "POST",
+                credentials: "same-origin",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ username: loggedInUser, accountId: newAccountId })
+                body: JSON.stringify({ displayName })
             });
 
             const data = await response.json().catch(() => ({}));
 
-            if (response.status === 409) {
-                accountModalError.textContent = "That Account ID is already taken. Try a different one.";
-                return;
-            }
-
             if (response.status === 400) {
-                accountModalError.textContent = data.error || "Use 3–32 letters, numbers, dots, underscores or hyphens.";
-                return;
-            }
-
-            if (response.status === 404) {
-                accountModalError.textContent = "Your account is not registered on the Helix backend yet. Refresh the app and try again.";
+                accountModalError.textContent = data.error || "Choose a display name from 1–50 characters.";
                 return;
             }
 
             if (!response.ok) {
-                accountModalError.textContent = data.error || "Helix could not save that Account ID. Try again.";
+                accountModalError.textContent = data.error || "Helix could not save your display name.";
                 return;
             }
 
-            localAccount.accountId = data.accountId || newAccountId;
-            users[loggedInUser] = localAccount;
-            localStorage.setItem("helixUsers", JSON.stringify(users));
+            setCurrentProfileUser(data.user || {
+                username: loggedInUser,
+                displayName
+            });
 
             updateProfileView();
             closeAccountModal();
 
             if (profileActionMessage) {
-                profileActionMessage.textContent = "Account ID changed to " + localAccount.accountId + ".";
+                profileActionMessage.textContent = "Display name updated.";
             }
         } catch (error) {
-            accountModalError.textContent = "Cannot reach the Helix backend. Run the backend on port 3000 and try again.";
+            accountModalError.textContent = "Helix could not reach the server. Make sure the backend is running.";
         } finally {
             accountModalSubmit.disabled = false;
             accountModalSubmit.textContent = "Save changes";
         }
-    } else if (activeAccountAction === "username") {
-        const newUsername = document.getElementById("account-modal-username").value.trim();
-        const users = readLocalJSON("helixUsers", {});
 
-        if (newUsername.length < 3) {
-            accountModalError.textContent = "Username must be at least 3 characters.";
-            return;
-        }
+        return;
+    }
 
-        if (!/^[a-zA-Z0-9_.-]+$/.test(newUsername)) {
-            accountModalError.textContent = "Use only letters, numbers, dots, underscores or hyphens.";
-            return;
-        }
-
-        if (newUsername !== loggedInUser && users[newUsername]) {
-            accountModalError.textContent = "That username already exists.";
-            return;
-        }
-
-        const account = users[loggedInUser];
-        if (!account) {
-            accountModalError.textContent = "Account record could not be found.";
-            return;
-        }
-
-        if (newUsername !== loggedInUser) {
-            try {
-                const response = await fetch("/api/network/sync", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        username: newUsername,
-                        previousUsername: loggedInUser,
-                        accountId: account.accountId || ""
-                    })
-                });
-
-                const data = await response.json().catch(() => ({}));
-
-                if (!response.ok) {
-                    accountModalError.textContent = data.error || "Helix could not sync the username change.";
-                    return;
-                }
-            } catch (error) {
-                accountModalError.textContent = "Cannot reach the Helix backend. Keep the current username until the server is available.";
-                return;
-            }
-        }
-
-        const previousUsername = loggedInUser;
-
-        users[newUsername] = account;
-        delete users[previousUsername];
-        localStorage.setItem("helixUsers", JSON.stringify(users));
-        localStorage.setItem("helixLoggedIn", newUsername);
-
-        // Keep user-scoped local data attached to the renamed account.
-        [
-            ["helixAIConversation:", localStorage],
-            ["helixAIChats:", localStorage],
-            ["helixProfilePhoto:", localStorage]
-        ].forEach(([prefix, storage]) => {
-            const oldKey = prefix + previousUsername;
-            const newKey = prefix + newUsername;
-            const value = storage.getItem(oldKey);
-            if (value !== null) {
-                storage.setItem(newKey, value);
-                storage.removeItem(oldKey);
-            }
-        });
-
-        const oldCurrentChatKey = "helixCurrentAIChat:" + previousUsername;
-        const newCurrentChatKey = "helixCurrentAIChat:" + newUsername;
-        const currentChatId = sessionStorage.getItem(oldCurrentChatKey);
-        if (currentChatId) {
-            sessionStorage.setItem(newCurrentChatKey, currentChatId);
-            sessionStorage.removeItem(oldCurrentChatKey);
-        }
-
-        loggedInUser = newUsername;
-        aiStorageKey = "helixAIConversation:" + newUsername;
-        aiChatsKey = "helixAIChats:" + newUsername;
-
-    } else if (activeAccountAction === "email" || activeAccountAction === "phone") {
+    if (activeAccountAction === "email") {
         const email = document.getElementById("account-modal-email")?.value.trim() || "";
         const users = readLocalJSON("helixUsers", {});
         const user = users[loggedInUser];
@@ -1345,7 +1309,7 @@ accountModalForm?.addEventListener("submit", async (event) => {
         user.email = email;
         users[loggedInUser] = user;
         localStorage.setItem("helixUsers", JSON.stringify(users));
-        localStorage.removeItem("helixEmail");
+
     } else if (activeAccountAction === "phone") {
         const phone = document.getElementById("account-modal-phone")?.value.trim() || "";
         if (phone.replace(/\D/g, "").length < 7) {
@@ -1364,26 +1328,36 @@ accountModalForm?.addEventListener("submit", async (event) => {
         user.phone = phone;
         users[loggedInUser] = user;
         localStorage.setItem("helixUsers", JSON.stringify(users));
-        localStorage.removeItem("helixPhone");
+
     } else if (activeAccountAction === "password") {
         const currentPassword = document.getElementById("account-modal-current-password").value;
         const newPassword = document.getElementById("account-modal-new-password").value;
         const users = readLocalJSON("helixUsers", {});
         const user = users[loggedInUser];
 
-        if (!user || user.password !== currentPassword) {
+        if (!user) {
+            accountModalError.textContent = "Account record could not be found.";
+            return;
+        }
+
+        if (newPassword.length < 8) {
+            accountModalError.textContent = "New password must be at least 8 characters.";
+            return;
+        }
+
+        // Password verification remains handled by the account system when it is moved server-side.
+        if (user.password && user.password !== currentPassword) {
             accountModalError.textContent = "Current password is incorrect.";
             return;
         }
-        if (newPassword.length < 6) {
-            accountModalError.textContent = "New password must be at least 6 characters.";
-            return;
-        }
+
         user.password = newPassword;
+        users[loggedInUser] = user;
+        delete user.accountId;
         localStorage.setItem("helixUsers", JSON.stringify(users));
+
     } else if (activeAccountAction === "sessions") {
-        localStorage.removeItem("helixLoggedIn");
-        window.location.href = "index.html";
+        await logoutCurrentSession();
         return;
     }
 
@@ -1783,7 +1757,7 @@ function exportHelixData(type) {
         exportType: type,
         account: {
             username: loggedInUser || null,
-            accountId: accountRecord?.accountId || null,
+            displayName: accountRecord?.displayName || getCurrentDisplayName(),
             createdAt: accountRecord?.createdAt || null,
             email: accountRecord?.email || accountRecord?.linkedEmail || null,
             phone: accountRecord?.phone || accountRecord?.linkedPhone || null
@@ -4310,25 +4284,51 @@ function friendEmpty(title, detail, mark = "◎") {
     return `<div class="friends-empty"><span class="friends-empty-mark">${mark}</span><strong>${escapeHTML(title)}</strong><small>${escapeHTML(detail)}</small></div>`;
 }
 
-function renderFriendRows(container, names, buttonLabel, action, secondaryLabel = "") {
+function getPublicUserPresentation(userOrUsername, maybeUsername = "") {
+    if (typeof userOrUsername === "string") {
+        return {
+            displayName: userOrUsername,
+            username: userOrUsername
+        };
+    }
+
+    return {
+        displayName: userOrUsername?.displayName || maybeUsername || "User",
+        username: userOrUsername?.username || maybeUsername || "user"
+    };
+}
+
+function renderPublicUserCopy(userOrUsername, maybeUsername = "", detail = "Helix network user") {
+    const user = getPublicUserPresentation(userOrUsername, maybeUsername);
+
+    return `
+        <strong>${escapeHTML(user.displayName)}</strong>
+        <small><span class="friend-row-signal"></span>-${escapeHTML(user.username)} · ${escapeHTML(detail)}</small>
+    `;
+}
+
+function renderFriendRows(container, users, buttonLabel, action, secondaryLabel = "") {
     if (!container) return;
 
-    if (!names.length) {
+    if (!users.length) {
         container.innerHTML = friendEmpty("Nothing here yet", "Your network will appear here as it grows.");
         return;
     }
 
-    container.innerHTML = names.map((name) => `
-        <div class="friend-row">
-            <span class="friend-row-avatar"><span class="friend-row-presence"></span>${escapeHTML(friendInitials(name))}</span>
-            <div class="friend-row-copy">
-                <strong>${escapeHTML(name)}</strong>
-                <small><span class="friend-row-signal"></span> Helix network user</small>
+    container.innerHTML = users.map((userOrUsername) => {
+        const user = getPublicUserPresentation(userOrUsername);
+
+        return `
+            <div class="friend-row">
+                <span class="friend-row-avatar"><span class="friend-row-presence"></span>${escapeHTML(friendInitials(user.username))}</span>
+                <div class="friend-row-copy">
+                    ${renderPublicUserCopy(user, "", "Helix network user")}
+                </div>
+                ${buttonLabel ? `<button type="button" data-friend-action="${action}" data-friend-name="${escapeHTML(user.username)}">${buttonLabel}</button>` : ""}
+                ${secondaryLabel ? `<button type="button" class="friend-decline" data-friend-action="decline" data-request-id="${escapeHTML(secondaryLabel)}">Decline</button>` : ""}
             </div>
-            ${buttonLabel ? `<button type="button" data-friend-action="${action}" data-friend-name="${escapeHTML(name)}">${buttonLabel}</button>` : ""}
-            ${secondaryLabel ? `<button type="button" class="friend-decline" data-friend-action="decline" data-request-id="${escapeHTML(secondaryLabel)}">Decline</button>` : ""}
-        </div>
-    `).join("");
+        `;
+    }).join("");
 }
 
 function renderFriendsConnectedList() {
@@ -4336,27 +4336,40 @@ function renderFriendsConnectedList() {
 
     const query = (friendsFilterInput?.value || "").trim().toLowerCase();
     const sort = friendsSortSelect?.value || "az";
-    const names = [...friendsNetworkState.friends]
-        .filter((name) => !query || name.toLowerCase().includes(query))
-        .sort((a, b) => sort === "za" ? b.localeCompare(a) : a.localeCompare(b));
+    const users = [...friendsNetworkState.friends]
+        .filter((user) => {
+            const profile = getPublicUserPresentation(user);
+            return !query ||
+                profile.displayName.toLowerCase().includes(query) ||
+                profile.username.toLowerCase().includes(query);
+        })
+        .sort((a, b) => {
+            const userA = getPublicUserPresentation(a);
+            const userB = getPublicUserPresentation(b);
+            const valueA = (sort === "display" ? userA.displayName : userA.username).toLowerCase();
+            const valueB = (sort === "display" ? userB.displayName : userB.username).toLowerCase();
+            return sort === "za" ? valueB.localeCompare(valueA) : valueA.localeCompare(valueB);
+        });
 
-    if (!names.length) {
+    if (!users.length) {
         friendsList.innerHTML = query
             ? friendEmpty("No matching friends", "Try another name or clear the filter.", "⌕")
             : friendEmpty("Your network is empty", "Discover someone above and send your first friend request.");
         return;
     }
 
-    friendsList.innerHTML = names.map((name) => `
-        <div class="friend-row">
-            <span class="friend-row-avatar"><span class="friend-row-presence"></span>${escapeHTML(friendInitials(name))}</span>
-            <div class="friend-row-copy">
-                <strong>${escapeHTML(name)}</strong>
-                <small><span class="friend-row-signal"></span> Connected on Helix</small>
+    friendsList.innerHTML = users.map((userOrUsername) => {
+        const user = getPublicUserPresentation(userOrUsername);
+        return `
+            <div class="friend-row">
+                <span class="friend-row-avatar"><span class="friend-row-presence"></span>${escapeHTML(friendInitials(user.username))}</span>
+                <div class="friend-row-copy">
+                    ${renderPublicUserCopy(user, "", "Connected on Helix")}
+                </div>
+                <button type="button" data-friend-action="remove" data-friend-name="${escapeHTML(user.username)}">Remove</button>
             </div>
-            <button type="button" data-friend-action="remove" data-friend-name="${escapeHTML(name)}">Remove</button>
-        </div>
-    `).join("");
+        `;
+    }).join("");
 }
 
 async function syncHelixNetworkUser() {
@@ -4365,6 +4378,7 @@ async function syncHelixNetworkUser() {
     try {
         const users = readLocalJSON("helixUsers", {});
         const account = users[loggedInUser] || {};
+
         const syncEndpoint = (
             ["localhost", "127.0.0.1"].includes(window.location.hostname) &&
             window.location.port !== "3000"
@@ -4374,24 +4388,20 @@ async function syncHelixNetworkUser() {
 
         const response = await fetch(syncEndpoint, {
             method: "POST",
+            credentials: "same-origin",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                username: loggedInUser,
-                accountId: account.accountId || ""
+                displayName: account.displayName || localStorage.getItem("helixDisplayName") || loggedInUser
             })
         });
 
         const data = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(data.error || "Network sync failed.");
 
-        if (data.accountId) {
-            users[loggedInUser] = {
-                ...account,
-                accountId: data.accountId
-            };
-            localStorage.setItem("helixUsers", JSON.stringify(users));
-            updateProfileView();
-        }
+        setCurrentProfileUser({
+            username: loggedInUser,
+            displayName: data.displayName || account.displayName || loggedInUser
+        });
 
         await refreshFriendsNetwork();
     } catch (error) {
@@ -4444,8 +4454,8 @@ async function refreshFriendsNetwork() {
                     <div class="friend-row">
                         <span class="friend-row-avatar"><span class="friend-row-presence friend-row-presence-pulse"></span>${escapeHTML(friendInitials(request.from))}</span>
                         <div class="friend-row-copy">
-                            <strong>${escapeHTML(request.from)}</strong>
-                            <small><span class="friend-row-signal"></span> Wants to connect with you</small>
+                            <strong>${escapeHTML(request.fromDisplayName || request.from)}</strong>
+                            <small><span class="friend-row-signal"></span>-${escapeHTML(request.from)} · Wants to connect with you</small>
                         </div>
                         <button type="button" data-friend-action="accept" data-request-id="${escapeHTML(request.id)}">Accept</button>
                         <button type="button" class="friend-decline" data-friend-action="decline" data-request-id="${escapeHTML(request.id)}">Decline</button>
@@ -4462,8 +4472,8 @@ async function refreshFriendsNetwork() {
                     <div class="friend-row">
                         <span class="friend-row-avatar friend-row-avatar-violet"><span class="friend-row-presence"></span>${escapeHTML(friendInitials(request.to))}</span>
                         <div class="friend-row-copy">
-                            <strong>${escapeHTML(request.to)}</strong>
-                            <small><span class="friend-row-signal friend-row-signal-violet"></span> Request pending</small>
+                            <strong>${escapeHTML(request.toDisplayName || request.to)}</strong>
+                            <small><span class="friend-row-signal friend-row-signal-violet"></span>-${escapeHTML(request.to)} · Request pending</small>
                         </div>
                         <button type="button" class="friend-decline" data-friend-action="cancel" data-request-id="${escapeHTML(request.id)}">Cancel</button>
                     </div>
@@ -4499,14 +4509,14 @@ async function searchHelixUsers(query) {
             return;
         }
 
-        friendsSearchResults.innerHTML = data.results.map((name) => `
+        friendsSearchResults.innerHTML = data.results.map((user) => `
             <div class="friend-row friend-search-result">
-                <span class="friend-row-avatar"><span class="friend-row-presence"></span>${escapeHTML(friendInitials(name))}</span>
+                <span class="friend-row-avatar"><span class="friend-row-presence"></span>${escapeHTML(friendInitials(user.username))}</span>
                 <div class="friend-row-copy">
-                    <strong>${escapeHTML(name)}</strong>
-                    <small><span class="friend-row-signal"></span> Available to connect</small>
+                    <strong>${escapeHTML(user.displayName || user.username)}</strong>
+                    <small><span class="friend-row-signal"></span>-${escapeHTML(user.username)} · Available to connect</small>
                 </div>
-                <button type="button" data-friend-action="request" data-friend-name="${escapeHTML(name)}">Add Friend</button>
+                <button type="button" data-friend-action="request" data-friend-name="${escapeHTML(user.username)}">Add Friend</button>
             </div>
         `).join("");
     } catch (error) {
