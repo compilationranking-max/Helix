@@ -1122,6 +1122,20 @@
                 </section>
             </div>
 
+            <div class="helix-modal comments-modal" id="comments-modal" hidden>
+                <div class="helix-modal-backdrop" data-comments-close></div>
+                <section class="helix-modal-panel comments-modal-panel" role="dialog" aria-modal="true" aria-labelledby="comments-modal-title">
+                    <button class="helix-modal-close" type="button" aria-label="Close comments" data-comments-close>×</button>
+                    <p class="system-label">HELIX / COMMUNITY</p>
+                    <h2 id="comments-modal-title">Comments</h2>
+                    <div class="comments-list" id="comments-list"></div>
+                    <form class="comments-form" id="comment-form">
+                        <input id="comment-input" type="text" maxlength="280" placeholder="Write a comment..." autocomplete="off" aria-label="Write a comment">
+                        <button class="profile-primary-button" type="submit">Post</button>
+                    </form>
+                </section>
+            </div>
+
             <div class="helix-modal" id="account-modal" hidden>
                 <div class="helix-modal-backdrop" data-modal-close></div>
                 <section class="helix-modal-panel" role="dialog" aria-modal="true" aria-labelledby="account-modal-title">
