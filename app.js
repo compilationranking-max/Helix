@@ -112,7 +112,6 @@ function setCurrentProfileUser(user) {
             displayName: currentDisplayName,
             createdAt: user.createdAt || users[loggedInUser]?.createdAt || new Date().toISOString()
         };
-        delete users[loggedInUser].accountId;
         localStorage.setItem("helixUsers", JSON.stringify(users));
     }
 }
@@ -1353,7 +1352,6 @@ accountModalForm?.addEventListener("submit", async (event) => {
 
         user.password = newPassword;
         users[loggedInUser] = user;
-        delete user.accountId;
         localStorage.setItem("helixUsers", JSON.stringify(users));
 
     } else if (activeAccountAction === "sessions") {
@@ -2676,7 +2674,7 @@ document.querySelectorAll("[data-settings-action]").forEach((button) => {
         );
 
         return {
-            id: String(entry?.id || entry?.accountId || username),
+            id: String(entry?.id || username),
             username
         };
     }
