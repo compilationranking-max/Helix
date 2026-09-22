@@ -1032,7 +1032,7 @@ function updateProfileView() {
     const profilePhotoPreview = document.getElementById("profile-photo-preview");
     const profilePhotoInitials = document.getElementById("profile-photo-initials");
 
-    const users = JSON.parse(localStorage.getItem("helixUsers")) || {};
+    const users = readLocalJSON("helixUsers", {});
     const account = users[loggedInUser];
 
     if (account && !account.accountId) {
@@ -1056,11 +1056,11 @@ function updateProfileView() {
     }
 
     if (profileEmail) {
-        profileEmail.textContent = localStorage.getItem("helixEmail") || "Not linked";
+        profileEmail.textContent = account?.email || account?.linkedEmail || localStorage.getItem("helixEmail") || "Not linked";
     }
 
     if (profilePhone) {
-        profilePhone.textContent = formatPhone(localStorage.getItem("helixPhone"));
+        profilePhone.textContent = formatPhone(account?.phone || account?.linkedPhone || localStorage.getItem("helixPhone"));
     }
 
     if (profilePhotoPreview) {
@@ -1249,21 +1249,69 @@ accountModalForm?.addEventListener("submit", async (event) => {
             return;
         }
 
+        if (newUsername !== loggedInUser) {
+            try {
+                const response = await fetch("/api/network/sync", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        username: newUsername,
+                        previousUsername: loggedInUser,
+                        accountId: account.accountId || ""
+                    })
+                });
+
+                const data = await response.json().catch(() => ({}));
+
+                if (!response.ok) {
+                    accountModalError.textContent = data.error || "Helix could not sync the username change.";
+                    return;
+                }
+            } catch (error) {
+                accountModalError.textContent = "Cannot reach the Helix backend. Keep the current username until the server is available.";
+                return;
+            }
+        }
+
         users[newUsername] = account;
         delete users[loggedInUser];
         localStorage.setItem("helixUsers", JSON.stringify(users));
         localStorage.setItem("helixLoggedIn", newUsername);
         loggedInUser = newUsername;
 
-    } else if (activeAccountAction === "email") {
-        localStorage.setItem("helixEmail", document.getElementById("account-modal-email").value.trim());
+    } else if (activeAccountAction === "email" || activeAccountAction === "phone") {
+        const email = document.getElementById("account-modal-email")?.value.trim() || "";
+        const users = readLocalJSON("helixUsers", {});
+        const user = users[loggedInUser];
+
+        if (!user || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            accountModalError.textContent = "Enter a valid email address.";
+            return;
+        }
+
+        user.email = email;
+        users[loggedInUser] = user;
+        localStorage.setItem("helixUsers", JSON.stringify(users));
+        localStorage.removeItem("helixEmail");
     } else if (activeAccountAction === "phone") {
-        const phone = document.getElementById("account-modal-phone").value.trim();
+        const phone = document.getElementById("account-modal-phone")?.value.trim() || "";
         if (phone.replace(/\D/g, "").length < 7) {
             accountModalError.textContent = "Enter a valid phone number.";
             return;
         }
-        localStorage.setItem("helixPhone", phone);
+
+        const users = readLocalJSON("helixUsers", {});
+        const user = users[loggedInUser];
+
+        if (!user) {
+            accountModalError.textContent = "Account record could not be found.";
+            return;
+        }
+
+        user.phone = phone;
+        users[loggedInUser] = user;
+        localStorage.setItem("helixUsers", JSON.stringify(users));
+        localStorage.removeItem("helixPhone");
     } else if (activeAccountAction === "password") {
         const currentPassword = document.getElementById("account-modal-current-password").value;
         const newPassword = document.getElementById("account-modal-new-password").value;
@@ -1445,6 +1493,12 @@ function renderComments(post) {
 }
 
 function openComments(post) {
+    if (!commentsModal) {
+        const status = document.getElementById("profile-action-message");
+        if (status) status.textContent = "Comments are temporarily unavailable.";
+        return;
+    }
+
     activeCommentPost = post;
     renderComments(post);
     commentsModal.hidden = false;
@@ -1641,16 +1695,10 @@ function collectHelixLocalData() {
 }
 
 function getCurrentAccountRecord() {
-    const users = readLocalJSON("helixUsers", []);
-    if (!Array.isArray(users)) return null;
+    const users = readLocalJSON("helixUsers", {});
+    if (!users || typeof users !== "object" || Array.isArray(users)) return null;
 
-    return users.find((user) => (
-        user &&
-        (
-            user.username === loggedInUser ||
-            user.name === loggedInUser
-        )
-    )) || null;
+    return users[loggedInUser] || null;
 }
 
 function downloadHelixJSON(filename, payload) {
@@ -2007,7 +2055,7 @@ document.querySelectorAll("[data-settings-action]").forEach((button) => {
     const storageKey = "helixAppearanceSettings";
     let settings = {
         ...defaults,
-        ...(JSON.parse(localStorage.getItem(storageKey) || "{}"))
+        ...readLocalJSON(storageKey, {})
     };
 
     const cycleValues = {
@@ -2441,7 +2489,7 @@ document.querySelectorAll("[data-settings-action]").forEach((button) => {
     const notificationStorageKey = "helixNotificationSettings";
     let notificationSettings = {
         ...notificationDefaults,
-        ...(JSON.parse(localStorage.getItem(notificationStorageKey) || "{}"))
+        ...readLocalJSON(notificationStorageKey, {})
     };
 
     function saveNotificationSettings() {
@@ -2490,7 +2538,7 @@ document.querySelectorAll("[data-settings-action]").forEach((button) => {
     const privacyStorageKey = "helixPrivacySettings";
     let privacySettings = {
         ...privacyDefaults,
-        ...(JSON.parse(localStorage.getItem(privacyStorageKey) || "{}"))
+        ...readLocalJSON(privacyStorageKey, {})
     };
 
     const cycleValues = {
@@ -2515,7 +2563,7 @@ document.querySelectorAll("[data-settings-action]").forEach((button) => {
                 : value;
         });
 
-        const blocked = JSON.parse(localStorage.getItem("helixBlockedUsers") || "[]");
+        const blocked = readLocalJSON("helixBlockedUsers", []);
         const count = document.getElementById("privacy-blocked-count");
         const list = document.getElementById("privacy-blocked-users");
 
