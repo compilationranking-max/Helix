@@ -3,7 +3,6 @@ require("dotenv").config();
 const express = require("express");
 const OpenAI = require("openai");
 const path = require("path");
-const fs = require("fs");
 const crypto = require("crypto");
 const { promisify } = require("util");
 const scrypt = promisify(crypto.scrypt);
@@ -23,164 +22,29 @@ const RATE_LIMITS = {
 };
 const SESSION_TTL_MS = 8 * 60 * 60 * 1000;
 const SESSION_COOKIE = "helix_session";
-const SESSION_FILE = path.join(__dirname, "data", "helix-sessions.enc");
-const DATA_KEY_FILE = path.join(__dirname, ".helix-data-key");
-const DATA_KEY_ENV = "HELIX_DATA_KEY";
-const DATA_ENCRYPTION_VERSION = 1;
-const SCRYPT_OPTIONS = { N: 131072, r: 8, p: 1, maxmem: 256 * 1024 * 1024 };
 const sessions = new Map();
+
 
 const rateBuckets = new Map();
 
-function getDataKey() {
-    if (process.env[DATA_KEY_ENV]) {
-        const raw = process.env[DATA_KEY_ENV].trim();
-        if (!/^[a-f0-9]{64}$/i.test(raw)) {
-            throw new Error("HELIX_DATA_KEY must be exactly 64 hexadecimal characters.");
-        }
-        return Buffer.from(raw, "hex");
-    }
-
-    if (process.env.NODE_ENV === "production") {
-        throw new Error("HELIX_DATA_KEY is required in production.");
-    }
-
-    fs.mkdirSync(path.dirname(DATA_KEY_FILE), { recursive: true });
-    if (fs.existsSync(DATA_KEY_FILE)) {
-        const raw = fs.readFileSync(DATA_KEY_FILE, "utf8").trim();
-        if (/^[a-f0-9]{64}$/i.test(raw)) return Buffer.from(raw, "hex");
-        throw new Error("The local Helix data key is invalid.");
-    }
-
-    const key = crypto.randomBytes(32);
-    fs.writeFileSync(DATA_KEY_FILE, key.toString("hex"), { encoding: "utf8", mode: 0o600 });
-    try { fs.chmodSync(DATA_KEY_FILE, 0o600); } catch {}
-    return key;
-}
-
-function encryptAtRest(value) {
-    const key = getDataKey();
-    const iv = crypto.randomBytes(12);
-    const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);
-    const ciphertext = Buffer.concat([cipher.update(value, "utf8"), cipher.final()]);
-    const tag = cipher.getAuthTag();
-    return JSON.stringify({
-        v: DATA_ENCRYPTION_VERSION,
-        alg: "aes-256-gcm",
-        iv: iv.toString("base64"),
-        tag: tag.toString("base64"),
-        data: ciphertext.toString("base64")
-    });
-}
-
-function decryptAtRest(payload) {
-    const envelope = JSON.parse(payload);
-    if (envelope?.v !== DATA_ENCRYPTION_VERSION || envelope?.alg !== "aes-256-gcm" ||
-        typeof envelope.iv !== "string" || typeof envelope.tag !== "string" || typeof envelope.data !== "string") {
-        throw new Error("Invalid encrypted Helix data envelope.");
-    }
-    const decipher = crypto.createDecipheriv("aes-256-gcm", getDataKey(), Buffer.from(envelope.iv, "base64"));
-    decipher.setAuthTag(Buffer.from(envelope.tag, "base64"));
-    return Buffer.concat([
-        decipher.update(Buffer.from(envelope.data, "base64")),
-        decipher.final()
-    ]).toString("utf8");
-}
-
-function writeProtectedFile(filePath, plaintext, { backup = true } = {}) {
-    const tempFile = `${filePath}.tmp`;
-    const encrypted = encryptAtRest(plaintext);
-    fs.mkdirSync(path.dirname(filePath), { recursive: true });
-    fs.writeFileSync(tempFile, encrypted, { encoding: "utf8", mode: 0o600 });
-    try { fs.chmodSync(tempFile, 0o600); } catch {}
-    if (backup && fs.existsSync(filePath)) {
-        const backupFile = `${filePath}.bak`;
-        fs.copyFileSync(filePath, backupFile);
-        try { fs.chmodSync(backupFile, 0o600); } catch {}
-    }
-    fs.renameSync(tempFile, filePath);
-    try { fs.chmodSync(filePath, 0o600); } catch {}
-}
-
-function isEncryptedEnvelope(raw) {
-    try {
-        const envelope = JSON.parse(raw);
-        return envelope?.v === DATA_ENCRYPTION_VERSION && envelope?.alg === "aes-256-gcm" &&
-            typeof envelope.iv === "string" && typeof envelope.tag === "string" && typeof envelope.data === "string";
-    } catch {
-        return false;
-    }
-}
-
-function readProtectedFile(filePath) {
-    if (!fs.existsSync(filePath)) return null;
-    const raw = fs.readFileSync(filePath, "utf8");
-    if (isEncryptedEnvelope(raw)) return decryptAtRest(raw);
-    if (raw.trim().startsWith("{")) return raw;
-    throw new Error("Invalid protected Helix data file.");
-}
-
-function sessionHash(token) {
-    return crypto.createHash("sha256").update(token).digest("hex");
-}
-
-function persistSessions() {
-    writeProtectedFile(SESSION_FILE, JSON.stringify([...sessions.entries()], null, 2));
-}
-
-function loadSessions() {
-    try {
-        const plaintext = readProtectedFile(SESSION_FILE);
-        if (!plaintext) return;
-        const parsed = JSON.parse(plaintext);
-        if (!Array.isArray(parsed)) return;
-        for (const entry of parsed) {
-            if (!Array.isArray(entry) || entry.length !== 2) continue;
-            const [tokenHash, session] = entry;
-            if (!/^[a-f0-9]{64}$/i.test(tokenHash) || !session?.username) continue;
-            if (Date.now() - Number(session.lastSeenAt) > SESSION_TTL_MS) continue;
-            sessions.set(tokenHash, {
-                username: session.username,
-                createdAt: Number(session.createdAt),
-                lastSeenAt: Number(session.lastSeenAt)
-            });
-        }
-        persistSessions();
-    } catch (error) {
-        console.warn("Unable to load persistent Helix sessions:", error.message);
-    }
-}
-
 function createSession(username) {
     const token = crypto.randomBytes(32).toString("base64url");
-    const tokenHash = sessionHash(token);
-    sessions.set(tokenHash, { username, createdAt: Date.now(), lastSeenAt: Date.now() });
-    persistSessions();
+    sessions.set(token, { username, createdAt: Date.now(), lastSeenAt: Date.now() });
     return token;
 }
 
 function getSession(req) {
     const token = req.cookies?.[SESSION_COOKIE];
     if (!token) return null;
-    const tokenHash = sessionHash(token);
-    const session = sessions.get(tokenHash);
+    const session = sessions.get(token);
     if (!session) return null;
     if (Date.now() - session.lastSeenAt > SESSION_TTL_MS) {
-        sessions.delete(tokenHash);
-        persistSessions();
+        sessions.delete(token);
         return null;
     }
     session.lastSeenAt = Date.now();
-    return { token, tokenHash, ...session };
+    return { token, ...session };
 }
-
-function destroySession(tokenHash) {
-    if (!tokenHash) return;
-    sessions.delete(tokenHash);
-    persistSessions();
-}
-
-loadSessions();
 
 function setSessionCookie(res, token) {
     const secure = process.env.NODE_ENV === "production";
@@ -209,7 +73,6 @@ function requireAuth(req, res, next) {
     }
     req.user = session.username;
     req.sessionToken = session.token;
-    req.sessionTokenHash = session.tokenHash;
     next();
 }
 
@@ -227,18 +90,13 @@ function requireSameOrigin(req, res, next) {
     next();
 }
 
-async function hashPassword(password, salt = crypto.randomBytes(16).toString("hex"), options = SCRYPT_OPTIONS) {
-    const derivedKey = await scrypt(password, salt, 64, options);
-    return {
-        salt,
-        hash: derivedKey.toString("hex"),
-        passwordAlgorithm: "scrypt",
-        passwordCost: { N: options.N, r: options.r, p: options.p }
-    };
+async function hashPassword(password, salt = crypto.randomBytes(16).toString("hex")) {
+    const derivedKey = await scrypt(password, salt, 64);
+    return { salt, hash: derivedKey.toString("hex") };
 }
 
-async function verifyPassword(password, salt, expectedHash, options = SCRYPT_OPTIONS) {
-    const derivedKey = await scrypt(password, salt, 64, options);
+async function verifyPassword(password, salt, expectedHash) {
+    const derivedKey = await scrypt(password, salt, 64);
     const expected = Buffer.from(expectedHash, "hex");
     return expected.length === derivedKey.length && crypto.timingSafeEqual(derivedKey, expected);
 }
@@ -302,12 +160,8 @@ const client = process.env.OPENAI_API_KEY
     : null;
 
 app.disable("x-powered-by");
-app.set("trust proxy", process.env.TRUST_PROXY === "1" ? 1 : false);
 
 app.use((req, res, next) => {
-    if (process.env.NODE_ENV === "production" && process.env.ENFORCE_HTTPS === "true" && !req.secure) {
-        return res.redirect(308, `https://${req.get("host")}${req.originalUrl}`);
-    }
     res.setHeader("X-Content-Type-Options", "nosniff");
     res.setHeader("X-Frame-Options", "DENY");
     res.setHeader("Referrer-Policy", "no-referrer");
@@ -402,19 +256,15 @@ const networkDataFile = path.join(networkDataDir, "helix-network.json");
 
 function loadNetworkData() {
     try {
-        const raw = fs.existsSync(networkDataFile) ? fs.readFileSync(networkDataFile, "utf8") : null;
-        const plaintext = readProtectedFile(networkDataFile);
-        if (!plaintext) return { users: {}, requests: [], friends: [] };
-        const parsed = JSON.parse(plaintext);
-        const normalized = {
+        if (!require("fs").existsSync(networkDataFile)) {
+            return { users: {}, requests: [], friends: [] };
+        }
+        const parsed = JSON.parse(require("fs").readFileSync(networkDataFile, "utf8"));
+        return {
             users: parsed.users && typeof parsed.users === "object" ? parsed.users : {},
             requests: Array.isArray(parsed.requests) ? parsed.requests : [],
             friends: Array.isArray(parsed.friends) ? parsed.friends : []
         };
-        if (raw && !isEncryptedEnvelope(raw)) {
-            writeProtectedFile(networkDataFile, JSON.stringify(normalized, null, 2), { backup: false });
-        }
-        return normalized;
     } catch (error) {
         console.warn("Unable to load Helix network data:", error.message);
         return { users: {}, requests: [], friends: [] };
@@ -422,7 +272,11 @@ function loadNetworkData() {
 }
 
 function saveNetworkData(data) {
-    writeProtectedFile(networkDataFile, JSON.stringify(data, null, 2));
+    const fs = require("fs");
+    fs.mkdirSync(networkDataDir, { recursive: true });
+    const tempFile = `${networkDataFile}.tmp`;
+    fs.writeFileSync(tempFile, JSON.stringify(data, null, 2), "utf8");
+    fs.renameSync(tempFile, networkDataFile);
 }
 
 function getUserRecord(data, username) {
@@ -553,9 +407,7 @@ app.post("/api/auth/register", rateLimit("auth"), async (req, res) => {
             accountId,
             createdAt: new Date().toISOString(),
             passwordSalt: credentials.salt,
-            passwordHash: credentials.hash,
-            passwordAlgorithm: credentials.passwordAlgorithm,
-            passwordCost: credentials.passwordCost
+            passwordHash: credentials.hash
         };
         saveNetworkData(data);
 
@@ -583,24 +435,8 @@ app.post("/api/auth/login", rateLimit("auth"), async (req, res) => {
             return res.status(401).json({ error: "Invalid username or password. Existing prototype accounts must be securely re-created." });
         }
 
-        const isStrongScrypt = user.passwordAlgorithm === "scrypt" &&
-            Number(user.passwordCost?.N) === SCRYPT_OPTIONS.N &&
-            Number(user.passwordCost?.r) === SCRYPT_OPTIONS.r &&
-            Number(user.passwordCost?.p) === SCRYPT_OPTIONS.p;
-        const verifyOptions = isStrongScrypt
-            ? SCRYPT_OPTIONS
-            : { N: 16384, r: 8, p: 1, maxmem: 128 * 1024 * 1024 };
-        const valid = await verifyPassword(password, user.passwordSalt, user.passwordHash, verifyOptions);
+        const valid = await verifyPassword(password, user.passwordSalt, user.passwordHash);
         if (!valid) return res.status(401).json({ error: "Invalid username or password." });
-
-        if (!isStrongScrypt) {
-            const upgraded = await hashPassword(password);
-            user.passwordSalt = upgraded.salt;
-            user.passwordHash = upgraded.hash;
-            user.passwordAlgorithm = upgraded.passwordAlgorithm;
-            user.passwordCost = upgraded.passwordCost;
-            saveNetworkData(data);
-        }
 
         const token = createSession(username);
         setSessionCookie(res, token);
@@ -625,9 +461,8 @@ app.get("/api/auth/session", (req, res) => {
 });
 
 app.post("/api/auth/logout", requireAuth, (req, res) => {
-    destroySession(req.sessionTokenHash);
+    sessions.delete(req.sessionToken);
     clearSessionCookie(res);
-    res.setHeader("Clear-Site-Data", "\"cache\", \"cookies\", \"storage\"");
     res.json({ ok: true });
 });
 
