@@ -87,13 +87,13 @@ function decryptAtRest(payload) {
     ]).toString("utf8");
 }
 
-function writeProtectedFile(filePath, plaintext) {
+function writeProtectedFile(filePath, plaintext, { backup = true } = {}) {
     const tempFile = `${filePath}.tmp`;
     const encrypted = encryptAtRest(plaintext);
     fs.mkdirSync(path.dirname(filePath), { recursive: true });
     fs.writeFileSync(tempFile, encrypted, { encoding: "utf8", mode: 0o600 });
     try { fs.chmodSync(tempFile, 0o600); } catch {}
-    if (fs.existsSync(filePath)) {
+    if (backup && fs.existsSync(filePath)) {
         const backupFile = `${filePath}.bak`;
         fs.copyFileSync(filePath, backupFile);
         try { fs.chmodSync(backupFile, 0o600); } catch {}
@@ -402,6 +402,7 @@ const networkDataFile = path.join(networkDataDir, "helix-network.json");
 
 function loadNetworkData() {
     try {
+        const raw = fs.existsSync(networkDataFile) ? fs.readFileSync(networkDataFile, "utf8") : null;
         const plaintext = readProtectedFile(networkDataFile);
         if (!plaintext) return { users: {}, requests: [], friends: [] };
         const parsed = JSON.parse(plaintext);
@@ -410,7 +411,9 @@ function loadNetworkData() {
             requests: Array.isArray(parsed.requests) ? parsed.requests : [],
             friends: Array.isArray(parsed.friends) ? parsed.friends : []
         };
-        if (!isEncryptedEnvelope(fs.readFileSync(networkDataFile, "utf8"))) saveNetworkData(normalized);
+        if (raw && !isEncryptedEnvelope(raw)) {
+            writeProtectedFile(networkDataFile, JSON.stringify(normalized, null, 2), { backup: false });
+        }
         return normalized;
     } catch (error) {
         console.warn("Unable to load Helix network data:", error.message);
