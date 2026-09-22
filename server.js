@@ -421,12 +421,36 @@ async function generateGeminiResponse(contents) {
         throw error;
     }
 
-    const reply = data?.candidates?.[0]?.content?.parts
-        ?.map((part) => part?.text || "")
+    const candidate = data?.candidates?.[0];
+    const parts = Array.isArray(candidate?.content?.parts)
+        ? candidate.content.parts
+        : [];
+
+    const reply = parts
+        .map((part) => typeof part?.text === "string" ? part.text : "")
+        .filter(Boolean)
         .join("")
         .trim();
 
-    return reply || "Helix AI returned an empty response.";
+    if (reply) return reply;
+
+    const blockReason =
+        data?.promptFeedback?.blockReason ||
+        candidate?.finishReason ||
+        data?.candidates?.[0]?.finishReason ||
+        "UNKNOWN";
+
+    const diagnostic = [
+        "Gemini returned no text.",
+        `Reason: ${blockReason}`,
+        data?.promptFeedback?.blockReasonMessage
+            ? `Details: ${data.promptFeedback.blockReasonMessage}`
+            : ""
+    ].filter(Boolean).join(" ");
+
+    const emptyResponse = new Error(diagnostic);
+    emptyResponse.status = 502;
+    throw emptyResponse;
 }
 
 app.get("/api/health", (req, res) => {
@@ -486,8 +510,14 @@ app.post("/api/chat", async (req, res) => {
             });
         }
 
-        res.status(502).json({
-            error: "Helix reached Gemini, but Gemini did not return a valid response."
+        if (error.status === 502) {
+            return res.status(502).json({
+                error: error.message || "Gemini returned no usable text."
+            });
+        }
+
+        res.status(500).json({
+            error: "Helix AI failed to respond. Check the Render logs for the Gemini error."
         });
     }
 });
