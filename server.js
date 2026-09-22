@@ -286,7 +286,7 @@ function getUserRecord(data, username) {
 function sanitizePublicUser(user) {
     return {
         username: user.username,
-        accountId: user.accountId,
+        displayName: user.displayName || user.username,
         createdAt: user.createdAt
     };
 }
@@ -357,63 +357,52 @@ function networkState(username) {
     return { friends, incoming, outgoing };
 }
 
-function normalizeAccountId(value) {
-    return typeof value === "string" ? value.trim().toLowerCase() : "";
+function normalizeDisplayName(value) {
+    return typeof value === "string"
+        ? value.trim().replace(/\s+/g, " ")
+        : "";
 }
 
-function validAccountId(value) {
-    return /^[a-z0-9][a-z0-9_.-]{2,31}$/.test(value);
-}
-
-function findAccountIdOwner(data, accountId) {
-    const normalized = normalizeAccountId(accountId);
-
-    return Object.entries(data.users).find(([, user]) =>
-        normalizeAccountId(user?.accountId) === normalized
-    )?.[0] || null;
-}
-
-function createFallbackAccountId(data) {
-    let candidate = "";
-    do {
-        candidate = `hx_${require("crypto").randomBytes(8).toString("hex")}`;
-    } while (findAccountIdOwner(data, candidate));
-
-    return candidate;
+function validDisplayName(value) {
+    return value.length >= 1 && value.length <= 50 && !/[\u0000-\u001F\u007F]/.test(value);
 }
 
 app.post("/api/auth/register", rateLimit("auth"), async (req, res) => {
     try {
         const username = normalizeUsername(req.body?.username);
-        const accountId = normalizeAccountId(req.body?.accountId);
+        const displayName = normalizeDisplayName(req.body?.displayName);
         const password = typeof req.body?.password === "string" ? req.body.password : "";
 
-        if (!validUsername(username) || !validAccountId(accountId) || password.length < 8) {
-            return res.status(400).json({ error: "Use a valid username, Account ID and a password of at least 8 characters." });
+        if (!validUsername(username) || !validDisplayName(displayName) || password.length < 8) {
+            return res.status(400).json({
+                error: "Use a unique username, a display name (1–50 characters), and a password of at least 8 characters."
+            });
         }
 
         const data = loadNetworkData();
         if (data.users[username]) {
-            return res.status(409).json({ error: "That username already exists. Please choose another username." });
-        }
-        const owner = findAccountIdOwner(data, accountId);
-        if (owner) {
-            return res.status(409).json({ error: "That Account ID is already taken." });
+            return res.status(409).json({
+                error: "That username already exists. Please choose another username."
+            });
         }
 
         const credentials = await hashPassword(password);
         data.users[username] = {
             username,
-            accountId,
+            displayName,
             createdAt: new Date().toISOString(),
             passwordSalt: credentials.salt,
             passwordHash: credentials.hash
         };
+
         saveNetworkData(data);
 
         const token = createSession(username);
         setSessionCookie(res, token);
-        res.status(201).json({ ok: true, user: sanitizePublicUser(data.users[username]) });
+        res.status(201).json({
+            ok: true,
+            user: sanitizePublicUser(data.users[username])
+        });
     } catch (error) {
         console.error("Registration failed:", error.message);
         res.status(500).json({ error: "Unable to create the account right now." });
@@ -466,89 +455,13 @@ app.post("/api/auth/logout", requireAuth, (req, res) => {
     res.json({ ok: true });
 });
 
-app.post("/api/network/sync", requireAuth, rateLimit("network"), (req, res) => {
-    const currentUsername = req.user;
-    const username = normalizeUsername(req.body?.username) || currentUsername;
-    const previousUsername = normalizeUsername(req.body?.previousUsername) || currentUsername;
-
-    if (previousUsername !== currentUsername) {
-        return res.status(403).json({ error: "You can only change your own username." });
-    }
-    const requestedAccountId = normalizeAccountId(req.body?.accountId);
-
-    if (!validUsername(username)) {
-        return res.status(400).json({ error: "Invalid username." });
-    }
-
-    if (requestedAccountId && !validAccountId(requestedAccountId)) {
-        return res.status(400).json({
-            error: "Account ID must be 3–32 characters using only letters, numbers, dots, underscores or hyphens."
-        });
-    }
-
-    const data = loadNetworkData();
-
-    if (previousUsername && previousUsername !== username) {
-        if (!validUsername(previousUsername)) {
-            return res.status(400).json({ error: "Invalid previous username." });
-        }
-
-        try {
-            migrateUsername(data, previousUsername, username);
-        } catch (error) {
-            return res.status(409).json({ error: error.message });
-        }
-    }
-
-    const existingUser = data.users[username];
-
-    if (!existingUser) {
-        const owner = requestedAccountId
-            ? findAccountIdOwner(data, requestedAccountId)
-            : null;
-
-        if (owner && owner !== username) {
-            return res.status(409).json({ error: "That Account ID is already taken." });
-        }
-
-        data.users[username] = {
-            username,
-            accountId: requestedAccountId || createFallbackAccountId(data),
-            createdAt: new Date().toISOString()
-        };
-    } else if (requestedAccountId && normalizeAccountId(existingUser.accountId) !== requestedAccountId) {
-        const owner = findAccountIdOwner(data, requestedAccountId);
-
-        if (owner && owner !== username) {
-            return res.status(409).json({ error: "That Account ID is already taken." });
-        }
-
-        existingUser.accountId = requestedAccountId;
-    } else if (!existingUser.accountId) {
-        existingUser.accountId = createFallbackAccountId(data);
-    }
-
-    saveNetworkData(data);
-
-    res.json({
-        ok: true,
-        username,
-        accountId: data.users[username].accountId,
-        ...networkState(username)
-    });
-});
-
-app.post("/api/network/account-id", requireAuth, rateLimit("network"), (req, res) => {
+app.post("/api/profile/display-name", requireAuth, rateLimit("network"), (req, res) => {
     const username = req.user;
-    const accountId = normalizeAccountId(req.body?.accountId);
+    const displayName = normalizeDisplayName(req.body?.displayName);
 
-    if (!validUsername(username)) {
-        return res.status(400).json({ error: "Invalid username." });
-    }
-
-    if (!validAccountId(accountId)) {
+    if (!validDisplayName(displayName)) {
         return res.status(400).json({
-            error: "Account ID must be 3–32 characters using only letters, numbers, dots, underscores or hyphens."
+            error: "Display name must be 1–50 characters and cannot contain control characters."
         });
     }
 
@@ -556,45 +469,76 @@ app.post("/api/network/account-id", requireAuth, rateLimit("network"), (req, res
     const account = data.users[username];
 
     if (!account) {
-        return res.status(404).json({ error: "Helix account was not found on the server." });
+        return res.status(404).json({ error: "Helix account was not found." });
     }
 
-    const owner = findAccountIdOwner(data, accountId);
-    if (owner && owner !== username) {
-        return res.status(409).json({ error: "That Account ID is already taken." });
+    account.displayName = displayName;
+    account.username = username;
+    saveNetworkData(data);
+
+    res.json({
+        ok: true,
+        user: sanitizePublicUser(account)
+    });
+});
+
+app.post("/api/network/sync", requireAuth, rateLimit("network"), (req, res) => {
+    const username = req.user;
+    const requestedDisplayName = normalizeDisplayName(req.body?.displayName);
+    const data = loadNetworkData();
+    const account = data.users[username];
+
+    if (!account) {
+        return res.status(404).json({ error: "Helix account was not found." });
     }
 
-    account.accountId = accountId;
+    if (requestedDisplayName) {
+        if (!validDisplayName(requestedDisplayName)) {
+            return res.status(400).json({
+                error: "Display name must be 1–50 characters."
+            });
+        }
+        account.displayName = requestedDisplayName;
+    }
+
+    account.username = username;
+    if (!account.displayName) account.displayName = username;
+    delete account.accountId;
+
     saveNetworkData(data);
 
     res.json({
         ok: true,
         username,
-        accountId: account.accountId
+        displayName: account.displayName,
+        ...networkState(username)
     });
 });
+
 
 app.get("/api/network/search", requireAuth, rateLimit("network"), (req, res) => {
     const username = req.user;
     const query = normalizeUsername(req.query.q).slice(0, MAX_SEARCH_LENGTH).toLowerCase();
 
-    if (!validUsername(username)) {
-        return res.status(400).json({ error: "Invalid username." });
-    }
-
     const data = loadNetworkData();
     const state = networkState(username);
     const blockedNames = new Set([
         username,
-        ...state.friends,
+        ...state.friends.map((user) => user.username),
         ...state.incoming.map((item) => item.from),
         ...state.outgoing.map((item) => item.to)
     ]);
 
-    const results = Object.keys(data.users)
-        .filter((name) => !blockedNames.has(name))
-        .filter((name) => !query || name.toLowerCase().includes(query))
-        .slice(0, 20);
+    const results = Object.values(data.users)
+        .filter((user) => user && validUsername(user.username))
+        .filter((user) => !blockedNames.has(user.username))
+        .filter((user) =>
+            !query ||
+            user.username.toLowerCase().includes(query) ||
+            String(user.displayName || user.username).toLowerCase().includes(query)
+        )
+        .slice(0, 20)
+        .map((user) => sanitizePublicUser(user));
 
     res.json({ results });
 });
