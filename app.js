@@ -11,6 +11,23 @@ let loggedInUser = localStorage.getItem("helixLoggedIn");
 
 if (!loggedInUser) {
     window.location.href = "index.html";
+} else {
+    fetch("/api/auth/session", { credentials: "same-origin" })
+        .then((response) => {
+            if (!response.ok) throw new Error("Session expired");
+            return response.json();
+        })
+        .then((data) => {
+            if (data?.user?.username) {
+                loggedInUser = data.user.username;
+                localStorage.setItem("helixLoggedIn", loggedInUser);
+                updateLoggedInUser();
+            }
+        })
+        .catch(() => {
+            localStorage.removeItem("helixLoggedIn");
+            window.location.href = "index.html";
+        });
 }
 
 
@@ -88,7 +105,15 @@ function updateLoggedInUser() {
 // LOGOUT
 // =========================================================
 
-function logoutCurrentSession() {
+async function logoutCurrentSession() {
+    try {
+        await fetch("/api/auth/logout", {
+            method: "POST",
+            credentials: "same-origin"
+        });
+    } catch (error) {
+        console.warn("Logout request failed:", error);
+    }
     localStorage.removeItem("helixLoggedIn");
     window.location.href = "index.html";
 }
