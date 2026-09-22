@@ -11,26 +11,7 @@ let loggedInUser = localStorage.getItem("helixLoggedIn");
 
 if (!loggedInUser) {
     window.location.href = "index.html";
-} else {
-    fetch("/api/auth/session", { credentials: "same-origin" })
-        .then((response) => {
-            if (!response.ok) throw new Error("Session expired");
-            return response.json();
-        })
-        .then((data) => {
-            if (data?.user?.username) {
-                setCurrentProfileUser(data.user);
-                updateLoggedInUser();
-            }
-        })
-        .catch(() => {
-            localStorage.removeItem("helixLoggedIn");
-            window.location.href = "index.html";
-        });
 }
-
-
-
 
 // =========================================================
 // HELIX INTRO ANIMATION
@@ -162,18 +143,12 @@ function updateLoggedInUser() {
 // LOGOUT
 // =========================================================
 
-async function logoutCurrentSession() {
-    try {
-        await fetch("/api/auth/logout", {
-            method: "POST",
-            credentials: "same-origin"
-        });
-    } catch (error) {
-        console.warn("Logout request failed:", error);
-    }
+function logoutCurrentSession() {
     localStorage.removeItem("helixLoggedIn");
+    localStorage.removeItem("helixDisplayName");
     window.location.href = "index.html";
 }
+
 
 const logoutButton = document.getElementById("logout-btn");
 
