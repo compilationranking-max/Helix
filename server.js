@@ -230,7 +230,7 @@ const PUBLIC_FILES = new Set([
 
 function isPublicAssetPath(requestPath) {
     if (PUBLIC_FILES.has(requestPath)) return true;
-    return /^\/images\/[A-Za-z0-9._-]+\\.(?:png|jpe?g|webp|gif|svg|ico)$/i.test(requestPath);
+    return /^\/images\/[A-Za-z0-9._-]+\.(?:png|jpe?g|webp|gif|svg|ico)$/i.test(requestPath);
 }
 
 app.use((req, res, next) => {
