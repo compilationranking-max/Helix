@@ -102,15 +102,22 @@ function writeProtectedFile(filePath, plaintext) {
     try { fs.chmodSync(filePath, 0o600); } catch {}
 }
 
+function isEncryptedEnvelope(raw) {
+    try {
+        const envelope = JSON.parse(raw);
+        return envelope?.v === DATA_ENCRYPTION_VERSION && envelope?.alg === "aes-256-gcm" &&
+            typeof envelope.iv === "string" && typeof envelope.tag === "string" && typeof envelope.data === "string";
+    } catch {
+        return false;
+    }
+}
+
 function readProtectedFile(filePath) {
     if (!fs.existsSync(filePath)) return null;
     const raw = fs.readFileSync(filePath, "utf8");
-    try {
-        return decryptAtRest(raw);
-    } catch (encryptedError) {
-        if (raw.trim().startsWith("{")) return raw;
-        throw encryptedError;
-    }
+    if (isEncryptedEnvelope(raw)) return decryptAtRest(raw);
+    if (raw.trim().startsWith("{")) return raw;
+    throw new Error("Invalid protected Helix data file.");
 }
 
 function sessionHash(token) {
@@ -295,8 +302,12 @@ const client = process.env.OPENAI_API_KEY
     : null;
 
 app.disable("x-powered-by");
+app.set("trust proxy", process.env.TRUST_PROXY === "1" ? 1 : false);
 
 app.use((req, res, next) => {
+    if (process.env.NODE_ENV === "production" && process.env.ENFORCE_HTTPS === "true" && !req.secure) {
+        return res.redirect(308, `https://${req.get("host")}${req.originalUrl}`);
+    }
     res.setHeader("X-Content-Type-Options", "nosniff");
     res.setHeader("X-Frame-Options", "DENY");
     res.setHeader("Referrer-Policy", "no-referrer");
@@ -399,7 +410,7 @@ function loadNetworkData() {
             requests: Array.isArray(parsed.requests) ? parsed.requests : [],
             friends: Array.isArray(parsed.friends) ? parsed.friends : []
         };
-        if (plaintext.trim().startsWith("{")) saveNetworkData(normalized);
+        if (!isEncryptedEnvelope(fs.readFileSync(networkDataFile, "utf8"))) saveNetworkData(normalized);
         return normalized;
     } catch (error) {
         console.warn("Unable to load Helix network data:", error.message);
@@ -539,7 +550,9 @@ app.post("/api/auth/register", rateLimit("auth"), async (req, res) => {
             accountId,
             createdAt: new Date().toISOString(),
             passwordSalt: credentials.salt,
-            passwordHash: credentials.hash
+            passwordHash: credentials.hash,
+            passwordAlgorithm: credentials.passwordAlgorithm,
+            passwordCost: credentials.passwordCost
         };
         saveNetworkData(data);
 
