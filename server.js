@@ -299,50 +299,34 @@ function validUsername(value) {
     return /^[A-Za-z0-9_.-]{3,32}$/.test(value);
 }
 
-function migrateUsername(data, previousUsername, nextUsername) {
-    if (!previousUsername || previousUsername === nextUsername) return;
-
-    const oldUser = data.users[previousUsername];
-    const newUser = data.users[nextUsername];
-
-    if (!oldUser) return;
-
-    if (newUser && previousUsername !== nextUsername) {
-        throw new Error("That username is already registered on the Helix network.");
-    }
-
-    data.users[nextUsername] = {
-        ...oldUser,
-        username: nextUsername
-    };
-    delete data.users[previousUsername];
-
-    data.requests.forEach((request) => {
-        if (request.from === previousUsername) request.from = nextUsername;
-        if (request.to === previousUsername) request.to = nextUsername;
-    });
-
-    data.friends.forEach((friend) => {
-        if (friend.a === previousUsername) friend.a = nextUsername;
-        if (friend.b === previousUsername) friend.b = nextUsername;
-    });
-}
-
 function samePair(a, b, x, y) {
     return (a === x && b === y) || (a === y && b === x);
 }
 
+function publicNetworkProfile(data, username) {
+    const user = data.users[username];
+
+    return {
+        username,
+        displayName: user?.displayName || username
+    };
+}
+
 function networkState(username) {
     const data = loadNetworkData();
+
     const friends = data.friends
         .filter((friend) => friend.a === username || friend.b === username)
-        .map((friend) => friend.a === username ? friend.b : friend.a);
+        .map((friend) =>
+            publicNetworkProfile(data, friend.a === username ? friend.b : friend.a)
+        );
 
     const incoming = data.requests
         .filter((request) => request.to === username && request.status === "pending")
         .map((request) => ({
             id: request.id,
             from: request.from,
+            fromDisplayName: data.users[request.from]?.displayName || request.from,
             createdAt: request.createdAt
         }));
 
@@ -351,6 +335,7 @@ function networkState(username) {
         .map((request) => ({
             id: request.id,
             to: request.to,
+            toDisplayName: data.users[request.to]?.displayName || request.to,
             createdAt: request.createdAt
         }));
 
@@ -522,6 +507,7 @@ app.get("/api/network/search", requireAuth, rateLimit("network"), (req, res) => 
 
     const data = loadNetworkData();
     const state = networkState(username);
+
     const blockedNames = new Set([
         username,
         ...state.friends.map((user) => user.username),
@@ -532,13 +518,13 @@ app.get("/api/network/search", requireAuth, rateLimit("network"), (req, res) => 
     const results = Object.values(data.users)
         .filter((user) => user && validUsername(user.username))
         .filter((user) => !blockedNames.has(user.username))
-        .filter((user) =>
+        .filter((user) => (
             !query ||
             user.username.toLowerCase().includes(query) ||
             String(user.displayName || user.username).toLowerCase().includes(query)
-        )
+        ))
         .slice(0, 20)
-        .map((user) => sanitizePublicUser(user));
+        .map((user) => publicNetworkProfile(data, user.username));
 
     res.json({ results });
 });
