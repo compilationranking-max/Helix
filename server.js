@@ -93,8 +93,17 @@ function requireAuth(req, res, next) {
 function sameOrigin(req) {
     const origin = req.get("origin");
     if (!origin) return true;
+
     const expected = `${req.protocol}://${req.get("host")}`;
-    return origin === expected || LOCAL_DEV_ORIGINS.has(origin);
+    if (origin === expected) return true;
+
+    try {
+        const parsed = new URL(origin);
+        const isLocalHost = parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1";
+        return isLocalHost && parsed.protocol === "http:";
+    } catch {
+        return false;
+    }
 }
 
 function requireSameOrigin(req, res, next) {
@@ -177,7 +186,19 @@ app.disable("x-powered-by");
 
 app.use((req, res, next) => {
     const origin = req.get("origin");
-    if (origin && LOCAL_DEV_ORIGINS.has(origin)) {
+    let localOrigin = false;
+    if (origin) {
+        try {
+            const parsed = new URL(origin);
+            localOrigin =
+                (parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1") &&
+                parsed.protocol === "http:";
+        } catch {
+            localOrigin = false;
+        }
+    }
+
+    if (origin && (LOCAL_DEV_ORIGINS.has(origin) || localOrigin)) {
         res.setHeader("Access-Control-Allow-Origin", origin);
         res.setHeader("Access-Control-Allow-Credentials", "true");
         res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -198,7 +219,7 @@ app.use((req, res, next) => {
         "Content-Security-Policy",
         "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; " +
         "script-src 'self'; style-src 'self'; img-src 'self' data: blob:; " +
-        "font-src 'self' data:; connect-src 'self'; form-action 'self'"
+        "font-src 'self' data:; connect-src 'self' http://localhost:3000 http://127.0.0.1:3000; form-action 'self'"
     );
 
     if (req.path.startsWith("/api/")) {
