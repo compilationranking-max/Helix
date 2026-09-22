@@ -27,6 +27,20 @@ const sessions = new Map();
 
 const rateBuckets = new Map();
 
+const LOCAL_DEV_ORIGINS = new Set([
+    "http://localhost:3000",
+    "http://localhost:5500",
+    "http://localhost:5501",
+    "http://localhost:8000",
+    "http://localhost:8080",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:5500",
+    "http://127.0.0.1:5501",
+    "http://127.0.0.1:8000",
+    "http://127.0.0.1:8080"
+]);
+
+
 function createSession(username) {
     const token = crypto.randomBytes(32).toString("base64url");
     sessions.set(token, { username, createdAt: Date.now(), lastSeenAt: Date.now() });
@@ -80,7 +94,7 @@ function sameOrigin(req) {
     const origin = req.get("origin");
     if (!origin) return true;
     const expected = `${req.protocol}://${req.get("host")}`;
-    return origin === expected;
+    return origin === expected || LOCAL_DEV_ORIGINS.has(origin);
 }
 
 function requireSameOrigin(req, res, next) {
@@ -161,6 +175,18 @@ const client = process.env.OPENAI_API_KEY
 
 app.disable("x-powered-by");
 
+app.use((req, res, next) => {
+    const origin = req.get("origin");
+    if (origin && LOCAL_DEV_ORIGINS.has(origin)) {
+        res.setHeader("Access-Control-Allow-Origin", origin);
+        res.setHeader("Access-Control-Allow-Credentials", "true");
+        res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+        res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
+        res.setHeader("Vary", "Origin");
+    }
+    if (req.method === "OPTIONS") return res.sendStatus(204);
+    next();
+});
 app.use((req, res, next) => {
     res.setHeader("X-Content-Type-Options", "nosniff");
     res.setHeader("X-Frame-Options", "DENY");
