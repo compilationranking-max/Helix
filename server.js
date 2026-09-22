@@ -464,18 +464,30 @@ app.post("/api/chat", async (req, res) => {
 
         if (error.status === 429) {
             return res.status(429).json({
-                error: "Gemini is temporarily rate-limited. Please try again shortly."
+                error: "Gemini rejected the request because of a quota or rate limit. Check your Gemini API usage/limits."
             });
         }
 
         if (error.status === 401 || error.status === 403) {
             return res.status(error.status).json({
-                error: "The Gemini API key was rejected. Check GEMINI_API_KEY in Render."
+                error: "Gemini rejected the API key. Verify that the current GEMINI_API_KEY in Render is complete, active, and authorized for the Gemini API."
             });
         }
 
-        res.status(500).json({
-            error: "Helix AI failed to respond. Please try again shortly."
+        if (error.status === 400) {
+            return res.status(400).json({
+                error: "Gemini rejected the Helix request format. The Render backend is connected, but the request payload was not accepted."
+            });
+        }
+
+        if (error.status === 404) {
+            return res.status(404).json({
+                error: "Gemini could not find the configured model. Check that GEMINI_MODEL is exactly gemini-3.8-flash."
+            });
+        }
+
+        res.status(502).json({
+            error: "Helix reached Gemini, but Gemini did not return a valid response."
         });
     }
 });
