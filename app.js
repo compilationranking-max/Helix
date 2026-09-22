@@ -1122,7 +1122,6 @@ function updateProfileView() {
     localStorage.setItem("helixDisplayName", displayName);
 
     if (users[loggedInUser]) {
-        delete users[loggedInUser].accountId;
         users[loggedInUser].displayName = displayName;
         localStorage.setItem("helixUsers", JSON.stringify(users));
     }
@@ -1488,12 +1487,13 @@ broadcastForm?.addEventListener("submit", (event) => {
     if (!text || !communityFeed) return;
 
     const username = loggedInUser || "User";
+    const displayName = getCurrentDisplayName();
     const post = document.createElement("article");
     post.className = "community-post";
     post.dataset.searchable = text.toLowerCase();
     post.dataset.postId = `post-${Date.now()}`;
     postComments[post.dataset.postId] = [];
-    post.innerHTML = `<div class="post-avatar avatar-lavender">${escapeHTML(username.slice(0, 2).toUpperCase())}</div><div class="post-content"><div class="post-meta"><div><strong>${escapeHTML(username)}</strong><span>@${escapeHTML(username.toLowerCase())} · now</span></div><button class="post-menu" type="button" aria-label="Post options">•••</button></div><p>${escapeHTML(text)}</p><div class="post-actions"><button type="button" data-post-action="like">♡ <span>0</span></button><button type="button" data-post-action="comment">◌ <span>0</span></button><button type="button" data-post-action="share">↗ <span>Share</span></button><button type="button" data-post-action="save">☆ <span>Save</span></button></div></div>`;
+    post.innerHTML = `<div class="post-avatar avatar-lavender">${escapeHTML(displayName.slice(0, 2).toUpperCase())}</div><div class="post-content"><div class="post-meta"><div><strong>${escapeHTML(displayName)}</strong><span>-${escapeHTML(username)} · now</span></div><button class="post-menu" type="button" aria-label="Post options">•••</button></div><p>${escapeHTML(text)}</p><div class="post-actions"><button type="button" data-post-action="like">♡ <span>0</span></button><button type="button" data-post-action="comment">◌ <span>0</span></button><button type="button" data-post-action="share">↗ <span>Share</span></button><button type="button" data-post-action="save">☆ <span>Save</span></button></div></div>`;
     communityFeed.prepend(post);
     broadcastInput.value = "";
     if (characterCount) characterCount.textContent = "0 / 280";
@@ -1513,7 +1513,7 @@ function renderComments(post) {
     if (!commentsList) return;
     const comments = postComments[post.dataset.postId] || [];
     commentsList.innerHTML = comments.length
-        ? comments.map((comment) => `<div class="comment-item"><span class="comment-avatar">${escapeHTML(comment.author.slice(0, 2).toUpperCase())}</span><div><strong>${escapeHTML(comment.author)}</strong><p>${escapeHTML(comment.text)}</p></div></div>`).join("")
+        ? comments.map((comment) => `<div class="comment-item"><span class="comment-avatar">${escapeHTML((comment.author || "User").slice(0, 2).toUpperCase())}</span><div><strong>${escapeHTML(comment.author || "User")}</strong><small>-${escapeHTML(comment.username || comment.author || "User")}</small><p>${escapeHTML(comment.text)}</p></div></div>`).join("")
         : `<p class="comments-empty">No comments yet. Start the conversation.</p>`;
 }
 
