@@ -3,10 +3,11 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
+const { GoogleGenAI } = require("@google/genai");
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
-const MODEL = process.env.GEMINI_MODEL || "gemini-3.8-flash";
+const MODEL = process.env.GEMINI_MODEL || "gemini-3.5-flash-lite";
 const MAX_HISTORY_MESSAGES = 20;
 
 const HELIX_AI_INSTRUCTIONS = `
@@ -394,98 +395,51 @@ function buildConversationInput(history, message) {
 }
 
 async function generateGeminiResponse(contents) {
-    // Keep total latency bounded for the Render web request.
-    // 3.8 can occasionally be capacity-constrained, so use fast fallbacks.
-    const configuredModels = [
-        MODEL,
-        "gemini-3.5-flash",
-        "gemini-3.5-flash-lite"
-    ].filter((model, index, models) => model && models.indexOf(model) === index);
-
-    let lastError = null;
-
-    for (const model of configuredModels) {
-        try {
-            const url = `${GEMINI_ENDPOINT}/${encodeURIComponent(model)}:generateContent`;
-
-            const response = await fetch(url, {
-                signal: AbortSignal.timeout(12000),
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "x-goog-api-key": process.env.GEMINI_API_KEY
-                },
-                body: JSON.stringify({
-                    systemInstruction: {
-                        parts: [{ text: HELIX_AI_INSTRUCTIONS }]
-                    },
-                    contents
-                })
-            });
-
-            const data = await response.json().catch(() => ({}));
-
-            if (!response.ok) {
-                const error = new Error(
-                    data?.error?.message ||
-                    `Gemini API request failed with HTTP ${response.status}`
-                );
-                error.status = response.status;
-                error.model = model;
-                lastError = error;
-
-                if (response.status === 429 || response.status === 503 || response.status === 408) {
-                    // Transient capacity/rate errors: try the next model.
-                    continue;
-                }
-
-                throw error;
-            }
-
-            const candidate = data?.candidates?.[0];
-            const parts = Array.isArray(candidate?.content?.parts)
-                ? candidate.content.parts
-                : [];
-
-            const reply = parts
-                .map((part) => typeof part?.text === "string" ? part.text : "")
-                .filter(Boolean)
-                .join("")
-                .trim();
-
-            if (reply) return reply;
-
-            const blockReason =
-                data?.promptFeedback?.blockReason ||
-                candidate?.finishReason ||
-                "UNKNOWN";
-
-            const emptyResponse = new Error(`Gemini returned no text. Reason: ${blockReason}`);
-            emptyResponse.status = 502;
-            emptyResponse.model = model;
-            lastError = emptyResponse;
-        } catch (error) {
-            lastError = error;
-
-            if (error?.name === "TimeoutError" || error?.name === "AbortError") {
-                // A slow/overloaded model should not make the whole Helix request hang.
-                continue;
-            }
-
-            if (error?.status === 429 || error?.status === 503) {
-                continue;
-            }
-
-            throw error;
-        }
+    if (!process.env.GEMINI_API_KEY) {
+        const error = new Error("GEMINI_API_KEY is not configured.");
+        error.status = 503;
+        throw error;
     }
 
-    const exhausted = new Error(
-        "Gemini is currently too busy or slow to answer. Please try again in a moment."
-    );
-    exhausted.status = 503;
-    exhausted.cause = lastError;
-    throw exhausted;
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
+    try {
+        const response = await ai.models.generateContent({
+            model: MODEL,
+            contents,
+            config: {
+                systemInstruction: HELIX_AI_INSTRUCTIONS,
+                temperature: 0.7,
+                httpOptions: {
+                    timeout: 15000,
+                    retryOptions: {
+                        attempts: 4,
+                        initialDelay: 1,
+                        maxDelay: 5,
+                        expBase: 2,
+                        jitter: 1
+                    }
+                }
+            }
+        });
+
+        const reply = typeof response?.text === "string"
+            ? response.text.trim()
+            : "";
+
+        if (!reply) {
+            const error = new Error("Gemini returned no text.");
+            error.status = 502;
+            throw error;
+        }
+
+        return reply;
+    } catch (error) {
+        const wrapped = new Error(error?.message || "Gemini request failed.");
+        wrapped.status = Number(error?.status || error?.code || 500);
+        wrapped.cause = error;
+        throw wrapped;
+    }
 }
 
 app.get("/api/health", (req, res) => {
