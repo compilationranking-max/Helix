@@ -394,10 +394,12 @@ function buildConversationInput(history, message) {
 }
 
 async function generateGeminiResponse(contents) {
+    // Keep total latency bounded for the Render web request.
+    // 3.8 can occasionally be capacity-constrained, so use fast fallbacks.
     const configuredModels = [
         MODEL,
-        "gemini-3.7-flash",
-        "gemini-3.6-flash"
+        "gemini-3.5-flash",
+        "gemini-3.5-flash-lite"
     ].filter((model, index, models) => model && models.indexOf(model) === index);
 
     let lastError = null;
@@ -407,7 +409,7 @@ async function generateGeminiResponse(contents) {
             const url = `${GEMINI_ENDPOINT}/${encodeURIComponent(model)}:generateContent`;
 
             const response = await fetch(url, {
-                signal: AbortSignal.timeout(30000),
+                signal: AbortSignal.timeout(12000),
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -432,9 +434,8 @@ async function generateGeminiResponse(contents) {
                 error.model = model;
                 lastError = error;
 
-                // Gemini can temporarily return 503 when a model is at capacity.
-                // Try the next stable Flash model instead of failing the whole chat.
-                if (response.status === 503 || response.status === 429) {
+                if (response.status === 429 || response.status === 503 || response.status === 408) {
+                    // Transient capacity/rate errors: try the next model.
                     continue;
                 }
 
@@ -459,19 +460,19 @@ async function generateGeminiResponse(contents) {
                 candidate?.finishReason ||
                 "UNKNOWN";
 
-            const emptyResponse = new Error(
-                `Gemini returned no text. Reason: ${blockReason}`
-            );
+            const emptyResponse = new Error(`Gemini returned no text. Reason: ${blockReason}`);
             emptyResponse.status = 502;
             emptyResponse.model = model;
             lastError = emptyResponse;
-
-            // A model can occasionally return an empty/blocked response; try a fallback.
         } catch (error) {
             lastError = error;
 
-            // Network/time-out failures should also try the next fallback model.
-            if (error?.name === "TimeoutError" || error?.status === 503 || error?.status === 429) {
+            if (error?.name === "TimeoutError" || error?.name === "AbortError") {
+                // A slow/overloaded model should not make the whole Helix request hang.
+                continue;
+            }
+
+            if (error?.status === 429 || error?.status === 503) {
                 continue;
             }
 
@@ -479,7 +480,12 @@ async function generateGeminiResponse(contents) {
         }
     }
 
-    throw lastError || new Error("All Gemini models failed to respond.");
+    const exhausted = new Error(
+        "Gemini is currently too busy or slow to answer. Please try again in a moment."
+    );
+    exhausted.status = 503;
+    exhausted.cause = lastError;
+    throw exhausted;
 }
 
 app.get("/api/health", (req, res) => {
@@ -488,7 +494,7 @@ app.get("/api/health", (req, res) => {
         aiConfigured: Boolean(process.env.GEMINI_API_KEY),
         provider: "gemini",
         model: MODEL,
-        fallbackModels: ["gemini-3.7-flash", "gemini-3.6-flash"]
+        fallbackModels: ["gemini-3.5-flash", "gemini-3.5-flash-lite"]
     });
 });
 
@@ -524,7 +530,7 @@ app.post("/api/chat", async (req, res) => {
 
         if (error.status === 503) {
             return res.status(503).json({
-                error: "Gemini is temporarily at capacity across the available Helix models. Please try again shortly."
+                error: "Gemini is currently busy or slow across Helix's available models. Please try again shortly."
             });
         }
 
