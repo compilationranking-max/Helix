@@ -397,6 +397,7 @@ async function generateGeminiResponse(contents) {
     const url = `${GEMINI_ENDPOINT}/${encodeURIComponent(MODEL)}:generateContent`;
 
     const response = await fetch(url, {
+        signal: AbortSignal.timeout(30000),
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -516,8 +517,10 @@ app.post("/api/chat", async (req, res) => {
             });
         }
 
-        res.status(500).json({
-            error: "Helix AI failed to respond. Check the Render logs for the Gemini error."
+        const detail = error?.message || "Unknown Gemini or network error.";
+        console.error("Helix AI diagnostic:", detail);
+        res.status(error.status || 502).json({
+            error: detail
         });
     }
 });
