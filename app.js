@@ -816,6 +816,47 @@ function setAIProcessing(isProcessing) {
     if (aiInput) aiInput.disabled = isProcessing;
 }
 
+function getHelixApiUrl(pathname) {
+    const normalizedPath = pathname.startsWith("/") ? pathname : `/${pathname}`;
+
+    // When the UI is opened from Live Server or another local static server,
+    // the API still runs on the Helix Express server at port 3000.
+    if (
+        ["localhost", "127.0.0.1"].includes(window.location.hostname) &&
+        window.location.port !== "3000"
+    ) {
+        return `http://localhost:3000${normalizedPath}`;
+    }
+
+    // Production/Render serves the UI and API from the same origin.
+    return normalizedPath;
+}
+
+async function checkHelixAIStatus() {
+    const statusElement = document.querySelector(".ai-sidebar-status");
+    if (!statusElement) return;
+
+    try {
+        const response = await fetch(getHelixApiUrl("/api/health"), {
+            method: "GET",
+            cache: "no-store"
+        });
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok || data.ok !== true) {
+            throw new Error(data.error || "AI service unavailable");
+        }
+
+        statusElement.innerHTML = '<span class="status-dot"></span>AI ONLINE';
+        statusElement.classList.remove("offline");
+        statusElement.classList.add("online");
+    } catch {
+        statusElement.innerHTML = '<span class="status-dot"></span>AI OFFLINE';
+        statusElement.classList.remove("online");
+        statusElement.classList.add("offline");
+    }
+}
+
 async function sendAIMessage() {
     const message = aiInput?.value.trim();
 
@@ -827,7 +868,7 @@ async function sendAIMessage() {
     setAIProcessing(true);
 
     try {
-        const response = await fetch("/api/chat", {
+        const response = await fetch(getHelixApiUrl("/api/chat"), {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -855,6 +896,7 @@ async function sendAIMessage() {
     }
 }
 
+checkHelixAIStatus();
 aiForm?.addEventListener("submit", (event) => {
     event.preventDefault();
     sendAIMessage();
