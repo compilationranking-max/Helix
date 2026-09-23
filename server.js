@@ -7,7 +7,7 @@ const { GoogleGenAI } = require("@google/genai");
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
-const MODEL = process.env.GEMINI_MODEL || "gemini-3.5-flash-lite";
+const MODEL = process.env.GEMINI_MODEL || "gemini-3.1-flash-lite";
 const MAX_HISTORY_MESSAGES = 20;
 
 const HELIX_AI_INSTRUCTIONS = `
@@ -394,41 +394,42 @@ function buildConversationInput(history, message) {
     }));
 }
 
-async function generateGeminiResponse(contents) {
+async function generateGeminiResponse(message) {
     if (!process.env.GEMINI_API_KEY) {
         const error = new Error("GEMINI_API_KEY is not configured.");
         error.status = 503;
         throw error;
     }
 
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    const ai = new GoogleGenAI({
+        apiKey: process.env.GEMINI_API_KEY,
+        timeout: 12000,
+        retryConfig: {
+            attempts: 1
+        }
+    });
 
     try {
-        const response = await ai.models.generateContent({
+        const interaction = await ai.interactions.create({
             model: MODEL,
-            contents,
-            config: {
-                systemInstruction: HELIX_AI_INSTRUCTIONS,
-                maxOutputTokens: 512,
-                httpOptions: {
-                    timeout: 20000,
-                    retryOptions: {
-                        attempts: 2,
-                        initialDelay: 1,
-                        maxDelay: 3,
-                        expBase: 2,
-                        jitter: 1
-                    }
-                }
-            }
+            input: message,
+            system_instruction: HELIX_AI_INSTRUCTIONS,
+            generation_config: {
+                thinking_level: "minimal",
+                max_output_tokens: 512
+            },
+            store: false
         });
 
-        const reply = typeof response?.text === "string"
-            ? response.text.trim()
+        const reply = typeof interaction?.output_text === "string"
+            ? interaction.output_text.trim()
             : "";
 
         if (!reply) {
-            const error = new Error("Gemini returned no text.");
+            const errorDetail = Array.isArray(interaction?.errors)
+                ? interaction.errors.map((item) => item?.message).filter(Boolean).join(" ")
+                : "";
+            const error = new Error(errorDetail || "Gemini returned no text.");
             error.status = 502;
             throw error;
         }
@@ -456,15 +457,14 @@ app.post("/api/chat", async (req, res) => {
         const message = typeof req.body.message === "string"
             ? req.body.message.trim()
             : "";
-        const input = buildConversationInput(req.body.history, message);
 
-        if (!input.length) {
+        if (!message) {
             return res.status(400).json({
                 error: "Please enter a message for Helix AI."
             });
         }
 
-        const reply = await generateGeminiResponse(input);
+        const reply = await generateGeminiResponse(message);
         res.json({ reply });
     } catch (error) {
         console.error("Helix AI request failed:", error);
@@ -484,10 +484,11 @@ app.post("/api/chat", async (req, res) => {
 
         if (status === 503 || status === 504) {
             return res.status(503).json({
-                error: "Gemini did not answer in time. Please try again shortly."
+                error: "Gemini is temporarily unavailable. Please try again shortly."
             });
         }
 
+        console.error("Gemini detail:", error?.message || "Unknown error");
         return res.status(502).json({
             error: "Helix could not get a response from Gemini. Check the Render logs for details."
         });
