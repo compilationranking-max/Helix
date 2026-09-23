@@ -7,6 +7,7 @@ const { GoogleGenAI } = require("@google/genai");
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || "";
 const MODEL = process.env.GEMINI_MODEL || "gemini-3.1-flash-lite";
 const MAX_HISTORY_MESSAGES = 20;
 
@@ -23,11 +24,9 @@ If the user says you are Helix AI, acknowledge it naturally rather than correcti
 In normal conversation, refer to yourself as Helix AI or Helix.
 `;
 
-if (!process.env.GEMINI_API_KEY) {
-    console.warn("WARNING: GEMINI_API_KEY is not configured. Helix AI requests will fail until it is set.");
+if (!GEMINI_API_KEY) {
+    console.warn("WARNING: Gemini API key is not configured. Set GEMINI_API_KEY (or GOOGLE_API_KEY) on the server.");
 }
-
-const GEMINI_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models";
 
 app.use(cors());
 app.use(express.json({ limit: "1mb" }));
@@ -394,42 +393,36 @@ function buildConversationInput(history, message) {
     }));
 }
 
-async function generateGeminiResponse(message) {
-    if (!process.env.GEMINI_API_KEY) {
-        const error = new Error("GEMINI_API_KEY is not configured.");
+async function generateGeminiResponse(contents) {
+    if (!GEMINI_API_KEY) {
+        const error = new Error("Gemini API key is not configured.");
         error.status = 503;
         throw error;
     }
 
     const ai = new GoogleGenAI({
-        apiKey: process.env.GEMINI_API_KEY,
-        timeout: 12000,
-        retryConfig: {
-            attempts: 1
+        apiKey: GEMINI_API_KEY,
+        httpOptions: {
+            timeout: 30000
         }
     });
 
     try {
-        const interaction = await ai.interactions.create({
+        const response = await ai.models.generateContent({
             model: MODEL,
-            input: message,
-            system_instruction: HELIX_AI_INSTRUCTIONS,
-            generation_config: {
-                thinking_level: "minimal",
-                max_output_tokens: 512
-            },
-            store: false
+            contents,
+            config: {
+                systemInstruction: HELIX_AI_INSTRUCTIONS,
+                maxOutputTokens: 512
+            }
         });
 
-        const reply = typeof interaction?.output_text === "string"
-            ? interaction.output_text.trim()
+        const reply = typeof response?.text === "string"
+            ? response.text.trim()
             : "";
 
         if (!reply) {
-            const errorDetail = Array.isArray(interaction?.errors)
-                ? interaction.errors.map((item) => item?.message).filter(Boolean).join(" ")
-                : "";
-            const error = new Error(errorDetail || "Gemini returned no text.");
+            const error = new Error("Gemini returned no usable text.");
             error.status = 502;
             throw error;
         }
@@ -446,7 +439,7 @@ async function generateGeminiResponse(message) {
 app.get("/api/health", (req, res) => {
     res.json({
         ok: true,
-        aiConfigured: Boolean(process.env.GEMINI_API_KEY),
+        aiConfigured: Boolean(GEMINI_API_KEY),
         provider: "gemini",
         model: MODEL
     });
@@ -464,7 +457,15 @@ app.post("/api/chat", async (req, res) => {
             });
         }
 
-        const reply = await generateGeminiResponse(message);
+        const input = buildConversationInput(req.body.history, message);
+
+        if (!input.length) {
+            return res.status(400).json({
+                error: "Please enter a message for Helix AI."
+            });
+        }
+
+        const reply = await generateGeminiResponse(input);
         res.json({ reply });
     } catch (error) {
         console.error("Helix AI request failed:", error);
@@ -479,6 +480,18 @@ app.post("/api/chat", async (req, res) => {
         if (status === 429) {
             return res.status(429).json({
                 error: "Gemini quota or rate limit reached. Check Gemini API usage/limits."
+            });
+        }
+
+        if (status === 400) {
+            return res.status(400).json({
+                error: "Gemini rejected the request. The server is reaching Gemini, but the request/model configuration was not accepted."
+            });
+        }
+
+        if (status === 404) {
+            return res.status(404).json({
+                error: "Gemini could not find the configured model. Check GEMINI_MODEL in Render."
             });
         }
 
