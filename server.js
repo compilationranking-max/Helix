@@ -394,64 +394,92 @@ function buildConversationInput(history, message) {
 }
 
 async function generateGeminiResponse(contents) {
-    const url = `${GEMINI_ENDPOINT}/${encodeURIComponent(MODEL)}:generateContent`;
+    const configuredModels = [
+        MODEL,
+        "gemini-3.7-flash",
+        "gemini-3.6-flash"
+    ].filter((model, index, models) => model && models.indexOf(model) === index);
 
-    const response = await fetch(url, {
-        signal: AbortSignal.timeout(30000),
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "x-goog-api-key": process.env.GEMINI_API_KEY
-        },
-        body: JSON.stringify({
-            systemInstruction: {
-                parts: [{ text: HELIX_AI_INSTRUCTIONS }]
-            },
-            contents
-        })
-    });
+    let lastError = null;
 
-    const data = await response.json().catch(() => ({}));
+    for (const model of configuredModels) {
+        try {
+            const url = `${GEMINI_ENDPOINT}/${encodeURIComponent(model)}:generateContent`;
 
-    if (!response.ok) {
-        const error = new Error(
-            data?.error?.message ||
-            `Gemini API request failed with HTTP ${response.status}`
-        );
-        error.status = response.status;
-        throw error;
+            const response = await fetch(url, {
+                signal: AbortSignal.timeout(30000),
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-goog-api-key": process.env.GEMINI_API_KEY
+                },
+                body: JSON.stringify({
+                    systemInstruction: {
+                        parts: [{ text: HELIX_AI_INSTRUCTIONS }]
+                    },
+                    contents
+                })
+            });
+
+            const data = await response.json().catch(() => ({}));
+
+            if (!response.ok) {
+                const error = new Error(
+                    data?.error?.message ||
+                    `Gemini API request failed with HTTP ${response.status}`
+                );
+                error.status = response.status;
+                error.model = model;
+                lastError = error;
+
+                // Gemini can temporarily return 503 when a model is at capacity.
+                // Try the next stable Flash model instead of failing the whole chat.
+                if (response.status === 503 || response.status === 429) {
+                    continue;
+                }
+
+                throw error;
+            }
+
+            const candidate = data?.candidates?.[0];
+            const parts = Array.isArray(candidate?.content?.parts)
+                ? candidate.content.parts
+                : [];
+
+            const reply = parts
+                .map((part) => typeof part?.text === "string" ? part.text : "")
+                .filter(Boolean)
+                .join("")
+                .trim();
+
+            if (reply) return reply;
+
+            const blockReason =
+                data?.promptFeedback?.blockReason ||
+                candidate?.finishReason ||
+                "UNKNOWN";
+
+            const emptyResponse = new Error(
+                `Gemini returned no text. Reason: ${blockReason}`
+            );
+            emptyResponse.status = 502;
+            emptyResponse.model = model;
+            lastError = emptyResponse;
+
+            // A model can occasionally return an empty/blocked response; try a fallback.
+        } catch (error) {
+            lastError = error;
+
+            // Network/time-out failures should also try the next fallback model.
+            if (error?.name === "TimeoutError" || error?.status === 503 || error?.status === 429) {
+                continue;
+            }
+
+            throw error;
+        }
     }
 
-    const candidate = data?.candidates?.[0];
-    const parts = Array.isArray(candidate?.content?.parts)
-        ? candidate.content.parts
-        : [];
-
-    const reply = parts
-        .map((part) => typeof part?.text === "string" ? part.text : "")
-        .filter(Boolean)
-        .join("")
-        .trim();
-
-    if (reply) return reply;
-
-    const blockReason =
-        data?.promptFeedback?.blockReason ||
-        candidate?.finishReason ||
-        data?.candidates?.[0]?.finishReason ||
-        "UNKNOWN";
-
-    const diagnostic = [
-        "Gemini returned no text.",
-        `Reason: ${blockReason}`,
-        data?.promptFeedback?.blockReasonMessage
-            ? `Details: ${data.promptFeedback.blockReasonMessage}`
-            : ""
-    ].filter(Boolean).join(" ");
-
-    const emptyResponse = new Error(diagnostic);
-    emptyResponse.status = 502;
-    throw emptyResponse;
+    throw lastError || new Error("All Gemini models failed to respond.");
 }
 
 app.get("/api/health", (req, res) => {
@@ -459,7 +487,8 @@ app.get("/api/health", (req, res) => {
         ok: true,
         aiConfigured: Boolean(process.env.GEMINI_API_KEY),
         provider: "gemini",
-        model: MODEL
+        model: MODEL,
+        fallbackModels: ["gemini-3.7-flash", "gemini-3.6-flash"]
     });
 });
 
@@ -489,7 +518,13 @@ app.post("/api/chat", async (req, res) => {
 
         if (error.status === 429) {
             return res.status(429).json({
-                error: "Gemini rejected the request because of a quota or rate limit. Check your Gemini API usage/limits."
+                error: "Gemini is rate-limited across the available Helix models. Check your Gemini API usage/limits."
+            });
+        }
+
+        if (error.status === 503) {
+            return res.status(503).json({
+                error: "Gemini is temporarily at capacity across the available Helix models. Please try again shortly."
             });
         }
 
