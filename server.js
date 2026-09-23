@@ -409,13 +409,13 @@ async function generateGeminiResponse(contents) {
             contents,
             config: {
                 systemInstruction: HELIX_AI_INSTRUCTIONS,
-                temperature: 0.7,
+                maxOutputTokens: 512,
                 httpOptions: {
-                    timeout: 15000,
+                    timeout: 20000,
                     retryOptions: {
-                        attempts: 4,
+                        attempts: 2,
                         initialDelay: 1,
-                        maxDelay: 5,
+                        maxDelay: 3,
                         expBase: 2,
                         jitter: 1
                     }
@@ -447,8 +447,7 @@ app.get("/api/health", (req, res) => {
         ok: true,
         aiConfigured: Boolean(process.env.GEMINI_API_KEY),
         provider: "gemini",
-        model: MODEL,
-        fallbackModels: ["gemini-3.5-flash", "gemini-3.5-flash-lite"]
+        model: MODEL
     });
 });
 
@@ -465,57 +464,32 @@ app.post("/api/chat", async (req, res) => {
             });
         }
 
-        if (!process.env.GEMINI_API_KEY) {
-            return res.status(503).json({
-                error: "Helix AI is not configured. Add GEMINI_API_KEY to the server environment."
-            });
-        }
-
         const reply = await generateGeminiResponse(input);
         res.json({ reply });
     } catch (error) {
         console.error("Helix AI request failed:", error);
+        const status = Number(error?.status || 502);
 
-        if (error.status === 429) {
+        if (status === 401 || status === 403) {
+            return res.status(status).json({
+                error: "Gemini rejected the API key. Check GEMINI_API_KEY in Render."
+            });
+        }
+
+        if (status === 429) {
             return res.status(429).json({
-                error: "Gemini is rate-limited across the available Helix models. Check your Gemini API usage/limits."
+                error: "Gemini quota or rate limit reached. Check Gemini API usage/limits."
             });
         }
 
-        if (error.status === 503) {
+        if (status === 503 || status === 504) {
             return res.status(503).json({
-                error: "Gemini is currently busy or slow across Helix's available models. Please try again shortly."
+                error: "Gemini did not answer in time. Please try again shortly."
             });
         }
 
-        if (error.status === 401 || error.status === 403) {
-            return res.status(error.status).json({
-                error: "Gemini rejected the API key. Verify that the current GEMINI_API_KEY in Render is complete, active, and authorized for the Gemini API."
-            });
-        }
-
-        if (error.status === 400) {
-            return res.status(400).json({
-                error: "Gemini rejected the Helix request format. The Render backend is connected, but the request payload was not accepted."
-            });
-        }
-
-        if (error.status === 404) {
-            return res.status(404).json({
-                error: "Gemini could not find the configured model. Check that GEMINI_MODEL is exactly gemini-3.8-flash."
-            });
-        }
-
-        if (error.status === 502) {
-            return res.status(502).json({
-                error: error.message || "Gemini returned no usable text."
-            });
-        }
-
-        const detail = error?.message || "Unknown Gemini or network error.";
-        console.error("Helix AI diagnostic:", detail);
-        res.status(error.status || 502).json({
-            error: detail
+        return res.status(502).json({
+            error: "Helix could not get a response from Gemini. Check the Render logs for details."
         });
     }
 });
@@ -532,6 +506,6 @@ app.use((req, res) => {
     res.sendFile(path.join(__dirname, "index.html"));
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, "0.0.0.0", () => {
     console.log(`Helix server running at http://localhost:${PORT}`);
 });
