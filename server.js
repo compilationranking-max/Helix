@@ -3,7 +3,6 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
-const { GoogleGenAI } = require("@google/genai");
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -400,25 +399,49 @@ async function generateGeminiResponse(contents) {
         throw error;
     }
 
-    const ai = new GoogleGenAI({
-        apiKey: GEMINI_API_KEY,
-        httpOptions: {
-            timeout: 30000
-        }
-    });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000);
 
     try {
-        const response = await ai.models.generateContent({
-            model: MODEL,
-            contents,
-            config: {
-                systemInstruction: HELIX_AI_INSTRUCTIONS,
-                maxOutputTokens: 512
+        const response = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(MODEL)}:generateContent`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-goog-api-key": GEMINI_API_KEY
+                },
+                body: JSON.stringify({
+                    systemInstruction: {
+                        parts: [{ text: HELIX_AI_INSTRUCTIONS.trim() }]
+                    },
+                    contents,
+                    generationConfig: {
+                        maxOutputTokens: 512,
+                        temperature: 0.7
+                    }
+                }),
+                signal: controller.signal
             }
-        });
+        );
 
-        const reply = typeof response?.text === "string"
-            ? response.text.trim()
+        const payload = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+            const error = new Error(
+                payload?.error?.message || `Gemini request failed with status ${response.status}.`
+            );
+            error.status = response.status;
+            error.providerPayload = payload;
+            throw error;
+        }
+
+        const reply = Array.isArray(payload?.candidates)
+            ? payload.candidates
+                .flatMap((candidate) => candidate?.content?.parts || [])
+                .map((part) => typeof part?.text === "string" ? part.text : "")
+                .join("")
+                .trim()
             : "";
 
         if (!reply) {
@@ -429,19 +452,59 @@ async function generateGeminiResponse(contents) {
 
         return reply;
     } catch (error) {
-        const wrapped = new Error(error?.message || "Gemini request failed.");
-        wrapped.status = Number(error?.status || error?.code || 500);
-        wrapped.cause = error;
-        throw wrapped;
+        if (error?.name === "AbortError") {
+            const timeoutError = new Error("Gemini request timed out.");
+            timeoutError.status = 504;
+            throw timeoutError;
+        }
+
+        throw error;
+    } finally {
+        clearTimeout(timeout);
     }
 }
 
-app.get("/api/health", (req, res) => {
-    res.json({
-        ok: true,
-        aiConfigured: Boolean(GEMINI_API_KEY),
+async function checkGeminiHealth() {
+    if (!GEMINI_API_KEY) {
+        return { configured: false, reachable: false, model: MODEL };
+    }
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
+
+    try {
+        const response = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(MODEL)}`,
+            {
+                method: "GET",
+                headers: {
+                    "x-goog-api-key": GEMINI_API_KEY
+                },
+                signal: controller.signal
+            }
+        );
+
+        if (!response.ok) {
+            return { configured: true, reachable: false, model: MODEL, status: response.status };
+        }
+
+        return { configured: true, reachable: true, model: MODEL };
+    } catch {
+        return { configured: true, reachable: false, model: MODEL };
+    } finally {
+        clearTimeout(timeout);
+    }
+}
+
+app.get("/api/health", async (req, res) => {
+    const health = await checkGeminiHealth();
+
+    res.status(health.reachable ? 200 : health.configured ? 503 : 503).json({
+        ok: health.reachable,
+        aiConfigured: health.configured,
         provider: "gemini",
-        model: MODEL
+        model: health.model,
+        reachable: health.reachable
     });
 });
 
