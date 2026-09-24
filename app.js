@@ -818,18 +818,51 @@ function setAIProcessing(isProcessing) {
 
 function getHelixApiUrl(pathname) {
     const normalizedPath = pathname.startsWith("/") ? pathname : `/${pathname}`;
+    const configuredBase = typeof window.HELIX_API_URL === "string"
+        ? window.HELIX_API_URL.trim().replace(/\/$/, "")
+        : "";
 
-    // When the UI is opened from Live Server or another local static server,
-    // the API still runs on the Helix Express server at port 3000.
+    if (configuredBase) {
+        return `${configuredBase}${normalizedPath}`;
+    }
+
     if (
-        ["localhost", "127.0.0.1"].includes(window.location.hostname) &&
-        window.location.port !== "3000"
+        window.location.protocol === "file:" ||
+        (
+            ["localhost", "127.0.0.1"].includes(window.location.hostname) &&
+            window.location.port !== "3000"
+        )
     ) {
         return `http://localhost:3000${normalizedPath}`;
     }
 
-    // Production/Render serves the UI and API from the same origin.
     return normalizedPath;
+}
+
+async function fetchHelixAI(pathname, options = {}) {
+    const primaryUrl = getHelixApiUrl(pathname);
+
+    try {
+        return await fetch(primaryUrl, {
+            ...options,
+            cache: "no-store"
+        });
+    } catch (primaryError) {
+        const fallbackUrl = `http://localhost:3000${pathname}`;
+
+        if (fallbackUrl !== primaryUrl && window.location.protocol !== "file:") {
+            try {
+                return await fetch(fallbackUrl, {
+                    ...options,
+                    cache: "no-store"
+                });
+            } catch {
+                throw primaryError;
+            }
+        }
+
+        throw primaryError;
+    }
 }
 
 async function checkHelixAIStatus() {
@@ -837,13 +870,10 @@ async function checkHelixAIStatus() {
     if (!statusElement) return;
 
     try {
-        const response = await fetch(getHelixApiUrl("/api/health"), {
-            method: "GET",
-            cache: "no-store"
-        });
+        const response = await fetchHelixAI("/api/health", { method: "GET" });
         const data = await response.json().catch(() => ({}));
 
-        if (!response.ok || data.ok !== true) {
+        if (!response.ok || data.ok !== true || data.reachable !== true) {
             throw new Error(data.error || "AI service unavailable");
         }
 
@@ -868,31 +898,61 @@ async function sendAIMessage() {
     setAIProcessing(true);
 
     try {
-        const response = await fetch(getHelixApiUrl("/api/chat"), {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                message,
-                history: aiConversation.map(({ role, content }) => ({ role, content }))
-            })
-        });
+        let response;
+        let data = {};
+        let lastError = null;
 
-        const data = await response.json().catch(() => ({}));
+        for (let attempt = 0; attempt < 3; attempt += 1) {
+            try {
+                response = await fetchHelixAI("/api/chat", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        message,
+                        history: aiConversation.map(({ role, content }) => ({ role, content }))
+                    })
+                });
 
-        if (!response.ok) {
-            throw new Error(data.error || "The AI service returned an error.");
+                data = await response.json().catch(() => ({}));
+
+                if (response.ok) break;
+
+                const retryable = [408, 429, 500, 502, 503, 504].includes(response.status);
+                lastError = new Error(data.error || "Helix AI is temporarily unavailable.");
+
+                if (!retryable || attempt === 2) throw lastError;
+
+                await new Promise((resolve) => setTimeout(resolve, 700 * (attempt + 1)));
+            } catch (error) {
+                lastError = error;
+
+                if (attempt === 2) throw error;
+                await new Promise((resolve) => setTimeout(resolve, 700 * (attempt + 1)));
+            }
+        }
+
+        if (!response?.ok) {
+            throw lastError || new Error("Helix AI is temporarily unavailable.");
         }
 
         if (typeof data.reply !== "string" || !data.reply.trim()) {
-            throw new Error("The AI returned an empty response.");
+            throw new Error("Helix AI returned an empty response.");
         }
 
         addAIMessage(data.reply, "assistant");
-    } catch (error) {
-        addAIMessage(error.message || "Helix AI is unavailable right now. Please try again in a moment.", "assistant", false);
+        checkHelixAIStatus();
+    } catch {
+        checkHelixAIStatus();
+
+        // Keep transport/provider failures out of the conversation itself.
+        // The user message stays visible and the input is restored for retry.
+        if (aiInput) {
+            aiInput.value = message;
+            aiInput.focus();
+        }
     } finally {
         setAIProcessing(false);
-       aiInput?.focus();
+        aiInput?.focus();
     }
 }
 
