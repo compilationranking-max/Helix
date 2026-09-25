@@ -2,6 +2,14 @@
 // HELIX — APP JAVASCRIPT
 // =========================================================
 
+function escapeHTML(value) {
+    const div = document.createElement("div");
+    div.textContent = value == null ? "" : String(value);
+    return div.innerHTML;
+}
+
+
+
 
 // =========================================================
 // AUTHENTICATION CHECK
@@ -4413,10 +4421,13 @@ friendsFilterInput?.addEventListener("input", renderFriendsConnectedList);
 friendsSortSelect?.addEventListener("change", renderFriendsConnectedList);
 friendsRefreshButton?.addEventListener("click", refreshFriendsNetwork);
 
-bootstrapHelixSession().then((authenticated) => {
-    if (authenticated) {
-        syncHelixNetworkUser();
-    }
-});
+if (!window.__helixBootstrapStarted) {
+    window.__helixBootstrapStarted = true;
+    bootstrapHelixSession().then((authenticated) => {
+        if (authenticated) {
+            syncHelixNetworkUser();
+        }
+    });
+}
 
 // =========================================================
