@@ -36,6 +36,15 @@ async function bootstrapHelixSession() {
         localStorage.setItem("helixLoggedIn", loggedInUser);
         localStorage.setItem("helixDisplayName", currentDisplayName);
 
+        if (Object.prototype.hasOwnProperty.call(data.user, "profilePhoto")) {
+            const photoKey = `helixProfilePhoto:${loggedInUser}`;
+            if (data.user.profilePhoto) {
+                localStorage.setItem(photoKey, data.user.profilePhoto);
+            } else {
+                localStorage.removeItem(photoKey);
+            }
+        }
+
         updateLoggedInUser();
         updateProfileView();
 
@@ -129,7 +138,10 @@ function setCurrentProfileUser(user) {
         users[loggedInUser] = {
             ...(users[loggedInUser] || {}),
             displayName: currentDisplayName,
-            createdAt: user.createdAt || users[loggedInUser]?.createdAt || new Date().toISOString()
+            createdAt: user.createdAt || users[loggedInUser]?.createdAt || new Date().toISOString(),
+            ...(Object.prototype.hasOwnProperty.call(user, "profilePhoto")
+                ? { profilePhoto: user.profilePhoto || null }
+                : {})
         };
         localStorage.setItem("helixUsers", JSON.stringify(users));
     }
@@ -1327,7 +1339,56 @@ document.addEventListener("keydown", (event) => {
 const profilePhotoInput = document.getElementById("profile-photo-input");
 const profilePhotoMessage = document.getElementById("profile-photo-message");
 
-profilePhotoInput?.addEventListener("change", () => {
+async function prepareProfilePhoto(file) {
+    const objectUrl = URL.createObjectURL(file);
+
+    try {
+        const image = await new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => resolve(img);
+            img.onerror = () => reject(new Error("Could not read that image."));
+            img.src = objectUrl;
+        });
+
+        const maxDimension = 512;
+        const scale = Math.min(1, maxDimension / Math.max(image.naturalWidth, image.naturalHeight));
+        const width = Math.max(1, Math.round(image.naturalWidth * scale));
+        const height = Math.max(1, Math.round(image.naturalHeight * scale));
+
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+
+        const context = canvas.getContext("2d");
+        if (!context) throw new Error("Your browser could not prepare the profile photo.");
+
+        context.drawImage(image, 0, 0, width, height);
+
+        // WebP keeps the database/network payload compact while preserving
+        // enough quality for circular DM avatars.
+        let dataUrl = canvas.toDataURL("image/webp", 0.82);
+
+        // A fallback for browsers that do not support WebP encoding.
+        if (!dataUrl.startsWith("data:image/webp")) {
+            dataUrl = canvas.toDataURL("image/jpeg", 0.82);
+        }
+
+        // Keep the JSON request comfortably under the server limit.
+        if (dataUrl.length > 850000) {
+            dataUrl = canvas.toDataURL("image/jpeg", 0.68);
+        }
+
+        if (dataUrl.length > 900000) {
+            throw new Error("That image is still too large after compression. Please choose a simpler photo.");
+        }
+
+        return dataUrl;
+    } finally {
+        URL.revokeObjectURL(objectUrl);
+    }
+}
+
+profilePhotoInput?.addEventListener("change", async () => {
     const file = profilePhotoInput.files?.[0];
     if (!file) return;
 
@@ -1337,20 +1398,52 @@ profilePhotoInput?.addEventListener("change", () => {
         return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-        profilePhotoMessage.textContent = "Photo must be smaller than 5 MB.";
+    if (file.size > 10 * 1024 * 1024) {
+        profilePhotoMessage.textContent = "Photo must be smaller than 10 MB.";
         profilePhotoInput.value = "";
         return;
     }
 
-    const reader = new FileReader();
-    reader.addEventListener("load", () => {
-        localStorage.setItem(`helixProfilePhoto:${loggedInUser}`, reader.result);
+    profilePhotoInput.disabled = true;
+    profilePhotoMessage.textContent = "Uploading profile photo...";
+
+    try {
+        const profilePhoto = await prepareProfilePhoto(file);
+
+        const response = await fetch("/api/profile/photo", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ profilePhoto })
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+            throw new Error(data.error || "Could not save your profile photo.");
+        }
+
+        setCurrentProfileUser(data.user || {
+            username: loggedInUser,
+            displayName: getCurrentDisplayName(),
+            profilePhoto
+        });
+
+        localStorage.setItem(`helixProfilePhoto:${loggedInUser}`, profilePhoto);
         updateProfileView();
-        profilePhotoMessage.textContent = "Profile photo updated.";
+        profilePhotoMessage.textContent = "Profile photo is now public across Helix.";
         profilePhotoInput.value = "";
-    });
-    reader.readAsDataURL(file);
+
+        // Refresh the network/DM data so friends immediately receive the
+        // public avatar without needing to log out.
+        if (typeof refreshFriendsNetwork === "function") {
+            await refreshFriendsNetwork();
+        }
+    } catch (error) {
+        profilePhotoMessage.textContent = error.message || "Could not save your profile photo.";
+    } finally {
+        profilePhotoInput.disabled = false;
+    }
 });
 
 const navItems =
@@ -4053,7 +4146,9 @@ bootstrapHelixSession().then((authenticated) => {
 
     function sameFriends(a, b) {
         return a.length === b.length && a.every((x, i) =>
-            x.username === b[i]?.username && x.displayName === b[i]?.displayName
+            x.username === b[i]?.username &&
+            x.displayName === b[i]?.displayName &&
+            (x.profilePhoto || null) === (b[i]?.profilePhoto || null)
         );
     }
 
@@ -4080,7 +4175,8 @@ bootstrapHelixSession().then((authenticated) => {
     function renderFriends(next) {
         const normalized = next.map((friend) => ({
             username: String(friend.username),
-            displayName: String(friend.displayName || friend.username)
+            displayName: String(friend.displayName || friend.username),
+            profilePhoto: friend.profilePhoto || null
         }));
 
         if (count) count.textContent = String(normalized.length);
@@ -4114,6 +4210,13 @@ bootstrapHelixSession().then((authenticated) => {
             const avatar = document.createElement("span");
             avatar.className = "conversation-avatar";
             avatar.textContent = friend.displayName.slice(0, 2).toUpperCase();
+            if (friend.profilePhoto) {
+                avatar.style.backgroundImage = `url("${friend.profilePhoto}")`;
+                avatar.style.backgroundSize = "cover";
+                avatar.style.backgroundPosition = "center";
+                avatar.style.color = "transparent";
+                avatar.classList.add("has-profile-photo");
+            }
 
             const copy = document.createElement("span");
             copy.className = "conversation-copy";
@@ -4276,7 +4379,39 @@ bootstrapHelixSession().then((authenticated) => {
 
         if (headerAvatar) {
             headerAvatar.textContent = friend.displayName.slice(0, 2).toUpperCase();
+            headerAvatar.classList.toggle("has-profile-photo", Boolean(friend.profilePhoto));
+            if (friend.profilePhoto) {
+                headerAvatar.style.backgroundImage = `url("${friend.profilePhoto}")`;
+                headerAvatar.style.backgroundSize = "cover";
+                headerAvatar.style.backgroundPosition = "center";
+                headerAvatar.style.color = "transparent";
+            } else {
+                headerAvatar.style.backgroundImage = "";
+                headerAvatar.style.backgroundSize = "";
+                headerAvatar.style.backgroundPosition = "";
+                headerAvatar.style.color = "";
+            }
         }
+
+        const infoAvatar = document.getElementById("info-avatar");
+        if (infoAvatar) {
+            infoAvatar.textContent = friend.displayName.slice(0, 2).toUpperCase();
+            infoAvatar.classList.toggle("has-profile-photo", Boolean(friend.profilePhoto));
+            if (friend.profilePhoto) {
+                infoAvatar.style.backgroundImage = `url("${friend.profilePhoto}")`;
+                infoAvatar.style.backgroundSize = "cover";
+                infoAvatar.style.backgroundPosition = "center";
+                infoAvatar.style.color = "transparent";
+            } else {
+                infoAvatar.style.backgroundImage = "";
+                infoAvatar.style.backgroundSize = "";
+                infoAvatar.style.backgroundPosition = "";
+                infoAvatar.style.color = "";
+            }
+        }
+
+        const infoName = document.getElementById("info-name");
+        if (infoName) infoName.innerHTML = `${safe(friend.displayName)} <small>-${safe(friend.username)}</small>`;
 
         if (headerName) {
             headerName.innerHTML = `${safe(friend.displayName)} <small>-${safe(friend.username)}</small>`;
