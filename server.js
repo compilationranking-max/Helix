@@ -45,7 +45,7 @@ if (!GEMINI_API_KEY) {
 }
 
 app.use(cors());
-app.use(express.json({ limit: "1mb" }));
+app.use(express.json({ limit: "2mb" }));
 app.use(express.static(__dirname));
 
 const networkDataDir = path.join(__dirname, "data");
@@ -64,6 +64,9 @@ async function initializeDatabase() {
             password_salt TEXT NOT NULL,
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
         );
+
+        ALTER TABLE helix_users
+            ADD COLUMN IF NOT EXISTS profile_photo TEXT;
 
         CREATE UNIQUE INDEX IF NOT EXISTS helix_users_username_lower_idx
             ON helix_users (LOWER(username));
@@ -173,13 +176,20 @@ async function currentUser(req) {
     if (!token) return null;
 
     const result = await dbPool.query(`
-        SELECT u.username, u.display_name, u.created_at
+        SELECT u.username, u.display_name, u.created_at, u.profile_photo
         FROM helix_sessions s
         JOIN helix_users u ON u.username = s.username
         WHERE s.token_hash = $1 AND s.expires_at > NOW()
     `, [hashSessionToken(token)]);
 
-    return result.rows[0] || null;
+    const row = result.rows[0];
+    if (!row) return null;
+    return {
+        username: row.username,
+        displayName: row.display_name,
+        createdAt: row.created_at,
+        profilePhoto: row.profile_photo || null
+    };
 }
 
 async function requireCurrentUser(req, res) {
@@ -193,11 +203,18 @@ async function requireCurrentUser(req, res) {
 
 async function publicUserFromDb(username) {
     const result = await dbPool.query(
-        "SELECT username, display_name, created_at FROM helix_users WHERE username = $1",
+        "SELECT username, display_name, created_at, profile_photo FROM helix_users WHERE username = $1",
         [username]
     );
     const row = result.rows[0];
-    return row ? { username: row.username, displayName: row.display_name, createdAt: row.created_at } : null;
+    return row
+        ? {
+            username: row.username,
+            displayName: row.display_name,
+            createdAt: row.created_at,
+            profilePhoto: row.profile_photo || null
+        }
+        : null;
 }
 function normalizeUsername(value) {
     return typeof value === "string" ? value.trim() : "";
@@ -215,7 +232,8 @@ function publicUser(data, username) {
     const user = data.users[username];
     return {
         username,
-        displayName: user?.displayName || username
+        displayName: user?.displayName || username,
+        profilePhoto: user?.profilePhoto || null
     };
 }
 
@@ -306,7 +324,7 @@ app.post("/api/auth/register", async (req, res) => {
             const result = await dbPool.query(`
                 INSERT INTO helix_users (username, display_name, password_hash, password_salt)
                 VALUES ($1, $2, $3, $4)
-                RETURNING username, display_name, created_at
+                RETURNING username, display_name, created_at, profile_photo
             `, [username, displayName, credentials.hash, credentials.salt]);
 
             const token = crypto.randomBytes(32).toString("hex");
@@ -320,7 +338,8 @@ app.post("/api/auth/register", async (req, res) => {
                 user: {
                     username: result.rows[0].username,
                     displayName: result.rows[0].display_name,
-                    createdAt: result.rows[0].created_at
+                    createdAt: result.rows[0].created_at,
+                    profilePhoto: result.rows[0].profile_photo || null
                 }
             });
         }
@@ -329,7 +348,14 @@ app.post("/api/auth/register", async (req, res) => {
         const data = loadNetworkData();
         if (data.users[username]) return res.status(409).json({ error: "That username already exists." });
         const credentials = await hashPassword(password);
-        data.users[username] = { username, displayName, passwordHash: credentials.hash, passwordSalt: credentials.salt, createdAt: new Date().toISOString() };
+        data.users[username] = {
+            username,
+            displayName,
+            passwordHash: credentials.hash,
+            passwordSalt: credentials.salt,
+            createdAt: new Date().toISOString(),
+            profilePhoto: null
+        };
         saveNetworkData(data);
         return res.status(201).json({ ok: true, user: publicUser(data, username) });
     } catch (error) {
@@ -364,7 +390,12 @@ app.post("/api/auth/login", async (req, res) => {
             setSessionCookie(res, token);
             return res.json({
                 ok: true,
-                user: { username: user.username, displayName: user.display_name, createdAt: user.created_at }
+                user: {
+                    username: user.username,
+                    displayName: user.display_name,
+                    createdAt: user.created_at,
+                    profilePhoto: user.profile_photo || null
+                }
             });
         }
 
@@ -442,7 +473,7 @@ app.post("/api/profile/display-name", async (req, res) => {
 
 async function getCloudNetworkState(username) {
     const friendsResult = await dbPool.query(`
-        SELECT u.username, u.display_name AS "displayName"
+        SELECT u.username, u.display_name AS "displayName", u.profile_photo AS "profilePhoto"
         FROM helix_friendships f
         JOIN helix_users u ON u.username = CASE WHEN f.user_a = $1 THEN f.user_b ELSE f.user_a END
         WHERE f.user_a = $1 OR f.user_b = $1
@@ -501,7 +532,7 @@ app.post("/api/network/sync", async (req, res) => {
                     [displayName, user.username]
                 )
                 : await dbPool.query(
-                    "SELECT username, display_name, created_at FROM helix_users WHERE username = $1",
+                    "SELECT username, display_name, created_at, profile_photo FROM helix_users WHERE username = $1",
                     [user.username]
                 );
 
@@ -510,6 +541,7 @@ app.post("/api/network/sync", async (req, res) => {
                 ok: true,
                 username: row.username,
                 displayName: row.display_name,
+                profilePhoto: row.profile_photo || null,
                 ...await getCloudNetworkState(user.username)
             });
         }
@@ -518,6 +550,7 @@ app.post("/api/network/sync", async (req, res) => {
             ok: true,
             username: user.username,
             displayName: user.display_name,
+            profilePhoto: user.profilePhoto || null,
             ...networkState(user.username)
         });
     } catch (error) {
@@ -553,7 +586,7 @@ app.get("/api/network/search", async (req, res) => {
             await requireDatabase();
             const pattern = `%${query}%`;
             const result = await dbPool.query(`
-                SELECT u.username, u.display_name AS "displayName"
+                SELECT u.username, u.display_name AS "displayName", u.profile_photo AS "profilePhoto"
                 FROM helix_users u
                 WHERE u.username <> $1
                   AND ($2 = '%%' OR LOWER(u.username) LIKE $2 OR LOWER(u.display_name) LIKE $2)
@@ -662,6 +695,123 @@ app.post("/api/network/request/:id/respond", async (req, res) => {
         }
         return res.status(400).json({ error: "Not available in local mode." });
     } catch (error) { return res.status(500).json({ error: "Could not update the friend request." }); }
+});
+
+
+// =========================================================
+// PUBLIC PROFILE PHOTOS
+// =========================================================
+
+function normalizeProfilePhoto(value) {
+    if (typeof value !== "string") return "";
+    return value.trim();
+}
+
+function validProfilePhoto(value) {
+    return /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(value)
+        && value.length <= 900000;
+}
+
+function decodeProfilePhoto(value) {
+    const match = /^data:image\/(png|jpeg|webp);base64,([A-Za-z0-9+/=]+)$/.exec(value);
+    if (!match) return null;
+
+    return {
+        mime: match[1] === "jpeg" ? "image/jpeg" : `image/${match[1]}`,
+        buffer: Buffer.from(match[2], "base64")
+    };
+}
+
+app.post("/api/profile/photo", async (req, res) => {
+    const user = await requireCurrentUser(req, res);
+    if (!user) return;
+
+    const profilePhoto = normalizeProfilePhoto(req.body?.profilePhoto);
+
+    if (!profilePhoto) {
+        return res.status(400).json({ error: "Please choose a profile photo." });
+    }
+
+    if (!validProfilePhoto(profilePhoto)) {
+        return res.status(400).json({ error: "Profile photo is too large or uses an unsupported image format." });
+    }
+
+    try {
+        if (dbPool) {
+            await requireDatabase();
+
+            const result = await dbPool.query(
+                "UPDATE helix_users SET profile_photo = $1 WHERE username = $2 RETURNING username, display_name, created_at, profile_photo",
+                [profilePhoto, user.username]
+            );
+
+            const row = result.rows[0];
+
+            return res.json({
+                ok: true,
+                user: {
+                    username: row.username,
+                    displayName: row.display_name,
+                    createdAt: row.created_at,
+                    profilePhoto: row.profile_photo || null
+                }
+            });
+        }
+
+        const data = loadNetworkData();
+        if (!data.users[user.username]) {
+            return res.status(404).json({ error: "Helix account was not found." });
+        }
+
+        data.users[user.username].profilePhoto = profilePhoto;
+        saveNetworkData(data);
+
+        return res.json({
+            ok: true,
+            user: publicUser(data, user.username)
+        });
+    } catch (error) {
+        console.error("Profile photo update failed:", error);
+        return res.status(500).json({ error: "Could not save your profile photo." });
+    }
+});
+
+// Public: anyone who can reach Helix can request a user's profile photo.
+app.get("/api/users/:username/photo", async (req, res) => {
+    const username = normalizeUsername(req.params.username);
+
+    if (!validUsername(username)) {
+        return res.status(400).json({ error: "Invalid username." });
+    }
+
+    try {
+        let profilePhoto = null;
+
+        if (dbPool) {
+            await requireDatabase();
+            const result = await dbPool.query(
+                "SELECT profile_photo FROM helix_users WHERE username = $1",
+                [username]
+            );
+            profilePhoto = result.rows[0]?.profile_photo || null;
+        } else {
+            const data = loadNetworkData();
+            profilePhoto = data.users[username]?.profilePhoto || null;
+        }
+
+        const decoded = profilePhoto ? decodeProfilePhoto(profilePhoto) : null;
+
+        if (!decoded) {
+            return res.status(404).json({ error: "This user has no profile photo." });
+        }
+
+        res.setHeader("Content-Type", decoded.mime);
+        res.setHeader("Cache-Control", "public, max-age=300, must-revalidate");
+        return res.end(decoded.buffer);
+    } catch (error) {
+        console.error("Public profile photo load failed:", error);
+        return res.status(500).json({ error: "Could not load this profile photo." });
+    }
 });
 
 app.delete("/api/network/friend", async (req, res) => {
