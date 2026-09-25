@@ -9735,3 +9735,45 @@ body.helix-reduced-motion *::after {
         flex: 0 0 32px !important;
     }
 }
+
+
+/* =========================================================
+   PUBLIC PROFILE PHOTOS
+   ========================================================= */
+
+#dm-view .conversation-avatar,
+#dm-view .avatar-badge,
+#dm-view #info-avatar {
+    background-position: center !important;
+    background-size: cover !important;
+    background-repeat: no-repeat !important;
+    overflow: hidden;
+}
+
+#dm-view .conversation-avatar.has-profile-photo,
+#dm-view .avatar-badge.has-profile-photo,
+#dm-view #info-avatar.has-profile-photo {
+    color: transparent !important;
+    border-color: rgba(0, 229, 255, 0.30);
+    box-shadow: 0 0 18px rgba(0, 229, 255, 0.10);
+}
+
+#dm-view .conversation-avatar.has-profile-photo {
+    border-radius: 50% !important;
+}
+
+#dm-view .avatar-badge.has-profile-photo {
+    border-radius: 13px;
+}
+
+#dm-view #info-avatar.has-profile-photo {
+    border-radius: 13px;
+}
+
+/* Keep the image crisp inside the profile editor preview. */
+#profile-view .profile-photo-preview.has-photo {
+    background-position: center !important;
+    background-size: cover !important;
+    background-repeat: no-repeat !important;
+}
+
