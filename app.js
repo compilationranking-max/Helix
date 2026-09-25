@@ -7,10 +7,38 @@
 // AUTHENTICATION CHECK
 // =========================================================
 
-let loggedInUser = localStorage.getItem("helixLoggedIn");
+let loggedInUser = localStorage.getItem("helixLoggedIn") || "";
+let currentDisplayName = localStorage.getItem("helixDisplayName") || "";
 
-if (!loggedInUser) {
-    window.location.href = "index.html";
+async function bootstrapHelixSession() {
+    try {
+        const response = await fetch("/api/auth/me", {
+            credentials: "include"
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok || !data.user?.username) {
+            localStorage.removeItem("helixLoggedIn");
+            localStorage.removeItem("helixDisplayName");
+            window.location.href = "index.html";
+            return false;
+        }
+
+        loggedInUser = data.user.username;
+        currentDisplayName = data.user.displayName || loggedInUser;
+        localStorage.setItem("helixLoggedIn", loggedInUser);
+        localStorage.setItem("helixDisplayName", currentDisplayName);
+
+        updateLoggedInUser();
+        updateProfileView();
+
+        return true;
+    } catch (error) {
+        console.error("Helix session bootstrap failed:", error);
+        window.location.href = "index.html";
+        return false;
+    }
 }
 
 // =========================================================
@@ -54,8 +82,6 @@ playHelixIntro();
 // =========================================================
 // USER DISPLAY
 // =========================================================
-
-let currentDisplayName = "";
 
 function getLocalAccount() {
     const users = readLocalJSON("helixUsers", {});
@@ -143,7 +169,16 @@ function updateLoggedInUser() {
 // LOGOUT
 // =========================================================
 
-function logoutCurrentSession() {
+async function logoutCurrentSession() {
+    try {
+        await fetch("/api/auth/logout", {
+            method: "POST",
+            credentials: "include"
+        });
+    } catch (error) {
+        console.warn("Unable to notify Helix server about logout.", error);
+    }
+
     localStorage.removeItem("helixLoggedIn");
     localStorage.removeItem("helixDisplayName");
     window.location.href = "index.html";
@@ -1333,7 +1368,7 @@ accountModalForm?.addEventListener("submit", async (event) => {
         try {
             const response = await fetch("/api/profile/display-name", {
                 method: "POST",
-                credentials: "same-origin",
+                credentials: "include",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ displayName })
             });
@@ -4447,6 +4482,14 @@ function renderFriendsConnectedList() {
     }).join("");
 }
 
+async function requireHelixSessionForNetwork() {
+    if (!loggedInUser) {
+        const authenticated = await bootstrapHelixSession();
+        if (!authenticated) return false;
+    }
+    return true;
+}
+
 async function syncHelixNetworkUser() {
     if (!loggedInUser) return;
 
@@ -4463,7 +4506,7 @@ async function syncHelixNetworkUser() {
 
         const response = await fetch(syncEndpoint, {
             method: "POST",
-            credentials: "same-origin",
+            credentials: "include",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 displayName: account.displayName || localStorage.getItem("helixDisplayName") || loggedInUser
@@ -4485,12 +4528,14 @@ async function syncHelixNetworkUser() {
 }
 
 async function refreshFriendsNetwork() {
+    if (!(await requireHelixSessionForNetwork())) return;
+
     if (!loggedInUser) return;
 
     friendsRefreshButton?.classList.add("is-refreshing");
 
     try {
-        const response = await fetch(`/api/network/state?username=${encodeURIComponent(loggedInUser)}`);
+        const response = await fetch("/api/network/state");
         if (!response.ok) throw new Error("Could not load network state.");
         const state = await response.json();
 
@@ -4563,6 +4608,8 @@ async function refreshFriendsNetwork() {
 }
 
 async function searchHelixUsers(query) {
+    if (!(await requireHelixSessionForNetwork())) return;
+
     if (!friendsSearchResults || !loggedInUser) return;
 
     const trimmed = query.trim();
@@ -4574,7 +4621,7 @@ async function searchHelixUsers(query) {
     friendsSearchResults.innerHTML = friendEmpty("Scanning the network", "Looking for matching Helix users…", "◌");
 
     try {
-        const response = await fetch(`/api/network/search?username=${encodeURIComponent(loggedInUser)}&q=${encodeURIComponent(trimmed)}`);
+        const response = await fetch(`/api/network/search?q=${encodeURIComponent(trimmed)}`);
         const data = await response.json();
 
         if (!response.ok) throw new Error(data.error || "Search failed.");
@@ -4600,11 +4647,13 @@ async function searchHelixUsers(query) {
 }
 
 async function sendFriendRequest(username) {
+    if (!(await requireHelixSessionForNetwork())) return;
+
     try {
         const response = await fetch("/api/network/request", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ from: loggedInUser, to: username })
+            body: JSON.stringify({ to: username })
         });
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || "Could not send request.");
@@ -4618,11 +4667,13 @@ async function sendFriendRequest(username) {
 }
 
 async function respondToFriendRequest(requestId, action) {
+    if (!(await requireHelixSessionForNetwork())) return;
+
     try {
         const response = await fetch(`/api/network/request/${encodeURIComponent(requestId)}/respond`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username: loggedInUser, action })
+            body: JSON.stringify({ action })
         });
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || "Could not update request.");
@@ -4635,11 +4686,13 @@ async function respondToFriendRequest(requestId, action) {
 }
 
 async function cancelFriendRequest(requestId) {
+    if (!(await requireHelixSessionForNetwork())) return;
+
     try {
         const response = await fetch(`/api/network/request/${encodeURIComponent(requestId)}`, {
             method: "DELETE",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username: loggedInUser })
+            body: JSON.stringify({})
         });
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || "Could not cancel request.");
@@ -4653,6 +4706,8 @@ async function cancelFriendRequest(requestId) {
 }
 
 async function removeHelixFriend(username) {
+    if (!(await requireHelixSessionForNetwork())) return;
+
     try {
         const response = await fetch("/api/network/friend", {
             method: "DELETE",
@@ -4718,6 +4773,10 @@ friendsFilterInput?.addEventListener("input", renderFriendsConnectedList);
 friendsSortSelect?.addEventListener("change", renderFriendsConnectedList);
 friendsRefreshButton?.addEventListener("click", refreshFriendsNetwork);
 
-syncHelixNetworkUser();
+bootstrapHelixSession().then((authenticated) => {
+    if (authenticated) {
+        syncHelixNetworkUser();
+    }
+});
 
 // =========================================================
