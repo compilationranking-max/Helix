@@ -9334,3 +9334,96 @@ body.helix-reduced-motion *::after {
     cursor: pointer;
     font-size: 16px;
 }
+
+/* =========================================================
+   HELIX — DM FINAL VISUAL POLISH
+   ========================================================= */
+
+#dm-view .conversation {
+    animation: none !important;
+    transform: none !important;
+}
+
+#dm-view .conversation:hover {
+    transform: none !important;
+}
+
+#dm-view .dm-search {
+    border: 1px solid rgba(63, 143, 184, 0.12);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.025);
+    transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
+}
+
+#dm-view .dm-search:focus-within {
+    border-color: rgba(0, 229, 255, 0.34);
+    box-shadow: 0 0 0 3px rgba(0,229,255,0.045), 0 0 20px rgba(0,229,255,0.05);
+    background: rgba(8, 19, 30, 0.82);
+}
+
+#dm-view .dm-search .search-icon {
+    color: #00e5ff;
+    font-size: 18px;
+    opacity: .9;
+}
+
+#dm-view .message-send-button {
+    width: 34px;
+    height: 34px;
+    flex: 0 0 34px;
+    padding: 0;
+    border: 0 !important;
+    outline: 0;
+    border-radius: 0 !important;
+    background: transparent !important;
+    color: #00e5ff !important;
+    box-shadow: none !important;
+    font-size: 22px;
+    font-weight: 600;
+    line-height: 1;
+    text-shadow: 0 0 12px rgba(0,229,255,.42);
+    transition: color .16s ease, transform .16s ease, text-shadow .16s ease;
+}
+
+#dm-view .message-send-button:hover:not(:disabled) {
+    color: #6cf4ff !important;
+    transform: translateX(2px);
+    text-shadow: 0 0 16px rgba(0,229,255,.7);
+}
+
+#dm-view .message-send-button:disabled {
+    opacity: .45;
+    cursor: default;
+}
+
+#dm-view .chat-message-search {
+    margin: 10px 16px 0;
+    min-height: 40px;
+    border-color: rgba(0,229,255,.16);
+}
+
+#dm-view .chat-message-search:focus-within {
+    border-color: rgba(0,229,255,.34);
+    box-shadow: 0 0 0 3px rgba(0,229,255,.04);
+}
+
+#dm-view .chat-message-search > span {
+    color: #00e5ff;
+    font-size: 16px;
+}
+
+#dm-view .chat-message-search input {
+    font-size: 11px;
+}
+
+#dm-view .chat-message-search input::placeholder {
+    color: #5f7481;
+}
+
+#dm-view .message.search-match .message-bubble {
+    border-color: rgba(0,229,255,.42);
+    box-shadow: 0 0 0 1px rgba(0,229,255,.07), 0 0 18px rgba(0,229,255,.08);
+}
+
+#dm-view .message[hidden] {
+    display: none !important;
+}
