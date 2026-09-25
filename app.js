@@ -41,6 +41,8 @@ async function bootstrapHelixSession() {
     }
 }
 
+window.__helixSessionReady = bootstrapHelixSession();
+
 // =========================================================
 // HELIX INTRO ANIMATION
 // =========================================================
