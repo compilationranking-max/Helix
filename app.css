@@ -9595,6 +9595,10 @@ body.helix-reduced-motion *::after {
     order: 0 !important;
 }
 
+#dm-view .dm-chat-header-actions .chat-message-search[hidden] {
+    display: none !important;
+}
+
 #dm-view .dm-chat-header-actions #chat-search-button {
     order: 1 !important;
 }
