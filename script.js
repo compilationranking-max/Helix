@@ -86,7 +86,7 @@ function saveUsers(users) {
 // SIGN UP
 // ================================
 
-signupBtn.addEventListener("click", () => {
+signupBtn.addEventListener("click", async () => {
     const username = document.getElementById("signup-username").value.trim();
     const displayName = document.getElementById("signup-display-name").value.trim();
     const password = document.getElementById("signup-password").value;
@@ -117,39 +117,50 @@ signupBtn.addEventListener("click", () => {
         return;
     }
 
-    const users = getUsers();
+    signupBtn.disabled = true;
 
-    if (users[username]) {
-        showMessage("That username already exists.");
-        return;
+    try {
+        const response = await fetch("/api/auth/register", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, displayName, password })
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+            throw new Error(data.error || "Could not create the account.");
+        }
+
+        const users = getUsers();
+        users[username] = {
+            displayName: data.user?.displayName || displayName,
+            createdAt: data.user?.createdAt || new Date().toISOString()
+        };
+        saveUsers(users);
+
+        localStorage.setItem("helixLoggedIn", username);
+        localStorage.setItem("helixDisplayName", data.user?.displayName || displayName);
+        sessionStorage.setItem("helixShowIntro", "1");
+
+        showMessage("Account created successfully!", "success");
+
+        setTimeout(() => {
+            window.location.href = "app.html";
+        }, 500);
+    } catch (error) {
+        showMessage(error.message || "Could not create the account.");
+    } finally {
+        signupBtn.disabled = false;
     }
-
-    users[username] = {
-        password,
-        displayName,
-        createdAt: new Date().toISOString()
-    };
-
-    saveUsers(users);
-
-    showMessage("Account created successfully!", "success");
-    document.getElementById("signup-username").value = "";
-    document.getElementById("signup-display-name").value = "";
-    document.getElementById("signup-password").value = "";
-    document.getElementById("signup-confirm-password").value = "";
-
-    setTimeout(() => {
-        signupForm.classList.add("hidden");
-        loginForm.classList.remove("hidden");
-        clearMessage();
-    }, 1000);
 });
 
 // ================================
 // LOGIN
 // ================================
 
-loginBtn.addEventListener("click", () => {
+loginBtn.addEventListener("click", async () => {
     const username = document.getElementById("login-username").value.trim();
     const password = document.getElementById("login-password").value;
 
@@ -158,24 +169,43 @@ loginBtn.addEventListener("click", () => {
         return;
     }
 
-    const users = getUsers();
+    loginBtn.disabled = true;
 
-    if (!users[username]) {
-        showMessage("Username not found.");
-        return;
+    try {
+        const response = await fetch("/api/auth/login", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, password })
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+            throw new Error(data.error || "Incorrect username or password.");
+        }
+
+        const users = getUsers();
+        users[username] = {
+            ...(users[username] || {}),
+            displayName: data.user?.displayName || username,
+            createdAt: data.user?.createdAt || users[username]?.createdAt || new Date().toISOString()
+        };
+        saveUsers(users);
+
+        localStorage.setItem("helixLoggedIn", username);
+        localStorage.setItem("helixDisplayName", data.user?.displayName || username);
+        sessionStorage.setItem("helixShowIntro", "1");
+
+        showMessage("Login successful!", "success");
+
+        setTimeout(() => {
+            window.location.href = "app.html";
+        }, 400);
+    } catch (error) {
+        showMessage(error.message || "Could not log in to Helix.");
+    } finally {
+        loginBtn.disabled = false;
     }
-
-    if (users[username].password !== password) {
-        showMessage("Incorrect password.");
-        return;
-    }
-
-    showMessage("Login successful!", "success");
-    localStorage.setItem("helixLoggedIn", username);
-    localStorage.setItem("helixDisplayName", users[username].displayName || username);
-    sessionStorage.setItem("helixShowIntro", "1");
-
-    setTimeout(() => {
-        window.location.href = "app.html";
-    }, 500);
 });
+
