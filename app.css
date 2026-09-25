@@ -9500,3 +9500,234 @@ body.helix-reduced-motion *::after {
     pointer-events: none;
 }
 
+
+
+/* =========================================================
+   HELIX — DM SEARCH + CHAT STABILITY FIX
+   ========================================================= */
+
+/* LEFT INBOX SEARCH
+   Remove the extra gray shell around the actual input. */
+#dm-view .dm-search {
+    height: 46px !important;
+    margin: 14px 16px 8px !important;
+    padding: 0 !important;
+    gap: 0 !important;
+    border: 0 !important;
+    border-radius: 14px !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    position: relative !important;
+}
+
+#dm-view .dm-search .search-icon {
+    position: absolute !important;
+    left: 13px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    z-index: 2 !important;
+    color: var(--cyan) !important;
+    font-size: 17px !important;
+    pointer-events: none !important;
+}
+
+#dm-view .dm-search input,
+#dm-view #chat-search {
+    width: 100% !important;
+    height: 46px !important;
+    min-height: 46px !important;
+    padding: 0 14px 0 40px !important;
+    border: 1px solid rgba(0, 229, 255, 0.22) !important;
+    border-radius: 14px !important;
+    outline: 0 !important;
+    background: rgba(7, 12, 21, 0.92) !important;
+    color: #eefaff !important;
+    box-shadow: none !important;
+    box-sizing: border-box !important;
+}
+
+#dm-view .dm-search input::placeholder,
+#dm-view #chat-search::placeholder {
+    color: rgba(143, 166, 184, 0.72) !important;
+}
+
+#dm-view .dm-search input:focus,
+#dm-view #chat-search:focus {
+    border-color: rgba(0, 229, 255, 0.58) !important;
+    box-shadow:
+        0 0 0 1px rgba(0, 229, 255, 0.08),
+        0 0 20px rgba(0, 229, 255, 0.08) !important;
+}
+
+/* MESSAGE SEARCH
+   It lives inside the header actions, so opening it naturally expands
+   to the LEFT of the search icon instead of floating over the chat. */
+#dm-view .dm-chat-header-actions {
+    position: relative !important;
+    min-width: 0 !important;
+}
+
+#dm-view .chat-message-search[hidden] {
+    display: none !important;
+}
+
+#dm-view .dm-chat-header-actions .chat-message-search {
+    position: static !important;
+    top: auto !important;
+    right: auto !important;
+    transform: none !important;
+    display: flex !important;
+    align-items: center !important;
+    flex: 0 1 290px !important;
+    width: min(290px, 30vw) !important;
+    min-width: 0 !important;
+    height: 36px !important;
+    margin: 0 !important;
+    padding: 0 7px 0 11px !important;
+    gap: 7px !important;
+    border: 1px solid rgba(0, 229, 255, 0.30) !important;
+    border-radius: 999px !important;
+    background: rgba(6, 12, 21, 0.97) !important;
+    box-shadow:
+        0 10px 26px rgba(0, 0, 0, 0.28),
+        0 0 18px rgba(0, 229, 255, 0.07) !important;
+    overflow: hidden !important;
+    order: 0 !important;
+}
+
+#dm-view .dm-chat-header-actions #chat-search-button {
+    order: 1 !important;
+}
+
+#dm-view .dm-chat-header-actions #chat-info-button {
+    order: 2 !important;
+}
+
+#dm-view .chat-message-search > span:first-child {
+    flex: 0 0 auto !important;
+    color: var(--cyan) !important;
+    font-size: 16px !important;
+    line-height: 1 !important;
+}
+
+#dm-view #message-search-input {
+    flex: 1 1 auto !important;
+    width: auto !important;
+    height: 100% !important;
+    min-width: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    outline: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    color: #eefaff !important;
+    font-size: 11px !important;
+    box-shadow: none !important;
+}
+
+#dm-view #message-search-input::placeholder {
+    color: rgba(143, 166, 184, 0.70) !important;
+}
+
+#dm-view #message-search-result-count,
+#dm-view .chat-search-result-count {
+    flex: 0 0 auto !important;
+    color: rgba(0, 229, 255, 0.62) !important;
+    font: 8px "SFMono-Regular", Consolas, monospace !important;
+    white-space: nowrap !important;
+}
+
+#dm-view .dm-chat-header-actions #chat-search-close {
+    flex: 0 0 24px !important;
+    width: 24px !important;
+    min-width: 24px !important;
+    height: 24px !important;
+    padding: 0 !important;
+    border: 1px solid rgba(0, 229, 255, 0.22) !important;
+    border-radius: 50% !important;
+    background: transparent !important;
+    color: var(--cyan) !important;
+    font-size: 14px !important;
+    line-height: 1 !important;
+    box-shadow: none !important;
+}
+
+#dm-view .dm-chat-header-actions #chat-search-close:hover {
+    border-color: rgba(0, 229, 255, 0.58) !important;
+    color: #ffffff !important;
+    box-shadow: 0 0 14px rgba(0, 229, 255, 0.12) !important;
+}
+
+/* CHAT STABILITY
+   The cloud DM poller only redraws when messages actually change.
+   Disable the old entrance animation so a redraw never flashes/blinks. */
+#dm-view #messages .message {
+    opacity: 1 !important;
+    animation: none !important;
+    margin: 0 !important;
+    flex: 0 0 auto !important;
+}
+
+#dm-view #messages {
+    gap: 12px !important;
+    padding: 18px 18px 14px !important;
+}
+
+#dm-view #messages .message-bubble {
+    margin: 0 !important;
+    transition:
+        border-color 0.18s ease,
+        box-shadow 0.18s ease !important;
+}
+
+/* Keep the time/checks neatly under each bubble. */
+#dm-view #messages .message-meta {
+    margin: 4px 4px 0 !important;
+    padding: 0 !important;
+}
+
+/* Search results get a clear but non-animated highlight. */
+#dm-view #messages .message.search-match .message-bubble {
+    border-color: rgba(0, 229, 255, 0.72) !important;
+    box-shadow:
+        0 0 0 1px rgba(0, 229, 255, 0.12),
+        0 0 22px rgba(0, 229, 255, 0.10) !important;
+}
+
+#dm-view #messages .message.search-match .message-bubble p {
+    color: var(--cyan) !important;
+}
+
+/* Prevent rapid repeated submits while the current send request is in flight. */
+#dm-view .message-send-button:disabled {
+    opacity: 0.42 !important;
+    cursor: wait !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+@media (max-width: 900px) {
+    #dm-view .dm-chat-header-actions .chat-message-search {
+        width: min(250px, 32vw) !important;
+        flex-basis: 250px !important;
+    }
+}
+
+@media (max-width: 760px) {
+    #dm-view .dm-chat-header {
+        gap: 8px !important;
+        padding-left: 12px !important;
+        padding-right: 12px !important;
+    }
+
+    #dm-view .dm-chat-header-actions .chat-message-search {
+        width: min(220px, 55vw) !important;
+        flex-basis: 220px !important;
+    }
+
+    #dm-view .dm-chat-header-actions button:not(#chat-search-close) {
+        width: 32px !important;
+        height: 32px !important;
+        flex: 0 0 32px !important;
+    }
+}
