@@ -4563,12 +4563,25 @@ bootstrapHelixSession().then((authenticated) => {
 
     input.disabled = true;
     showConversationHint("");
-    loadFriends();
 
-    refreshTimer = setInterval(async () => {
-        await loadFriends();
-        if (activeUsername && !isSending) {
-            await loadMessages(activeUsername);
+    let dmRefreshRunning = false;
+
+    async function refreshDMLoop() {
+        if (!dmRefreshRunning) {
+            dmRefreshRunning = true;
+
+            try {
+                await loadFriends();
+                if (activeUsername && !isSending) {
+                    await loadMessages(activeUsername);
+                }
+            } finally {
+                dmRefreshRunning = false;
+            }
         }
-    }, 5000);
+
+        refreshTimer = window.setTimeout(refreshDMLoop, 1000);
+    }
+
+    refreshDMLoop();
 })();
