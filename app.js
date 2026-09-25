@@ -1434,6 +1434,11 @@ profilePhotoInput?.addEventListener("change", async () => {
         profilePhotoMessage.textContent = "Profile photo is now public across Helix.";
         profilePhotoInput.value = "";
 
+        // Tell every live Helix surface to refresh the public avatar immediately.
+        window.dispatchEvent(new CustomEvent("helix-profile-photo-updated", {
+            detail: { username: loggedInUser, profilePhoto }
+        }));
+
         // Refresh the network/DM data so friends immediately receive the
         // public avatar without needing to log out.
         if (typeof refreshFriendsNetwork === "function") {
@@ -4485,6 +4490,40 @@ bootstrapHelixSession().then((authenticated) => {
             if (!input.value.trim()) input.value = value;
             if (headerStatus) headerStatus.textContent = error.message || "Message failed.";
             input.focus();
+        }
+    });
+
+    window.addEventListener("helix-profile-photo-updated", async (event) => {
+        const updatedUsername = event.detail?.username;
+        const updatedPhoto = event.detail?.profilePhoto || null;
+
+        if (updatedUsername === loggedInUser) {
+            // Update the current user's cached public identity without waiting
+            // for another network poll.
+            const localUsers = readLocalJSON("helixUsers", {});
+            if (localUsers?.[loggedInUser]) {
+                localUsers[loggedInUser].profilePhoto = updatedPhoto;
+                localStorage.setItem("helixUsers", JSON.stringify(localUsers));
+            }
+        }
+
+        await loadFriends();
+
+        if (activeUsername) {
+            const activeFriend = friends.find((friend) => friend.username === activeUsername);
+            if (activeFriend) {
+                if (updatedUsername === activeUsername) {
+                    activeFriend.profilePhoto = updatedPhoto;
+                    if (headerAvatar) {
+                        headerAvatar.style.backgroundImage = updatedPhoto
+                            ? `url("${updatedPhoto}")`
+                            : "";
+                        headerAvatar.style.backgroundSize = updatedPhoto ? "cover" : "";
+                        headerAvatar.style.backgroundPosition = updatedPhoto ? "center" : "";
+                        headerAvatar.style.color = updatedPhoto ? "transparent" : "";
+                    }
+                }
+            }
         }
     });
 
