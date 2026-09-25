@@ -428,34 +428,91 @@ app.post("/api/profile/display-name", async (req, res) => {
     }
 });
 
-app.get("/api/network/state", async (req, res) => {
+async function getCloudNetworkState(username) {
+    const friendsResult = await dbPool.query(`
+        SELECT u.username, u.display_name AS "displayName"
+        FROM helix_friendships f
+        JOIN helix_users u ON u.username = CASE WHEN f.user_a = $1 THEN f.user_b ELSE f.user_a END
+        WHERE f.user_a = $1 OR f.user_b = $1
+        ORDER BY LOWER(u.display_name), LOWER(u.username)
+    `, [username]);
+
+    const incomingResult = await dbPool.query(`
+        SELECT r.id, r.from_username AS "from", u.display_name AS "fromDisplayName", r.created_at AS "createdAt"
+        FROM helix_friend_requests r
+        JOIN helix_users u ON u.username = r.from_username
+        WHERE r.to_username = $1 AND r.status = 'pending'
+        ORDER BY r.created_at DESC
+    `, [username]);
+
+    const outgoingResult = await dbPool.query(`
+        SELECT r.id, r.to_username AS "to", u.display_name AS "toDisplayName", r.created_at AS "createdAt"
+        FROM helix_friend_requests r
+        JOIN helix_users u ON u.username = r.to_username
+        WHERE r.from_username = $1 AND r.status = 'pending'
+        ORDER BY r.created_at DESC
+    `, [username]);
+
+    return {
+        friends: friendsResult.rows,
+        incoming: incomingResult.rows,
+        outgoing: outgoingResult.rows
+    };
+}
+
+app.post("/api/network/sync", async (req, res) => {
     const user = await requireCurrentUser(req, res);
     if (!user) return;
+
+    const displayName = normalizeDisplayName(req.body?.displayName);
+
     try {
         if (dbPool) {
             await requireDatabase();
-            const friendsResult = await dbPool.query(`
-                SELECT u.username, u.display_name AS "displayName"
-                FROM helix_friendships f
-                JOIN helix_users u ON u.username = CASE WHEN f.user_a = $1 THEN f.user_b ELSE f.user_a END
-                WHERE f.user_a = $1 OR f.user_b = $1
-                ORDER BY LOWER(u.display_name), LOWER(u.username)
-            `, [user.username]);
-            const incomingResult = await dbPool.query(`
-                SELECT r.id, r.from_username AS "from", u.display_name AS "fromDisplayName", r.created_at AS "createdAt"
-                FROM helix_friend_requests r
-                JOIN helix_users u ON u.username = r.from_username
-                WHERE r.to_username = $1 AND r.status = 'pending'
-                ORDER BY r.created_at DESC
-            `, [user.username]);
-            const outgoingResult = await dbPool.query(`
-                SELECT r.id, r.to_username AS "to", u.display_name AS "toDisplayName", r.created_at AS "createdAt"
-                FROM helix_friend_requests r
-                JOIN helix_users u ON u.username = r.to_username
-                WHERE r.from_username = $1 AND r.status = 'pending'
-                ORDER BY r.created_at DESC
-            `, [user.username]);
-            return res.json({ friends: friendsResult.rows, incoming: incomingResult.rows, outgoing: outgoingResult.rows });
+
+            if (displayName && !validDisplayName(displayName)) {
+                return res.status(400).json({ error: "Display name must be 1–50 characters." });
+            }
+
+            const result = displayName
+                ? await dbPool.query(
+                    "UPDATE helix_users SET display_name = $1 WHERE username = $2 RETURNING username, display_name, created_at",
+                    [displayName, user.username]
+                )
+                : await dbPool.query(
+                    "SELECT username, display_name, created_at FROM helix_users WHERE username = $1",
+                    [user.username]
+                );
+
+            const row = result.rows[0];
+            return res.json({
+                ok: true,
+                username: row.username,
+                displayName: row.display_name,
+                ...await getCloudNetworkState(user.username)
+            });
+        }
+
+        return res.json({
+            ok: true,
+            username: user.username,
+            displayName: user.display_name,
+            ...networkState(user.username)
+        });
+    } catch (error) {
+        console.error("Network sync failed:", error);
+        return res.status(500).json({ error: "Could not sync your Helix profile." });
+    }
+});
+
+app.get("/api/network/state", async (req, res) => {
+    const user = await requireCurrentUser(req, res);
+    if (!user) return;
+
+    try {
+        if (dbPool) {
+            await requireDatabase();
+            return res.json(await getCloudNetworkState(user.username));
         }
         return res.json(networkState(user.username));
     } catch (error) {
@@ -463,6 +520,7 @@ app.get("/api/network/state", async (req, res) => {
         return res.status(500).json({ error: "Could not load your Helix network." });
     }
 });
+
 
 app.get("/api/network/search", async (req, res) => {
     const user = await requireCurrentUser(req, res);
@@ -690,15 +748,30 @@ async function generateGeminiResponse(message) {
     return reply;
 }
 
-app.get("/api/health", (req, res) => {
+app.get("/api/health", async (req, res) => {
+    let databaseConnected = false;
+
+    if (dbPool) {
+        try {
+            await requireDatabase();
+            await dbPool.query("SELECT 1");
+            databaseConnected = true;
+        } catch (error) {
+            databaseConnected = false;
+        }
+    }
+
     res.json({
         ok: true,
-        aiConfigured: Boolean(process.env.GEMINI_API_KEY),
+        aiConfigured: Boolean(GEMINI_API_KEY),
         provider: "gemini",
         model: MODEL,
-        transport: "direct-rest"
+        transport: "direct-rest",
+        databaseConfigured: Boolean(dbPool),
+        databaseConnected
     });
 });
+
 
 app.post("/api/chat", async (req, res) => {
     try {
