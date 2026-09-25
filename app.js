@@ -2733,133 +2733,8 @@ console.log(
 (() => {
 
     // =====================================================
-    // DM — CONVERSATION SEARCH
+    // DM — LIVE SEARCH IS OWNED BY THE ISOLATED CLOUD DMS MODULE BELOW
     // =====================================================
-
-    const helixDMSearch = document.getElementById("chat-search");
-    const helixConversations =
-        document.querySelectorAll("#conversation-list .conversation");
-
-    if (helixDMSearch) {
-
-        helixDMSearch.addEventListener("input", () => {
-
-            const query =
-                helixDMSearch.value.trim().toLowerCase();
-
-            helixConversations.forEach((conversation) => {
-
-                const name =
-                    conversation
-                        .querySelector("strong")
-                        ?.textContent
-                        .toLowerCase() || "";
-
-                const preview =
-                    conversation
-                        .querySelector(".conversation-preview")
-                        ?.textContent
-                        .toLowerCase() || "";
-
-                const matches =
-                    !query ||
-                    name.includes(query) ||
-                    preview.includes(query);
-
-                conversation.style.display =
-                    matches ? "" : "none";
-            });
-        });
-    }
-
-
-    // =====================================================
-    // DM — CHAT MESSAGE SEARCH BUTTON
-    // =====================================================
-
-    const chatSearchButton =
-        document.getElementById("chat-search-button");
-
-    const chatMessageSearch =
-        document.getElementById("chat-message-search");
-
-    const messageSearchInput =
-        document.getElementById("message-search-input");
-
-    const chatSearchClose =
-        document.getElementById("chat-search-close");
-
-    const dmMessages =
-        document.getElementById("messages");
-
-
-    if (
-        chatSearchButton &&
-        chatMessageSearch &&
-        messageSearchInput
-    ) {
-
-        chatSearchButton.addEventListener("click", () => {
-
-            chatMessageSearch.hidden = false;
-
-            requestAnimationFrame(() => {
-                messageSearchInput.focus();
-            });
-        });
-
-
-        messageSearchInput.addEventListener("input", () => {
-
-            const query =
-                messageSearchInput.value.trim().toLowerCase();
-
-            if (!dmMessages) return;
-
-            dmMessages
-                .querySelectorAll(".message")
-                .forEach((message) => {
-
-                    const text =
-                        message.textContent.toLowerCase();
-
-                    const matches =
-                        !query || text.includes(query);
-
-                    message.hidden = !matches;
-
-                    message.classList.toggle(
-                        "search-match",
-                        Boolean(query && matches)
-                    );
-                });
-        });
-
-
-        if (chatSearchClose) {
-
-            chatSearchClose.addEventListener("click", () => {
-
-                messageSearchInput.value = "";
-
-                if (dmMessages) {
-
-                    dmMessages
-                        .querySelectorAll(".message")
-                        .forEach((message) => {
-
-                            message.hidden = false;
-                            message.classList.remove("search-match");
-
-                        });
-                }
-
-                chatMessageSearch.hidden = true;
-            });
-        }
-    }
-
-
     // =====================================================
     // DM — INFO PANEL
     // =====================================================
@@ -4156,8 +4031,10 @@ bootstrapHelixSession().then((authenticated) => {
     const messageSearch = document.getElementById("chat-message-search");
     const messageSearchInput = document.getElementById("message-search-input");
     const messageSearchClose = document.getElementById("chat-search-close");
+    const searchResultCount = document.getElementById("chat-search-result-count");
     const form = document.getElementById("message-form");
     const input = document.getElementById("message-input");
+    const sendButton = form?.querySelector("button[type=\"submit\"]");
     const messages = document.getElementById("messages");
     const headerAvatar = document.getElementById("chat-avatar");
     const headerName = document.getElementById("chat-user-name");
@@ -4169,6 +4046,8 @@ bootstrapHelixSession().then((authenticated) => {
     let activeUsername = null;
     let currentMessages = [];
     let refreshTimer = null;
+    let messageLoadSerial = 0;
+    let isSending = false;
 
     const safe = (value) => escapeHTML(value);
 
@@ -4176,6 +4055,19 @@ bootstrapHelixSession().then((authenticated) => {
         return a.length === b.length && a.every((x, i) =>
             x.username === b[i]?.username && x.displayName === b[i]?.displayName
         );
+    }
+
+    function sameMessages(a, b) {
+        if (a.length !== b.length) return false;
+        return a.every((x, i) => {
+            const y = b[i];
+            return y &&
+                String(x.id || "") === String(y.id || "") &&
+                x.sender === y.sender &&
+                x.recipient === y.recipient &&
+                x.text === y.text &&
+                x.createdAt === y.createdAt;
+        });
     }
 
     function filterFriends() {
@@ -4199,24 +4091,43 @@ bootstrapHelixSession().then((authenticated) => {
 
         friends = normalized;
         list.replaceChildren();
+
+        if (!normalized.length) {
+            const empty = document.createElement("div");
+            empty.className = "dm-empty-state";
+            empty.innerHTML = `
+                <span class="dm-empty-icon">◈</span>
+                <strong>No friends yet</strong>
+                <p>Add a friend to start a Direct Message.</p>
+            `;
+            list.appendChild(empty);
+            filterFriends();
+            return;
+        }
+
         normalized.forEach((friend) => {
             const button = document.createElement("button");
             button.type = "button";
             button.className = "conversation" + (friend.username === activeUsername ? " active" : "");
             button.dataset.user = friend.username;
+
             const avatar = document.createElement("span");
             avatar.className = "conversation-avatar";
             avatar.textContent = friend.displayName.slice(0, 2).toUpperCase();
+
             const copy = document.createElement("span");
             copy.className = "conversation-copy";
             copy.innerHTML = `<strong>${safe(friend.displayName)}</strong><small>-${safe(friend.username)}</small><span class="conversation-preview">${friend.username === activeUsername ? "Open conversation" : "Start a conversation"}</span>`;
+
             const arrow = document.createElement("span");
             arrow.className = "conversation-arrow";
             arrow.textContent = "↗";
+
             button.append(avatar, copy, arrow);
             button.addEventListener("click", () => openFriend(friend));
             list.appendChild(button);
         });
+
         filterFriends();
     }
 
@@ -4241,55 +4152,119 @@ bootstrapHelixSession().then((authenticated) => {
         }
     }
 
-    function renderMessages() {
-        messages.replaceChildren();
+    function updateSearchResultCount(matchCount, totalCount, query) {
+        if (!searchResultCount) return;
+        if (!query) {
+            searchResultCount.textContent = "";
+            return;
+        }
+        searchResultCount.textContent =
+            `${matchCount} result${matchCount === 1 ? "" : "s"}`;
+        searchResultCount.title = `${matchCount} of ${totalCount} messages match`;
+    }
+
+    function renderMessages({ scrollToBottom = false } = {}) {
         const query = (messageSearchInput?.value || "").trim().toLowerCase();
         const visible = query
-            ? currentMessages.filter((item) => String(item.text).toLowerCase().includes(query))
+            ? currentMessages.filter((item) => String(item.text || "").toLowerCase().includes(query))
             : currentMessages;
 
+        updateSearchResultCount(visible.length, currentMessages.length, query);
+
+        const wasNearBottom =
+            messages.scrollHeight - messages.scrollTop - messages.clientHeight < 80;
+        const previousScrollTop = messages.scrollTop;
+
+        messages.replaceChildren();
+
         if (!visible.length) {
-            // Intentionally leave the chat area blank when a conversation has no messages.
             if (query) showConversationHint("No matching messages.");
             return;
         }
 
+        const fragment = document.createDocumentFragment();
+        const rows = [];
+
         visible.forEach((item) => {
             const row = document.createElement("div");
             row.className = "message " + (item.sender === loggedInUser ? "sent" : "received");
+
             const bubble = document.createElement("div");
             bubble.className = "message-bubble";
+
             const p = document.createElement("p");
             p.textContent = item.text;
             bubble.appendChild(p);
+
             const meta = document.createElement("div");
             meta.className = "message-meta";
+
             const time = document.createElement("span");
             time.className = "message-time";
-            time.textContent = new Date(item.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+            time.textContent = new Date(item.createdAt).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit"
+            });
             meta.appendChild(time);
+
             if (item.sender === loggedInUser) {
                 const status = document.createElement("span");
                 status.className = "message-status";
                 status.textContent = "✓✓";
                 meta.appendChild(status);
             }
+
             row.append(bubble, meta);
-            messages.appendChild(row);
+
+            if (query) row.classList.add("search-match");
+
+            fragment.appendChild(row);
+            rows.push(row);
         });
-        messages.scrollTop = messages.scrollHeight;
+
+        messages.appendChild(fragment);
+
+        if (query) {
+            rows[0]?.scrollIntoView({ block: "center", behavior: "auto" });
+        } else if (scrollToBottom || wasNearBottom) {
+            messages.scrollTop = messages.scrollHeight;
+        } else {
+            messages.scrollTop = previousScrollTop;
+        }
     }
 
-    async function loadMessages(username) {
+    async function loadMessages(username, { force = false, scrollToBottom = false } = {}) {
+        const requestSerial = ++messageLoadSerial;
+
         try {
-            const response = await fetch(`/api/dm/messages?with=${encodeURIComponent(username)}`, { credentials: "include" });
+            const response = await fetch(
+                `/api/dm/messages?with=${encodeURIComponent(username)}`,
+                { credentials: "include" }
+            );
             const data = await response.json().catch(() => ({}));
-            if (!response.ok) throw new Error(data.error || "Could not load conversation.");
-            currentMessages = Array.isArray(data.messages) ? data.messages : [];
-            renderMessages();
+
+            if (!response.ok) {
+                throw new Error(data.error || "Could not load conversation.");
+            }
+
+            if (activeUsername !== username || requestSerial !== messageLoadSerial) return;
+
+            const nextMessages = Array.isArray(data.messages) ? data.messages : [];
+            const changed = force || !sameMessages(currentMessages, nextMessages);
+
+            currentMessages = nextMessages;
+
+            // Do not rebuild the message DOM during normal polling when nothing changed.
+            // This removes the visible blink/jump every few seconds.
+            if (changed) {
+                renderMessages({ scrollToBottom });
+            }
         } catch (error) {
+            if (activeUsername !== username || requestSerial !== messageLoadSerial) return;
             currentMessages = [];
-            if (headerStatus) headerStatus.textContent = error.message || "Could not load conversation.";
+            if (headerStatus) {
+                headerStatus.textContent = error.message || "Could not load conversation.";
+            }
         }
     }
 
@@ -4298,45 +4273,83 @@ bootstrapHelixSession().then((authenticated) => {
         list.querySelectorAll(".conversation").forEach((item) =>
             item.classList.toggle("active", item.dataset.user === activeUsername)
         );
-        if (headerAvatar) headerAvatar.textContent = friend.displayName.slice(0, 2).toUpperCase();
-        if (headerName) headerName.innerHTML = `${safe(friend.displayName)} <small>-${safe(friend.username)}</small>`;
+
+        if (headerAvatar) {
+            headerAvatar.textContent = friend.displayName.slice(0, 2).toUpperCase();
+        }
+
+        if (headerName) {
+            headerName.innerHTML = `${safe(friend.displayName)} <small>-${safe(friend.username)}</small>`;
+        }
+
         if (headerStatus) headerStatus.textContent = "Friend on Helix";
+
+        if (messageSearchInput) messageSearchInput.value = "";
+        if (messageSearch) messageSearch.hidden = true;
+        searchButton?.setAttribute("aria-expanded", "false");
+
         input.disabled = false;
-        await loadMessages(activeUsername);
+        currentMessages = [];
+        showConversationHint("");
+        await loadMessages(activeUsername, { force: true, scrollToBottom: true });
+        input.focus();
     }
 
     async function sendMessage(text) {
-        if (!activeUsername || !text.trim()) return false;
-        const response = await fetch("/api/dm/messages", {
-            method: "POST",
-            credentials: "include",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ to: activeUsername, text: text.trim() })
-        });
-        const data = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(data.error || "Could not send message.");
-        await loadMessages(activeUsername);
-        return true;
+        const recipient = activeUsername;
+        const trimmed = String(text || "").trim();
+
+        if (!recipient || !trimmed || isSending) return false;
+
+        isSending = true;
+        if (sendButton) sendButton.disabled = true;
+
+        try {
+            const response = await fetch("/api/dm/messages", {
+                method: "POST",
+                credentials: "include",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ to: recipient, text: trimmed })
+            });
+
+            const data = await response.json().catch(() => ({}));
+
+            if (!response.ok) {
+                throw new Error(data.error || "Could not send message.");
+            }
+
+            if (activeUsername === recipient) {
+                await loadMessages(recipient, { force: true, scrollToBottom: true });
+            }
+
+            return true;
+        } finally {
+            isSending = false;
+            if (sendButton) sendButton.disabled = false;
+        }
     }
 
     form.addEventListener("submit", async (event) => {
         event.preventDefault();
         event.stopPropagation();
-        const value = input.value;
-        if (!value.trim() || !activeUsername) return;
+
+        if (isSending) return;
+
+        const value = input.value.trim();
+        if (!value || !activeUsername) return;
+
+        // Clear only the submitted message. This prevents duplicate submits and
+        // also lets the user type the next message while the request completes.
+        input.value = "";
+
         try {
             await sendMessage(value);
-            input.value = "";
             input.focus();
         } catch (error) {
+            // Restore the message so a failed send can be retried.
+            if (!input.value.trim()) input.value = value;
             if (headerStatus) headerStatus.textContent = error.message || "Message failed.";
-        }
-    });
-
-    input.addEventListener("keydown", (event) => {
-        if (event.key === "Enter" && !event.shiftKey) {
-            event.preventDefault();
-            form.requestSubmit();
+            input.focus();
         }
     });
 
@@ -4345,21 +4358,43 @@ bootstrapHelixSession().then((authenticated) => {
     searchButton?.addEventListener("click", () => {
         if (!messageSearch) return;
         messageSearch.hidden = false;
-        messageSearchInput?.focus();
+        searchButton.setAttribute("aria-expanded", "true");
+
+        requestAnimationFrame(() => {
+            messageSearchInput?.focus();
+        });
     });
 
-    messageSearchInput?.addEventListener("input", renderMessages);
+    messageSearchInput?.addEventListener("input", () => {
+        renderMessages();
+    });
+
+    messageSearchInput?.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+            messageSearchInput.value = "";
+            if (messageSearch) messageSearch.hidden = true;
+            searchButton?.setAttribute("aria-expanded", "false");
+            renderMessages();
+            searchButton?.focus();
+        }
+    });
+
     messageSearchClose?.addEventListener("click", () => {
         if (messageSearchInput) messageSearchInput.value = "";
         if (messageSearch) messageSearch.hidden = true;
+        searchButton?.setAttribute("aria-expanded", "false");
         renderMessages();
+        searchButton?.focus();
     });
 
     input.disabled = true;
     showConversationHint("");
     loadFriends();
+
     refreshTimer = setInterval(async () => {
         await loadFriends();
-        if (activeUsername) await loadMessages(activeUsername);
+        if (activeUsername && !isSending) {
+            await loadMessages(activeUsername);
+        }
     }, 5000);
 })();
