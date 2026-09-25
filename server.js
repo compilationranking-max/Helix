@@ -373,7 +373,7 @@ app.post("/api/auth/login", async (req, res) => {
         if (dbPool) {
             await requireDatabase();
             const result = await dbPool.query(
-                "SELECT username, display_name, password_hash, password_salt, created_at FROM helix_users WHERE username = $1",
+                "SELECT username, display_name, password_hash, password_salt, created_at, profile_photo FROM helix_users WHERE username = $1",
                 [username]
             );
             const user = result.rows[0];
@@ -451,7 +451,7 @@ app.post("/api/profile/display-name", async (req, res) => {
         if (dbPool) {
             await requireDatabase();
             const result = await dbPool.query(
-                "UPDATE helix_users SET display_name = $1 WHERE username = $2 RETURNING username, display_name, created_at",
+                "UPDATE helix_users SET display_name = $1 WHERE username = $2 RETURNING username, display_name, created_at, profile_photo",
                 [displayName, user.username]
             );
             return res.json({
