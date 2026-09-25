@@ -93,6 +93,18 @@ async function initializeDatabase() {
                 CHECK (status IN ('pending', 'accepted', 'declined', 'cancelled')),
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
         );
+        CREATE TABLE IF NOT EXISTS helix_messages (
+            id UUID PRIMARY KEY,
+            sender_username TEXT NOT NULL REFERENCES helix_users(username) ON DELETE CASCADE,
+            recipient_username TEXT NOT NULL REFERENCES helix_users(username) ON DELETE CASCADE,
+            body TEXT NOT NULL CHECK (char_length(body) BETWEEN 1 AND 4000),
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            read_at TIMESTAMPTZ
+        );
+
+        CREATE INDEX IF NOT EXISTS helix_messages_conversation_idx
+            ON helix_messages (sender_username, recipient_username, created_at);
+
 
         CREATE INDEX IF NOT EXISTS helix_friend_requests_to_idx
             ON helix_friend_requests (to_username, status);
@@ -460,6 +472,15 @@ async function getCloudNetworkState(username) {
     };
 }
 
+async function areCloudFriends(usernameA, usernameB) {
+    const result = await dbPool.query(`
+        SELECT 1
+        FROM helix_friendships
+        WHERE user_a = LEAST($1, $2) AND user_b = GREATEST($1, $2)
+    `, [usernameA, usernameB]);
+    return result.rowCount > 0;
+}
+
 app.post("/api/network/sync", async (req, res) => {
     const user = await requireCurrentUser(req, res);
     if (!user) return;
@@ -657,6 +678,81 @@ app.delete("/api/network/friend", async (req, res) => {
         return res.status(400).json({ error: "Not available in local mode." });
     } catch (error) { return res.status(500).json({ error: "Could not remove your friend." }); }
 });
+app.get("/api/dm/messages", async (req, res) => {
+    const user = await requireCurrentUser(req, res);
+    if (!user) return;
+
+    const withUser = normalizeUsername(req.query.with);
+    if (!validUsername(withUser) || withUser === user.username) {
+        return res.status(400).json({ error: "Invalid conversation." });
+    }
+
+    try {
+        if (!dbPool) return res.json({ messages: [] });
+        await requireDatabase();
+        if (!(await areCloudFriends(user.username, withUser))) {
+            return res.status(403).json({ error: "You can only message friends on Helix." });
+        }
+
+        const result = await dbPool.query(`
+            SELECT id, sender_username AS "sender", recipient_username AS "recipient",
+                   body AS "text", created_at AS "createdAt", read_at AS "readAt"
+            FROM helix_messages
+            WHERE (sender_username = $1 AND recipient_username = $2)
+               OR (sender_username = $2 AND recipient_username = $1)
+            ORDER BY created_at ASC
+            LIMIT 200
+        `, [user.username, withUser]);
+
+        await dbPool.query(`
+            UPDATE helix_messages
+            SET read_at = NOW()
+            WHERE recipient_username = $1 AND sender_username = $2 AND read_at IS NULL
+        `, [user.username, withUser]);
+
+        res.json({ messages: result.rows });
+    } catch (error) {
+        console.error("DM load failed:", error);
+        res.status(500).json({ error: "Could not load this conversation." });
+    }
+});
+
+app.post("/api/dm/messages", async (req, res) => {
+    const user = await requireCurrentUser(req, res);
+    if (!user) return;
+
+    const recipient = normalizeUsername(req.body?.to);
+    const body = typeof req.body?.text === "string" ? req.body.text.trim() : "";
+
+    if (!validUsername(recipient) || recipient === user.username) {
+        return res.status(400).json({ error: "Invalid recipient." });
+    }
+
+    if (!body || body.length > 4000) {
+        return res.status(400).json({ error: "Message must be between 1 and 4000 characters." });
+    }
+
+    try {
+        if (!dbPool) return res.status(503).json({ error: "Cloud messaging is not configured." });
+        await requireDatabase();
+        if (!(await areCloudFriends(user.username, recipient))) {
+            return res.status(403).json({ error: "You can only message friends on Helix." });
+        }
+
+        const result = await dbPool.query(`
+            INSERT INTO helix_messages (id, sender_username, recipient_username, body)
+            VALUES ($1, $2, $3, $4)
+            RETURNING id, sender_username AS "sender", recipient_username AS "recipient",
+                      body AS "text", created_at AS "createdAt", read_at AS "readAt"
+        `, [crypto.randomUUID(), user.username, recipient, body]);
+
+        res.status(201).json({ ok: true, message: result.rows[0] });
+    } catch (error) {
+        console.error("DM send failed:", error);
+        res.status(500).json({ error: "Could not send the message." });
+    }
+});
+
 function buildConversationInput(history, message) {
     const validHistory = Array.isArray(history)
         ? history.filter((item) => (
