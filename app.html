@@ -448,16 +448,17 @@
                 </div>
             </div>
             <div class="dm-chat-header-actions">
-                <button type="button" id="chat-search-button" aria-label="Search messages" title="Search messages">⌕</button>
+                <div class="chat-message-search" id="chat-message-search" hidden>
+                    <span aria-hidden="true">⌕</span>
+                    <input id="message-search-input" type="search" placeholder="Search messages..." autocomplete="off">
+                    <span class="chat-search-result-count" id="chat-search-result-count" aria-live="polite"></span>
+                    <button type="button" id="chat-search-close" aria-label="Close search">×</button>
+                </div>
+
+                <button type="button" id="chat-search-button" aria-label="Search messages" aria-expanded="false" title="Search messages">⌕</button>
                 <button type="button" id="chat-info-button" aria-label="Conversation info" title="Conversation info">ⓘ</button>
             </div>
         </header>
-
-        <div class="chat-message-search" id="chat-message-search" hidden>
-            <span aria-hidden="true">⌕</span>
-            <input id="message-search-input" type="search" placeholder="Search messages..." autocomplete="off">
-            <button type="button" id="chat-search-close" aria-label="Close search">×</button>
-        </div>
 
         <div class="messages" id="messages" aria-live="polite">
             <div class="dm-chat-empty-state" id="dm-chat-empty-state">
