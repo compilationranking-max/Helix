@@ -2,14 +2,6 @@
 // HELIX — APP JAVASCRIPT
 // =========================================================
 
-function escapeHTML(value) {
-    const div = document.createElement("div");
-    div.textContent = value == null ? "" : String(value);
-    return div.innerHTML;
-}
-
-
-
 
 // =========================================================
 // AUTHENTICATION CHECK
@@ -40,12 +32,6 @@ async function bootstrapHelixSession() {
 
         updateLoggedInUser();
         updateProfileView();
-
-        // Populate the Direct Messages inbox from the cloud as soon as
-        // the server session is confirmed.
-        if (typeof fetchFriendsForDM === "function") {
-            await fetchFriendsForDM();
-        }
 
         return true;
     } catch (error) {
@@ -213,181 +199,71 @@ if (profileLogoutButton) {
 
 
 // =========================================================
-// HELIX — CLOUD DIRECT MESSAGES
+// MESSAGE SYSTEM
 // =========================================================
 
+// The app uses the nav shell and section toggling without DM chat logic.
 const dmConversations = {};
 let activeDMUser = null;
-let dmPollTimer = null;
+const dmStorageKey = "helixDMConversations:v2";
 
-function getCurrentTime(value) {
-    const date = value ? new Date(value) : new Date();
-    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-}
+function getCurrentTime() {
+    const now = new Date();
 
-function getDMApiError(data, fallback) {
-    return data?.error || fallback;
-}
-
-function renderDMFriends(friends = []) {
-    const list = document.getElementById("conversation-list");
-    const count = document.getElementById("dm-friends-count");
-    if (!list) return;
-
-    if (count) count.textContent = String(friends.length);
-
-    if (!friends.length) {
-        list.innerHTML = `
-            <div class="dm-empty-state">
-                <span class="dm-empty-icon">◈</span>
-                <strong>No friends yet</strong>
-                <p>Add a friend to start a Direct Message.</p>
-            </div>
-        `;
-        return;
-    }
-
-    friends.forEach((friend) => {
-        const username = friend.username;
-        const displayName = friend.displayName || username;
-        dmConversations[username] = {
-            username,
-            displayName,
-            avatar: displayName.slice(0, 2).toUpperCase(),
-            messages: dmConversations[username]?.messages || []
-        };
+    return now.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit"
     });
+}
 
-    list.innerHTML = friends.map((friend) => {
-        const username = friend.username;
-        const displayName = friend.displayName || username;
-        const existing = dmConversations[username];
-        const last = existing?.messages?.[existing.messages.length - 1];
-        const preview = last?.text || "Start a conversation";
+function loadDMConversations() {
+    try {
+        const saved = JSON.parse(localStorage.getItem(dmStorageKey));
 
-        return `
-            <button type="button" class="conversation" data-user="${escapeHTML(username)}">
-                <span class="conversation-avatar">${escapeHTML(displayName.slice(0, 2).toUpperCase())}</span>
-                <span class="conversation-copy">
-                    <strong>${escapeHTML(displayName)}</strong>
-                    <small>-${escapeHTML(username)}</small>
-                    <span class="conversation-preview">${escapeHTML(preview)}</span>
-                </span>
-                <span class="conversation-arrow" aria-hidden="true">↗</span>
-            </button>
-        `;
-    }).join("");
+        if (!saved || typeof saved !== "object") return;
 
-    list.querySelectorAll(".conversation").forEach((conversation) => {
-        conversation.addEventListener("click", () => {
-            openDMConversation(conversation.dataset.user);
+        Object.keys(dmConversations).forEach((user) => {
+            if (Array.isArray(saved[user])) {
+                dmConversations[user].messages = saved[user];
+            }
         });
+    } catch (error) {
+        console.warn("Unable to load DM conversations.", error);
+    }
+}
+
+function saveDMConversations() {
+    const messages = {};
+
+    Object.keys(dmConversations).forEach((user) => {
+        messages[user] = dmConversations[user].messages;
     });
 
-    if (activeDMUser && dmConversations[activeDMUser]) {
-        list.querySelector(`[data-user="${CSS.escape(activeDMUser)}"]`)?.classList.add("active");
-    }
+    localStorage.setItem(dmStorageKey, JSON.stringify(messages));
 }
-
-async function fetchFriendsForDM() {
-    try {
-        const response = await fetch("/api/network/state", { credentials: "include" });
-        const data = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(getDMApiError(data, "Could not load friends."));
-
-        const friends = Array.isArray(data.friends) ? data.friends : [];
-        renderDMFriends(friends);
-
-        if (activeDMUser && !friends.some((friend) => friend.username === activeDMUser)) {
-            activeDMUser = null;
-            showDMEmptyState();
-        }
-
-        return friends;
-    } catch (error) {
-        console.warn("Unable to load cloud DM friends.", error);
-        return [];
-    }
+function escapeHTML(text) {
+    const div = document.createElement("div");
+    div.textContent = text ?? "";
+    return div.innerHTML;
 }
-
-function showDMEmptyState() {
-    const messages = document.getElementById("messages");
-    const headerName = document.getElementById("chat-user-name");
-    const headerStatus = document.getElementById("chat-status");
-    const avatar = document.getElementById("chat-avatar");
-    if (headerName) headerName.textContent = "Select a friend";
-    if (headerStatus) headerStatus.textContent = "Your private Direct Message channel";
-    if (avatar) avatar.textContent = "H";
-    if (messages) {
-        messages.innerHTML = `
-            <div class="dm-chat-empty-state">
-                <span class="dm-empty-icon" aria-hidden="true">◈</span>
-                <strong>Your Direct Console is ready</strong>
-                <p>Select one of your friends to start chatting.</p>
-            </div>
-        `;
-    }
-}
-
-async function loadDMConversation(username) {
-    if (!username) return;
-
-    const messages = document.getElementById("messages");
-    try {
-        const response = await fetch(`/api/dm/messages?with=${encodeURIComponent(username)}`, { credentials: "include" });
-        const data = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(getDMApiError(data, "Could not load this conversation."));
-
-        dmConversations[username] = dmConversations[username] || {
-            username,
-            displayName: username,
-            avatar: username.slice(0, 2).toUpperCase(),
-            messages: []
-        };
-
-        dmConversations[username].messages = (data.messages || []).map((message) => ({
-            id: message.id,
-            type: message.sender === loggedInUser ? "sent" : "received",
-            text: message.text,
-            time: getCurrentTime(message.createdAt),
-            read: true
-        }));
-
-        renderDMConversation();
-    } catch (error) {
-        if (messages) {
-            messages.innerHTML = `<div class="dm-chat-empty-state"><span class="dm-empty-icon">!</span><strong>Conversation unavailable</strong><p>${escapeHTML(error.message || "Could not load messages.")}</p></div>`;
-        }
-    }
-}
-
 function renderDMConversation() {
     const conversation = dmConversations[activeDMUser];
     const messagesContainer = document.getElementById("messages");
-    if (!messagesContainer || !conversation) return;
+
+    if (!conversation || !messagesContainer) return;
 
     messagesContainer.replaceChildren();
 
-    if (!conversation.messages.length) {
-        messagesContainer.innerHTML = `
-            <div class="dm-chat-empty-state">
-                <span class="dm-empty-icon" aria-hidden="true">◈</span>
-                <strong>No messages yet</strong>
-                <p>Start the conversation with ${escapeHTML(conversation.displayName)}.</p>
-            </div>
-        `;
-        return;
-    }
-
     conversation.messages.forEach((message) => {
-        const element = document.createElement("div");
-        element.className = `message ${message.type}`;
+        const messageElement = document.createElement("div");
+        messageElement.className = `message ${message.type}`;
 
         const bubble = document.createElement("div");
         bubble.className = "message-bubble";
 
         const text = document.createElement("p");
         text.textContent = message.text;
+
         bubble.appendChild(text);
 
         const meta = document.createElement("div");
@@ -396,24 +272,25 @@ function renderDMConversation() {
         const time = document.createElement("span");
         time.className = "message-time";
         time.textContent = message.time;
+
         meta.appendChild(time);
 
         if (message.type === "sent") {
             const status = document.createElement("span");
             status.className = "message-status";
-            status.textContent = "✓✓";
+            status.textContent = message.read ? "✓✓" : "✓";
             meta.appendChild(status);
         }
 
-        element.append(bubble, meta);
-        messagesContainer.appendChild(element);
+        messageElement.append(bubble, meta);
+        messagesContainer.appendChild(messageElement);
     });
 
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
 }
-
 function updateDMHeader() {
     const conversation = dmConversations[activeDMUser];
+
     if (!conversation) return;
 
     const avatar = document.getElementById("chat-avatar");
@@ -421,84 +298,77 @@ function updateDMHeader() {
     const status = document.getElementById("chat-status");
 
     if (avatar) avatar.textContent = conversation.avatar;
-    if (name) {
-        name.innerHTML = `${escapeHTML(conversation.displayName)} <small>-${escapeHTML(conversation.username)}</small>`;
+    if (name) name.textContent = conversation.name;
+
+    if (status) {
+        status.innerHTML = conversation.online
+            ? `<span class="online-dot"></span>Online · ${conversation.ping}`
+            : `Last seen recently · ${conversation.ping}`;
     }
-    if (status) status.innerHTML = `Friend on Helix`;
 }
+function switchDMConversation(user) {
+    if (!dmConversations[user]) return;
 
-async function openDMConversation(username) {
-    if (!dmConversations[username]) return;
+    activeDMUser = user;
 
-    activeDMUser = username;
-    document.querySelectorAll("#conversation-list .conversation").forEach((conversation) => {
-        conversation.classList.toggle("active", conversation.dataset.user === username);
+    document.querySelectorAll(".conversation").forEach((conversation) => {
+        conversation.classList.toggle(
+            "active",
+            conversation.dataset.user === user
+        );
     });
 
     updateDMHeader();
-    await loadDMConversation(username);
+    renderDMConversation();
 }
-
-async function sendDMMessage(text) {
+function sendDMMessage(text) {
     const message = text.trim();
-    if (!message || !activeDMUser) return false;
 
-    try {
-        const response = await fetch("/api/dm/messages", {
-            method: "POST",
-            credentials: "include",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ to: activeDMUser, text: message })
-        });
-        const data = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(getDMApiError(data, "Could not send the message."));
+    if (!message || !dmConversations[activeDMUser]) return;
 
-        await loadDMConversation(activeDMUser);
-        renderDMFriends(Object.values(dmConversations).filter((conversation) => conversation.username));
-        return true;
-    } catch (error) {
-        const status = document.getElementById("chat-status");
-        if (status) status.textContent = error.message || "Message failed to send";
-        return false;
-    }
+    dmConversations[activeDMUser].messages.push({
+        type: "sent",
+        text: message,
+        time: getCurrentTime(),
+        read: true
+    });
+
+    saveDMConversations();
+    renderDMConversation();
 }
+function setupDMSystem() {
+    loadDMConversations();
 
-function setupCloudDM() {
+    document.querySelectorAll(".conversation").forEach((conversation) => {
+        conversation.addEventListener("click", () => {
+            switchDMConversation(conversation.dataset.user);
+        });
+    });
+
     const messageForm = document.getElementById("message-form");
     const messageInput = document.getElementById("message-input");
-    const searchInput = document.getElementById("chat-search");
 
-    showDMEmptyState();
-
-    messageForm?.addEventListener("submit", async (event) => {
+    messageForm?.addEventListener("submit", (event) => {
         event.preventDefault();
-        const text = messageInput?.value || "";
-        if (!text.trim() || !activeDMUser) return;
-        const sent = await sendDMMessage(text);
-        if (sent && messageInput) {
-            messageInput.value = "";
-            messageInput.focus();
-        }
+
+        if (!messageInput) return;
+
+        sendDMMessage(messageInput.value);
+        messageInput.value = "";
+        messageInput.focus();
     });
 
-    searchInput?.addEventListener("input", () => {
-        const query = searchInput.value.trim().toLowerCase();
-        document.querySelectorAll("#conversation-list .conversation").forEach((conversation) => {
-            conversation.hidden = Boolean(query && !conversation.textContent.toLowerCase().includes(query));
+    document.querySelectorAll(".macro-btn").forEach((button) => {
+        button.addEventListener("click", () => {
+            sendDMMessage(button.textContent.trim());
         });
     });
 
-    fetchFriendsForDM();
-
-    clearInterval(dmPollTimer);
-    dmPollTimer = setInterval(async () => {
-        if (!loggedInUser) return;
-        await fetchFriendsForDM();
-        if (activeDMUser) await loadDMConversation(activeDMUser);
-    }, 3000);
+    updateDMHeader();
+    renderDMConversation();
 }
 
-setupCloudDM();
+setupDMSystem();
 // =========================================================
 // HELIX AI HOME
 // =========================================================
@@ -3655,21 +3525,6 @@ console.log(
 
 })();
 // =========================================================
-// HELIX — DM INTERACTION CLEANUP
-// =========================================================
-
-(() => {
-    const dmRoot = document.getElementById("dm-view");
-    if (!dmRoot) return;
-
-    // Remove any leftover demo quick-reply controls from older versions.
-    ["On my way", "Check build", "Coffee?"].forEach((word) => {
-        dmRoot.querySelectorAll("button").forEach((button) => {
-            if (button.textContent.trim() === word) button.closest("div")?.remove();
-        });
-    });
-})();
-// =========================================================
 // HELIX — MESSAGE DOM REPAIR
 // =========================================================
 (() => {
@@ -4421,13 +4276,203 @@ friendsFilterInput?.addEventListener("input", renderFriendsConnectedList);
 friendsSortSelect?.addEventListener("change", renderFriendsConnectedList);
 friendsRefreshButton?.addEventListener("click", refreshFriendsNetwork);
 
-if (!window.__helixBootstrapStarted) {
-    window.__helixBootstrapStarted = true;
-    bootstrapHelixSession().then((authenticated) => {
-        if (authenticated) {
-            syncHelixNetworkUser();
-        }
-    });
-}
+bootstrapHelixSession().then((authenticated) => {
+    if (authenticated) {
+        syncHelixNetworkUser();
+    }
+});
 
 // =========================================================
+
+// =========================================================
+// HELIX — REAL CLOUD FRIEND DMS
+// =========================================================
+(function setupRealCloudDM() {
+    const dmView = document.getElementById("dm-view");
+    const friendList = document.getElementById("conversation-list");
+    const messageForm = document.getElementById("message-form");
+    const messageInput = document.getElementById("message-input");
+    const messagesBox = document.getElementById("messages");
+    const chatName = document.getElementById("chat-user-name");
+    const chatStatus = document.getElementById("chat-status");
+    const chatAvatar = document.getElementById("chat-avatar");
+
+    if (!dmView || !friendList) return;
+
+    const cloudDM = new Map();
+    let activeFriend = null;
+    let pollTimer = null;
+
+    const safe = (value) => {
+        const div = document.createElement("div");
+        div.textContent = value == null ? "" : String(value);
+        return div.innerHTML;
+    };
+
+    function renderFriends(friends) {
+        if (!friends.length) {
+            friendList.innerHTML = `
+                <div class="dm-empty-state">
+                    <span class="dm-empty-icon">◈</span>
+                    <strong>No friends yet</strong>
+                    <p>Add a friend to start a Direct Message.</p>
+                </div>`;
+            return;
+        }
+
+        friendList.replaceChildren();
+        friends.forEach((friend) => {
+            const username = friend.username;
+            const displayName = friend.displayName || username;
+            cloudDM.set(username, { username, displayName });
+
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "conversation" + (username === activeFriend ? " active" : "");
+            button.dataset.user = username;
+            button.innerHTML = `
+                <span class="conversation-avatar">${safe(displayName.slice(0, 2).toUpperCase())}</span>
+                <span class="conversation-copy">
+                    <strong>${safe(displayName)}</strong>
+                    <small>-${safe(username)}</small>
+                    <span class="conversation-preview">${activeFriend === username ? "Open conversation" : "Start a conversation"}</span>
+                </span>
+                <span class="conversation-arrow" aria-hidden="true">↗</span>`;
+
+            button.addEventListener("click", () => openFriend(username));
+            friendList.appendChild(button);
+        });
+
+        const count = document.getElementById("dm-friends-count");
+        if (count) count.textContent = String(friends.length);
+    }
+
+    async function loadFriends() {
+        try {
+            const response = await fetch("/api/network/state", { credentials: "include" });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(data.error || "Could not load friends.");
+            renderFriends(Array.isArray(data.friends) ? data.friends : []);
+        } catch (error) {
+            console.warn("Cloud DM friend list unavailable:", error);
+        }
+    }
+
+    function renderMessages(messages) {
+        if (!messagesBox) return;
+        messagesBox.replaceChildren();
+
+        if (!messages.length) {
+            messagesBox.innerHTML = `
+                <div class="dm-chat-empty-state">
+                    <span class="dm-empty-icon">◈</span>
+                    <strong>No messages yet</strong>
+                    <p>Start the conversation.</p>
+                </div>`;
+            return;
+        }
+
+        messages.forEach((message) => {
+            const row = document.createElement("div");
+            row.className = "message " + (message.sender === loggedInUser ? "sent" : "received");
+
+            const bubble = document.createElement("div");
+            bubble.className = "message-bubble";
+            const p = document.createElement("p");
+            p.textContent = message.text;
+            bubble.appendChild(p);
+
+            const meta = document.createElement("div");
+            meta.className = "message-meta";
+            const time = document.createElement("span");
+            time.className = "message-time";
+            time.textContent = new Date(message.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+            meta.appendChild(time);
+
+            if (message.sender === loggedInUser) {
+                const status = document.createElement("span");
+                status.className = "message-status";
+                status.textContent = "✓✓";
+                meta.appendChild(status);
+            }
+
+            row.append(bubble, meta);
+            messagesBox.appendChild(row);
+        });
+
+        messagesBox.scrollTop = messagesBox.scrollHeight;
+    }
+
+    async function loadMessages(username) {
+        const response = await fetch(`/api/dm/messages?with=${encodeURIComponent(username)}`, { credentials: "include" });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || "Could not load conversation.");
+        cloudDM.get(username).messages = Array.isArray(data.messages) ? data.messages : [];
+        renderMessages(cloudDM.get(username).messages);
+    }
+
+    async function openFriend(username) {
+        const friend = cloudDM.get(username);
+        if (!friend) return;
+        activeFriend = username;
+
+        document.querySelectorAll("#conversation-list .conversation").forEach((item) => {
+            item.classList.toggle("active", item.dataset.user === username);
+        });
+
+        if (chatAvatar) chatAvatar.textContent = friend.displayName.slice(0, 2).toUpperCase();
+        if (chatName) chatName.innerHTML = `${safe(friend.displayName)} <small>-${safe(friend.username)}</small>`;
+        if (chatStatus) chatStatus.textContent = "Friend on Helix";
+        if (messageInput) messageInput.disabled = false;
+
+        try {
+            await loadMessages(username);
+        } catch (error) {
+            if (messagesBox) messagesBox.innerHTML = `<div class="dm-chat-empty-state"><strong>Could not load messages</strong><p>${safe(error.message)}</p></div>`;
+        }
+    }
+
+    async function sendMessage(text) {
+        if (!activeFriend || !text.trim()) return;
+        const response = await fetch("/api/dm/messages", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ to: activeFriend, text: text.trim() })
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || "Could not send message.");
+        await loadMessages(activeFriend);
+    }
+
+    messageForm?.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const text = messageInput?.value || "";
+        if (!activeFriend || !text.trim()) return;
+        try {
+            await sendMessage(text);
+            messageInput.value = "";
+            messageInput.focus();
+        } catch (error) {
+            if (chatStatus) chatStatus.textContent = error.message || "Message failed";
+        }
+    });
+
+    messageInput?.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" && !event.shiftKey) {
+            event.preventDefault();
+            messageForm?.requestSubmit();
+        }
+    });
+
+    messageInput?.setAttribute("disabled", "disabled");
+    loadFriends();
+
+    clearInterval(pollTimer);
+    pollTimer = setInterval(async () => {
+        await loadFriends();
+        if (activeFriend) {
+            try { await loadMessages(activeFriend); } catch {}
+        }
+    }, 3000);
+})();
