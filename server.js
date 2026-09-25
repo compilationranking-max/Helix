@@ -3,6 +3,23 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
+const crypto = require("crypto");
+const { promisify } = require("util");
+const { Pool } = require("pg");
+
+const scryptAsync = promisify(crypto.scrypt);
+const DATABASE_URL = process.env.DATABASE_URL || "";
+const dbPool = DATABASE_URL
+    ? new Pool({
+        connectionString: DATABASE_URL,
+        ssl: DATABASE_URL.includes("sslmode=require")
+            ? { rejectUnauthorized: false }
+            : false,
+        max: 5,
+        connectionTimeoutMillis: 10000,
+        idleTimeoutMillis: 30000
+    })
+    : null;
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -34,40 +51,142 @@ app.use(express.static(__dirname));
 const networkDataDir = path.join(__dirname, "data");
 const networkDataFile = path.join(networkDataDir, "helix-network.json");
 
-function loadNetworkData() {
-    try {
-        if (!require("fs").existsSync(networkDataFile)) {
-            return { users: {}, requests: [], friends: [] };
-        }
-        const parsed = JSON.parse(require("fs").readFileSync(networkDataFile, "utf8"));
-        const users = parsed.users && typeof parsed.users === "object" ? parsed.users : {};
+let databaseReady;
 
-        Object.values(users).forEach((user) => {
-            if (user && typeof user === "object") {
-                delete user.accountId;
-                if (!user.displayName) user.displayName = user.username;
-            }
-        });
+async function initializeDatabase() {
+    if (!dbPool) return;
 
-        return {
-            users,
-            requests: Array.isArray(parsed.requests) ? parsed.requests : [],
-            friends: Array.isArray(parsed.friends) ? parsed.friends : []
-        };
-    } catch (error) {
-        console.warn("Unable to load Helix network data:", error.message);
-        return { users: {}, requests: [], friends: [] };
+    await dbPool.query(`
+        CREATE TABLE IF NOT EXISTS helix_users (
+            username TEXT PRIMARY KEY,
+            display_name TEXT NOT NULL,
+            password_hash TEXT NOT NULL,
+            password_salt TEXT NOT NULL,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+
+        CREATE UNIQUE INDEX IF NOT EXISTS helix_users_username_lower_idx
+            ON helix_users (LOWER(username));
+
+        CREATE TABLE IF NOT EXISTS helix_sessions (
+            token_hash TEXT PRIMARY KEY,
+            username TEXT NOT NULL REFERENCES helix_users(username) ON DELETE CASCADE,
+            expires_at TIMESTAMPTZ NOT NULL
+        );
+
+        CREATE INDEX IF NOT EXISTS helix_sessions_username_idx
+            ON helix_sessions (username);
+
+        CREATE TABLE IF NOT EXISTS helix_friendships (
+            user_a TEXT NOT NULL REFERENCES helix_users(username) ON DELETE CASCADE,
+            user_b TEXT NOT NULL REFERENCES helix_users(username) ON DELETE CASCADE,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            PRIMARY KEY (user_a, user_b),
+            CHECK (user_a < user_b)
+        );
+
+        CREATE TABLE IF NOT EXISTS helix_friend_requests (
+            id UUID PRIMARY KEY,
+            from_username TEXT NOT NULL REFERENCES helix_users(username) ON DELETE CASCADE,
+            to_username TEXT NOT NULL REFERENCES helix_users(username) ON DELETE CASCADE,
+            status TEXT NOT NULL DEFAULT 'pending'
+                CHECK (status IN ('pending', 'accepted', 'declined', 'cancelled')),
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+
+        CREATE INDEX IF NOT EXISTS helix_friend_requests_to_idx
+            ON helix_friend_requests (to_username, status);
+        CREATE INDEX IF NOT EXISTS helix_friend_requests_from_idx
+            ON helix_friend_requests (from_username, status);
+    `);
+}
+
+databaseReady = initializeDatabase().catch((error) => {
+    console.error("Helix database initialization failed:", error.message);
+    throw error;
+});
+
+async function requireDatabase() {
+    if (!dbPool) throw Object.assign(new Error("DATABASE_URL is not configured."), { status: 503 });
+    await databaseReady;
+}
+
+function hashSessionToken(token) {
+    return crypto.createHash("sha256").update(token).digest("hex");
+}
+
+function parseCookies(req) {
+    const header = req.headers.cookie || "";
+    return Object.fromEntries(header.split(";").map((part) => {
+        const index = part.indexOf("=");
+        if (index < 0) return ["", ""];
+        return [part.slice(0, index).trim(), decodeURIComponent(part.slice(index + 1).trim())];
+    }).filter(([key]) => key));
+}
+
+function setSessionCookie(res, token) {
+    const secure = process.env.NODE_ENV === "production" || process.env.RENDER === "true";
+    const parts = [
+        `helix_session=${encodeURIComponent(token)}`,
+        "Path=/",
+        "HttpOnly",
+        "SameSite=Lax",
+        "Max-Age=2592000"
+    ];
+    if (secure) parts.push("Secure");
+    res.setHeader("Set-Cookie", parts.join("; "));
+}
+
+function clearSessionCookie(res) {
+    res.setHeader("Set-Cookie", "helix_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0");
+}
+
+async function hashPassword(password) {
+    const salt = crypto.randomBytes(16);
+    const derived = await scryptAsync(password, salt, 64);
+    return { salt: salt.toString("hex"), hash: Buffer.from(derived).toString("hex") };
+}
+
+async function verifyPassword(password, saltHex, hashHex) {
+    const salt = Buffer.from(saltHex, "hex");
+    const expected = Buffer.from(hashHex, "hex");
+    const derived = Buffer.from(await scryptAsync(password, salt, expected.length));
+    return expected.length === derived.length && crypto.timingSafeEqual(expected, derived);
+}
+
+async function currentUser(req) {
+    if (!dbPool) return null;
+    await requireDatabase();
+    const token = parseCookies(req).helix_session;
+    if (!token) return null;
+
+    const result = await dbPool.query(`
+        SELECT u.username, u.display_name, u.created_at
+        FROM helix_sessions s
+        JOIN helix_users u ON u.username = s.username
+        WHERE s.token_hash = $1 AND s.expires_at > NOW()
+    `, [hashSessionToken(token)]);
+
+    return result.rows[0] || null;
+}
+
+async function requireCurrentUser(req, res) {
+    const user = await currentUser(req);
+    if (!user) {
+        res.status(401).json({ error: "Please log in to Helix." });
+        return null;
     }
+    return user;
 }
 
-function saveNetworkData(data) {
-    const fs = require("fs");
-    fs.mkdirSync(networkDataDir, { recursive: true });
-    const tempFile = `${networkDataFile}.tmp`;
-    fs.writeFileSync(tempFile, JSON.stringify(data, null, 2), "utf8");
-    fs.renameSync(tempFile, networkDataFile);
+async function publicUserFromDb(username) {
+    const result = await dbPool.query(
+        "SELECT username, display_name, created_at FROM helix_users WHERE username = $1",
+        [username]
+    );
+    const row = result.rows[0];
+    return row ? { username: row.username, displayName: row.display_name, createdAt: row.created_at } : null;
 }
-
 function normalizeUsername(value) {
     return typeof value === "string" ? value.trim() : "";
 }
@@ -153,222 +272,333 @@ function networkState(username) {
     return { friends, incoming, outgoing };
 }
 
-app.post("/api/network/sync", (req, res) => {
+app.post("/api/auth/register", async (req, res) => {
     const username = normalizeUsername(req.body?.username);
     const displayName = normalizeDisplayName(req.body?.displayName);
+    const password = typeof req.body?.password === "string" ? req.body.password : "";
 
     if (!validUsername(username)) {
-        return res.status(400).json({ error: "Invalid username." });
+        return res.status(400).json({ error: "Username must be 3–32 characters using letters, numbers, dots, underscores or hyphens." });
+    }
+    if (!validDisplayName(displayName)) {
+        return res.status(400).json({ error: "Display name must be 1–50 characters." });
+    }
+    if (password.length < 6) {
+        return res.status(400).json({ error: "Password must be at least 6 characters." });
     }
 
-    const data = loadNetworkData();
+    try {
+        if (dbPool) {
+            await requireDatabase();
+            const credentials = await hashPassword(password);
+            const result = await dbPool.query(`
+                INSERT INTO helix_users (username, display_name, password_hash, password_salt)
+                VALUES ($1, $2, $3, $4)
+                RETURNING username, display_name, created_at
+            `, [username, displayName, credentials.hash, credentials.salt]);
 
-    if (!data.users[username]) {
-        data.users[username] = {
-            username,
-            displayName: validDisplayName(displayName) ? displayName : username,
-            createdAt: new Date().toISOString()
-        };
-    } else {
-        data.users[username].username = username;
-
-        if (displayName) {
-            if (!validDisplayName(displayName)) {
-                return res.status(400).json({ error: "Display name must be 1–50 characters." });
-            }
-            data.users[username].displayName = displayName;
-        } else if (!data.users[username].displayName) {
-            data.users[username].displayName = username;
+            const token = crypto.randomBytes(32).toString("hex");
+            await dbPool.query(
+                "INSERT INTO helix_sessions (token_hash, username, expires_at) VALUES ($1, $2, NOW() + INTERVAL '30 days')",
+                [hashSessionToken(token), username]
+            );
+            setSessionCookie(res, token);
+            return res.status(201).json({
+                ok: true,
+                user: {
+                    username: result.rows[0].username,
+                    displayName: result.rows[0].display_name,
+                    createdAt: result.rows[0].created_at
+                }
+            });
         }
+
+        // Local development fallback when no DATABASE_URL exists.
+        const data = loadNetworkData();
+        if (data.users[username]) return res.status(409).json({ error: "That username already exists." });
+        const credentials = await hashPassword(password);
+        data.users[username] = { username, displayName, passwordHash: credentials.hash, passwordSalt: credentials.salt, createdAt: new Date().toISOString() };
+        saveNetworkData(data);
+        return res.status(201).json({ ok: true, user: publicUser(data, username) });
+    } catch (error) {
+        if (error?.code === "23505") return res.status(409).json({ error: "That username already exists. Please choose another username." });
+        console.error("Registration failed:", error);
+        return res.status(500).json({ error: "Could not create your Helix account." });
     }
-
-    delete data.users[username].accountId;
-    saveNetworkData(data);
-
-    res.json({
-        ok: true,
-        username,
-        displayName: data.users[username].displayName,
-        ...networkState(username)
-    });
 });
 
-app.post("/api/profile/display-name", (req, res) => {
+app.post("/api/auth/login", async (req, res) => {
     const username = normalizeUsername(req.body?.username);
-    const displayName = normalizeDisplayName(req.body?.displayName);
+    const password = typeof req.body?.password === "string" ? req.body.password : "";
 
-    if (!validUsername(username)) {
-        return res.status(400).json({ error: "Invalid username." });
+    try {
+        if (dbPool) {
+            await requireDatabase();
+            const result = await dbPool.query(
+                "SELECT username, display_name, password_hash, password_salt, created_at FROM helix_users WHERE username = $1",
+                [username]
+            );
+            const user = result.rows[0];
+            if (!user || !(await verifyPassword(password, user.password_salt, user.password_hash))) {
+                return res.status(401).json({ error: "Incorrect username or password." });
+            }
+
+            const token = crypto.randomBytes(32).toString("hex");
+            await dbPool.query("DELETE FROM helix_sessions WHERE expires_at <= NOW() OR username = $1", [username]);
+            await dbPool.query(
+                "INSERT INTO helix_sessions (token_hash, username, expires_at) VALUES ($1, $2, NOW() + INTERVAL '30 days')",
+                [hashSessionToken(token), username]
+            );
+            setSessionCookie(res, token);
+            return res.json({
+                ok: true,
+                user: { username: user.username, displayName: user.display_name, createdAt: user.created_at }
+            });
+        }
+
+        const data = loadNetworkData();
+        const user = data.users[username];
+        if (!user || !user.passwordHash || !(await verifyPassword(password, user.passwordSalt, user.passwordHash))) {
+            return res.status(401).json({ error: "Incorrect username or password." });
+        }
+        return res.json({ ok: true, user: publicUser(data, username) });
+    } catch (error) {
+        console.error("Login failed:", error);
+        return res.status(500).json({ error: "Could not log in to Helix right now." });
     }
+});
+
+app.get("/api/auth/me", async (req, res) => {
+    try {
+        if (dbPool) {
+            const user = await currentUser(req);
+            if (!user) return res.status(401).json({ error: "Not logged in." });
+            return res.json({ ok: true, user });
+        }
+        return res.status(401).json({ error: "Not logged in." });
+    } catch (error) {
+        return res.status(503).json({ error: "Helix account service is unavailable." });
+    }
+});
+
+app.post("/api/auth/logout", async (req, res) => {
+    try {
+        if (dbPool) {
+            const token = parseCookies(req).helix_session;
+            if (token) await dbPool.query("DELETE FROM helix_sessions WHERE token_hash = $1", [hashSessionToken(token)]);
+        }
+        clearSessionCookie(res);
+        res.json({ ok: true });
+    } catch (error) {
+        clearSessionCookie(res);
+        res.json({ ok: true });
+    }
+});
+
+app.post("/api/profile/display-name", async (req, res) => {
+    const user = await requireCurrentUser(req, res);
+    if (!user) return;
+    const displayName = normalizeDisplayName(req.body?.displayName);
 
     if (!validDisplayName(displayName)) {
         return res.status(400).json({ error: "Display name must be 1–50 characters." });
     }
 
-    const data = loadNetworkData();
-    const user = data.users[username];
+    try {
+        if (dbPool) {
+            await requireDatabase();
+            const result = await dbPool.query(
+                "UPDATE helix_users SET display_name = $1 WHERE username = $2 RETURNING username, display_name, created_at",
+                [displayName, user.username]
+            );
+            return res.json({
+                ok: true,
+                user: { username: result.rows[0].username, displayName: result.rows[0].display_name, createdAt: result.rows[0].created_at }
+            });
+        }
 
-    if (!user) {
-        return res.status(404).json({ error: "Helix account was not found." });
+        const data = loadNetworkData();
+        if (!data.users[user.username]) return res.status(404).json({ error: "Helix account was not found." });
+        data.users[user.username].displayName = displayName;
+        saveNetworkData(data);
+        return res.json({ ok: true, user: publicUser(data, user.username) });
+    } catch (error) {
+        console.error("Display name update failed:", error);
+        return res.status(500).json({ error: "Could not update your display name." });
     }
-
-    user.displayName = displayName;
-    saveNetworkData(data);
-
-    res.json({ ok: true, user: publicUser(data, username) });
 });
 
+app.get("/api/network/state", async (req, res) => {
+    const user = await requireCurrentUser(req, res);
+    if (!user) return;
+    try {
+        if (dbPool) {
+            await requireDatabase();
+            const friendsResult = await dbPool.query(`
+                SELECT u.username, u.display_name AS "displayName"
+                FROM helix_friendships f
+                JOIN helix_users u ON u.username = CASE WHEN f.user_a = $1 THEN f.user_b ELSE f.user_a END
+                WHERE f.user_a = $1 OR f.user_b = $1
+                ORDER BY LOWER(u.display_name), LOWER(u.username)
+            `, [user.username]);
+            const incomingResult = await dbPool.query(`
+                SELECT r.id, r.from_username AS "from", u.display_name AS "fromDisplayName", r.created_at AS "createdAt"
+                FROM helix_friend_requests r
+                JOIN helix_users u ON u.username = r.from_username
+                WHERE r.to_username = $1 AND r.status = 'pending'
+                ORDER BY r.created_at DESC
+            `, [user.username]);
+            const outgoingResult = await dbPool.query(`
+                SELECT r.id, r.to_username AS "to", u.display_name AS "toDisplayName", r.created_at AS "createdAt"
+                FROM helix_friend_requests r
+                JOIN helix_users u ON u.username = r.to_username
+                WHERE r.from_username = $1 AND r.status = 'pending'
+                ORDER BY r.created_at DESC
+            `, [user.username]);
+            return res.json({ friends: friendsResult.rows, incoming: incomingResult.rows, outgoing: outgoingResult.rows });
+        }
+        return res.json(networkState(user.username));
+    } catch (error) {
+        console.error("Network state failed:", error);
+        return res.status(500).json({ error: "Could not load your Helix network." });
+    }
+});
 
-app.get("/api/network/search", (req, res) => {
-    const username = normalizeUsername(req.query.username);
+app.get("/api/network/search", async (req, res) => {
+    const user = await requireCurrentUser(req, res);
+    if (!user) return;
     const query = normalizeUsername(req.query.q).slice(0, 64).toLowerCase();
 
-    if (!validUsername(username)) {
-        return res.status(400).json({ error: "Invalid username." });
+    try {
+        if (dbPool) {
+            await requireDatabase();
+            const pattern = `%${query}%`;
+            const result = await dbPool.query(`
+                SELECT u.username, u.display_name AS "displayName"
+                FROM helix_users u
+                WHERE u.username <> $1
+                  AND ($2 = '%%' OR LOWER(u.username) LIKE $2 OR LOWER(u.display_name) LIKE $2)
+                  AND NOT EXISTS (
+                      SELECT 1 FROM helix_friendships f
+                      WHERE (f.user_a = LEAST($1, u.username) AND f.user_b = GREATEST($1, u.username))
+                  )
+                  AND NOT EXISTS (
+                      SELECT 1 FROM helix_friend_requests r
+                      WHERE r.status = 'pending'
+                        AND ((r.from_username = $1 AND r.to_username = u.username)
+                             OR (r.from_username = u.username AND r.to_username = $1))
+                  )
+                ORDER BY LOWER(u.display_name), LOWER(u.username)
+                LIMIT 20
+            `, [user.username, pattern]);
+            return res.json({ results: result.rows });
+        }
+
+        const data = loadNetworkData();
+        const state = networkState(user.username);
+        const blockedNames = new Set([user.username, ...state.friends.map((u) => typeof u === "string" ? u : u.username), ...state.incoming.map((x) => x.from), ...state.outgoing.map((x) => x.to)]);
+        const results = Object.values(data.users)
+            .filter((u) => u && validUsername(u.username) && !blockedNames.has(u.username))
+            .filter((u) => !query || u.username.toLowerCase().includes(query) || String(u.displayName || u.username).toLowerCase().includes(query))
+            .slice(0, 20).map((u) => publicUser(data, u.username));
+        return res.json({ results });
+    } catch (error) {
+        console.error("Network search failed:", error);
+        return res.status(500).json({ error: "Could not search the Helix network." });
     }
-
-    const data = loadNetworkData();
-    const state = networkState(username);
-
-    const blockedNames = new Set([
-        username,
-        ...state.friends.map((user) => typeof user === "string" ? user : user.username),
-        ...state.incoming.map((item) => item.from),
-        ...state.outgoing.map((item) => item.to)
-    ]);
-
-    const results = Object.values(data.users)
-        .filter((user) => user && validUsername(user.username))
-        .filter((user) => !blockedNames.has(user.username))
-        .filter((user) =>
-            !query ||
-            user.username.toLowerCase().includes(query) ||
-            String(user.displayName || user.username).toLowerCase().includes(query)
-        )
-        .slice(0, 20)
-        .map((user) => publicUser(data, user.username));
-
-    res.json({ results });
 });
 
-app.get("/api/network/state", (req, res) => {
-    const username = normalizeUsername(req.query.username);
-    if (!validUsername(username)) {
-        return res.status(400).json({ error: "Invalid username." });
-    }
-    res.json(networkState(username));
-});
-
-app.post("/api/network/request", (req, res) => {
-    const from = normalizeUsername(req.body?.from);
+app.post("/api/network/request", async (req, res) => {
+    const user = await requireCurrentUser(req, res);
+    if (!user) return;
     const to = normalizeUsername(req.body?.to);
+    if (!validUsername(to) || to === user.username) return res.status(400).json({ error: "Invalid friend request." });
 
-    if (!validUsername(from) || !validUsername(to) || from === to) {
-        return res.status(400).json({ error: "Invalid friend request." });
+    try {
+        if (dbPool) {
+            await requireDatabase();
+            const target = await dbPool.query("SELECT username FROM helix_users WHERE username = $1", [to]);
+            if (!target.rowCount) return res.status(404).json({ error: "User not found on the Helix network." });
+            const pair = await dbPool.query(`SELECT 1 FROM helix_friendships WHERE user_a = LEAST($1,$2) AND user_b = GREATEST($1,$2)`, [user.username, to]);
+            if (pair.rowCount) return res.status(409).json({ error: "You are already friends." });
+            const pending = await dbPool.query(`SELECT 1 FROM helix_friend_requests WHERE status = 'pending' AND ((from_username=$1 AND to_username=$2) OR (from_username=$2 AND to_username=$1))`, [user.username, to]);
+            if (pending.rowCount) return res.status(409).json({ error: "A friend request is already pending." });
+            const id = crypto.randomUUID();
+            const created = await dbPool.query(`INSERT INTO helix_friend_requests (id, from_username, to_username) VALUES ($1,$2,$3) RETURNING id, from_username AS "from", to_username AS "to", status, created_at AS "createdAt"`, [id,user.username,to]);
+            return res.status(201).json({ ok: true, request: created.rows[0] });
+        }
+
+        // Local fallback retained for development.
+        const data = loadNetworkData();
+        if (!data.users[to]) return res.status(404).json({ error: "User not found on the Helix network yet." });
+        if (data.friends.some((friend) => samePair(friend.a, friend.b, user.username, to))) return res.status(409).json({ error: "You are already friends." });
+        const existing = data.requests.find((request) => request.status === "pending" && samePair(request.from, request.to, user.username, to));
+        if (existing) return res.status(409).json({ error: "A friend request is already pending." });
+        const request = { id: crypto.randomUUID(), from: user.username, to, status:"pending", createdAt:new Date().toISOString() };
+        data.requests.push(request); saveNetworkData(data);
+        return res.status(201).json({ ok:true, request });
+    } catch (error) {
+        console.error("Friend request failed:", error);
+        return res.status(500).json({ error: "Could not send the friend request." });
     }
-
-    const data = loadNetworkData();
-    if (!data.users[from] || !data.users[to]) {
-        return res.status(404).json({ error: "User not found on the Helix network yet." });
-    }
-
-    if (data.friends.some((friend) => samePair(friend.a, friend.b, from, to))) {
-        return res.status(409).json({ error: "You are already friends." });
-    }
-
-    const existing = data.requests.find((request) =>
-        request.status === "pending" &&
-        samePair(request.from, request.to, from, to)
-    );
-
-    if (existing) {
-        return res.status(409).json({ error: "A friend request is already pending." });
-    }
-
-    const request = {
-        id: require("crypto").randomUUID(),
-        from,
-        to,
-        status: "pending",
-        createdAt: new Date().toISOString()
-    };
-
-    data.requests.push(request);
-    saveNetworkData(data);
-    res.status(201).json({ ok: true, request });
 });
 
-app.delete("/api/network/request/:id", (req, res) => {
-    const username = normalizeUsername(req.body?.username);
-    if (!validUsername(username)) {
-        return res.status(400).json({ error: "Invalid username." });
-    }
-
-    const data = loadNetworkData();
-    const request = data.requests.find((item) =>
-        item.id === req.params.id &&
-        item.from === username &&
-        item.status === "pending"
-    );
-
-    if (!request) {
-        return res.status(404).json({ error: "Pending outgoing request not found." });
-    }
-
-    request.status = "cancelled";
-    saveNetworkData(data);
-    res.json({ ok: true, ...networkState(username) });
+app.delete("/api/network/request/:id", async (req, res) => {
+    const user = await requireCurrentUser(req, res);
+    if (!user) return;
+    try {
+        if (dbPool) {
+            await requireDatabase();
+            const result = await dbPool.query("UPDATE helix_friend_requests SET status = 'cancelled' WHERE id = $1 AND from_username = $2 AND status = 'pending' RETURNING id", [req.params.id, user.username]);
+            if (!result.rowCount) return res.status(404).json({ error: "Pending request not found." });
+            return res.json({ ok: true });
+        }
+        return res.status(400).json({ error: "Not available in local mode." });
+    } catch (error) { return res.status(500).json({ error: "Could not cancel the request." }); }
 });
 
-app.post("/api/network/request/:id/respond", (req, res) => {
-    const username = normalizeUsername(req.body?.username);
+app.post("/api/network/request/:id/respond", async (req, res) => {
+    const user = await requireCurrentUser(req, res);
+    if (!user) return;
     const action = req.body?.action;
+    if (!["accept", "decline"].includes(action)) return res.status(400).json({ error: "Invalid request response." });
 
-    if (!validUsername(username) || !["accept", "decline"].includes(action)) {
-        return res.status(400).json({ error: "Invalid request response." });
-    }
-
-    const data = loadNetworkData();
-    const request = data.requests.find((item) =>
-        item.id === req.params.id &&
-        item.to === username &&
-        item.status === "pending"
-    );
-
-    if (!request) {
-        return res.status(404).json({ error: "Friend request not found." });
-    }
-
-    request.status = action === "accept" ? "accepted" : "declined";
-
-    if (action === "accept" && !data.friends.some((friend) =>
-        samePair(friend.a, friend.b, request.from, request.to)
-    )) {
-        data.friends.push({
-            a: request.from,
-            b: request.to,
-            createdAt: new Date().toISOString()
-        });
-    }
-
-    saveNetworkData(data);
-    res.json({ ok: true, ...networkState(username) });
+    try {
+        if (dbPool) {
+            await requireDatabase();
+            const client = await dbPool.connect();
+            try {
+                await client.query("BEGIN");
+                const found = await client.query("SELECT from_username, to_username FROM helix_friend_requests WHERE id = $1 AND to_username = $2 AND status = 'pending' FOR UPDATE", [req.params.id, user.username]);
+                if (!found.rowCount) { await client.query("ROLLBACK"); return res.status(404).json({ error: "Friend request not found." }); }
+                const from = found.rows[0].from_username;
+                await client.query("UPDATE helix_friend_requests SET status = $1 WHERE id = $2", [action === "accept" ? "accepted" : "declined", req.params.id]);
+                if (action === "accept") {
+                    await client.query("INSERT INTO helix_friendships (user_a,user_b) VALUES (LEAST($1,$2),GREATEST($1,$2)) ON CONFLICT DO NOTHING", [from,user.username]);
+                }
+                await client.query("COMMIT");
+                return res.json({ ok:true });
+            } catch (error) { await client.query("ROLLBACK"); throw error; }
+            finally { client.release(); }
+        }
+        return res.status(400).json({ error: "Not available in local mode." });
+    } catch (error) { return res.status(500).json({ error: "Could not update the friend request." }); }
 });
 
-app.delete("/api/network/friend", (req, res) => {
-    const username = normalizeUsername(req.body?.username);
+app.delete("/api/network/friend", async (req, res) => {
+    const user = await requireCurrentUser(req, res);
+    if (!user) return;
     const friend = normalizeUsername(req.body?.friend);
-
-    if (!validUsername(username) || !validUsername(friend)) {
-        return res.status(400).json({ error: "Invalid friend." });
-    }
-
-    const data = loadNetworkData();
-    data.friends = data.friends.filter((item) => !samePair(item.a, item.b, username, friend));
-    saveNetworkData(data);
-    res.json({ ok: true, ...networkState(username) });
+    if (!validUsername(friend)) return res.status(400).json({ error: "Invalid friend." });
+    try {
+        if (dbPool) {
+            await requireDatabase();
+            await dbPool.query("DELETE FROM helix_friendships WHERE user_a = LEAST($1,$2) AND user_b = GREATEST($1,$2)", [user.username,friend]);
+            return res.json({ ok:true });
+        }
+        return res.status(400).json({ error: "Not available in local mode." });
+    } catch (error) { return res.status(500).json({ error: "Could not remove your friend." }); }
 });
-
 function buildConversationInput(history, message) {
     const validHistory = Array.isArray(history)
         ? history.filter((item) => (
