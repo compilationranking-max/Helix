@@ -24,7 +24,7 @@ const dbPool = DATABASE_URL
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || "";
-const MODEL = process.env.GEMINI_MODEL || "gemini-3.1-flash-lite";
+const MODEL = process.env.GEMINI_MODEL || "gemini-3.8-flash";
 const MAX_HISTORY_MESSAGES = 20;
 
 const HELIX_AI_INSTRUCTIONS = `
@@ -926,7 +926,7 @@ function buildConversationInput(history, message) {
     }));
 }
 
-async function generateGeminiResponse(message) {
+async function generateGeminiResponse(message, history = []) {
     if (!process.env.GEMINI_API_KEY) {
         const error = new Error("GEMINI_API_KEY is not configured.");
         error.status = 503;
@@ -936,18 +936,20 @@ async function generateGeminiResponse(message) {
     const url = "https://generativelanguage.googleapis.com/v1beta/models/"
         + encodeURIComponent(MODEL) + ":generateContent";
 
+    const isLowLatencyGemini3Model =
+        /gemini-3\.8-flash|gemini-3\.7-flash/i.test(MODEL);
+
+    const contents = buildConversationInput(history, message);
+
     const body = {
         systemInstruction: {
             parts: [{ text: HELIX_AI_INSTRUCTIONS }]
         },
-        contents: [{
-            role: "user",
-            parts: [{ text: message }]
-        }],
+        contents,
         generationConfig: {
-            thinkingConfig: {
-                thinkingLevel: "minimal"
-            },
+            ...(isLowLatencyGemini3Model
+                ? { thinkingConfig: { thinkingLevel: "low" } }
+                : { thinkingConfig: { thinkingLevel: "minimal" } }),
             maxOutputTokens: 512
         }
     };
@@ -1029,7 +1031,8 @@ app.post("/api/chat", async (req, res) => {
             return res.status(400).json({ error: "Please enter a message for Helix AI." });
         }
 
-        const reply = await generateGeminiResponse(message);
+        const history = Array.isArray(req.body.history) ? req.body.history : [];
+        const reply = await generateGeminiResponse(message, history);
         res.json({ reply });
     } catch (error) {
         console.error("Helix AI request failed:", error?.message || error);
