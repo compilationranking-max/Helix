@@ -392,119 +392,81 @@ function buildConversationInput(history, message) {
     }));
 }
 
-async function generateGeminiResponse(contents) {
-    if (!GEMINI_API_KEY) {
-        const error = new Error("Gemini API key is not configured.");
+async function generateGeminiResponse(message) {
+    if (!process.env.GEMINI_API_KEY) {
+        const error = new Error("GEMINI_API_KEY is not configured.");
         error.status = 503;
         throw error;
     }
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 30000);
+    const url = "https://generativelanguage.googleapis.com/v1beta/models/"
+        + encodeURIComponent(MODEL) + ":generateContent";
 
+    const body = {
+        systemInstruction: {
+            parts: [{ text: HELIX_AI_INSTRUCTIONS }]
+        },
+        contents: [{
+            role: "user",
+            parts: [{ text: message }]
+        }],
+        generationConfig: {
+            thinkingConfig: {
+                thinkingLevel: "minimal"
+            },
+            maxOutputTokens: 512
+        }
+    };
+
+    let response;
     try {
-        const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(MODEL)}:generateContent`,
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "x-goog-api-key": GEMINI_API_KEY
-                },
-                body: JSON.stringify({
-                    systemInstruction: {
-                        parts: [{ text: HELIX_AI_INSTRUCTIONS.trim() }]
-                    },
-                    contents,
-                    generationConfig: {
-                        maxOutputTokens: 512,
-                        temperature: 0.7
-                    }
-                }),
-                signal: controller.signal
-            }
-        );
-
-        const payload = await response.json().catch(() => ({}));
-
-        if (!response.ok) {
-            const error = new Error(
-                payload?.error?.message || `Gemini request failed with status ${response.status}.`
-            );
-            error.status = response.status;
-            error.providerPayload = payload;
-            throw error;
-        }
-
-        const reply = Array.isArray(payload?.candidates)
-            ? payload.candidates
-                .flatMap((candidate) => candidate?.content?.parts || [])
-                .map((part) => typeof part?.text === "string" ? part.text : "")
-                .join("")
-                .trim()
-            : "";
-
-        if (!reply) {
-            const error = new Error("Gemini returned no usable text.");
-            error.status = 502;
-            throw error;
-        }
-
-        return reply;
-    } catch (error) {
-        if (error?.name === "AbortError") {
-            const timeoutError = new Error("Gemini request timed out.");
-            timeoutError.status = 504;
-            throw timeoutError;
-        }
-
+        response = await fetch(url, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "x-goog-api-key": process.env.GEMINI_API_KEY
+            },
+            body: JSON.stringify(body)
+        });
+    } catch (networkError) {
+        const error = new Error("Could not reach the Gemini API: " + (networkError?.message || "network error"));
+        error.status = 502;
         throw error;
-    } finally {
-        clearTimeout(timeout);
     }
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+        const error = new Error(data?.error?.message || `Gemini API returned HTTP ${response.status}.`);
+        error.status = response.status;
+        throw error;
+    }
+
+    const reply = data?.candidates?.[0]?.content?.parts
+        ?.filter((part) => typeof part?.text === "string")
+        .map((part) => part.text)
+        .join("")
+        .trim();
+
+    if (!reply) {
+        const reason = data?.promptFeedback?.blockReason
+            || data?.candidates?.[0]?.finishReason
+            || "NO_TEXT";
+        const error = new Error("Gemini returned no text. Reason: " + reason);
+        error.status = 502;
+        throw error;
+    }
+
+    return reply;
 }
 
-async function checkGeminiHealth() {
-    if (!GEMINI_API_KEY) {
-        return { configured: false, reachable: false, model: MODEL };
-    }
-
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10000);
-
-    try {
-        const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(MODEL)}`,
-            {
-                method: "GET",
-                headers: {
-                    "x-goog-api-key": GEMINI_API_KEY
-                },
-                signal: controller.signal
-            }
-        );
-
-        if (!response.ok) {
-            return { configured: true, reachable: false, model: MODEL, status: response.status };
-        }
-
-        return { configured: true, reachable: true, model: MODEL };
-    } catch {
-        return { configured: true, reachable: false, model: MODEL };
-    } finally {
-        clearTimeout(timeout);
-    }
-}
-
-app.get("/api/health", async (req, res) => {
-    const health = await checkGeminiHealth();
-
-    res.status(health.reachable ? 200 : health.configured ? 503 : 503).json({
-        ok: health.reachable,
-        aiConfigured: health.configured,
+app.get("/api/health", (req, res) => {
+    res.json({
+        ok: true,
+        aiConfigured: Boolean(process.env.GEMINI_API_KEY),
         provider: "gemini",
-        model: health.model,
-        reachable: health.reachable
+        model: MODEL,
+        transport: "direct-rest"
     });
 });
 
@@ -515,58 +477,35 @@ app.post("/api/chat", async (req, res) => {
             : "";
 
         if (!message) {
-            return res.status(400).json({
-                error: "Please enter a message for Helix AI."
-            });
+            return res.status(400).json({ error: "Please enter a message for Helix AI." });
         }
 
-        const input = buildConversationInput(req.body.history, message);
-
-        if (!input.length) {
-            return res.status(400).json({
-                error: "Please enter a message for Helix AI."
-            });
-        }
-
-        const reply = await generateGeminiResponse(input);
+        const reply = await generateGeminiResponse(message);
         res.json({ reply });
     } catch (error) {
-        console.error("Helix AI request failed:", error);
+        console.error("Helix AI request failed:", error?.message || error);
         const status = Number(error?.status || 502);
 
         if (status === 401 || status === 403) {
             return res.status(status).json({
-                error: "Gemini rejected the API key. Check GEMINI_API_KEY in Render."
+                error: "Gemini rejected the API key. Replace GEMINI_API_KEY in Render with a fresh active key."
             });
         }
 
         if (status === 429) {
             return res.status(429).json({
-                error: "Gemini quota or rate limit reached. Check Gemini API usage/limits."
-            });
-        }
-
-        if (status === 400) {
-            return res.status(400).json({
-                error: "Gemini rejected the request. The server is reaching Gemini, but the request/model configuration was not accepted."
-            });
-        }
-
-        if (status === 404) {
-            return res.status(404).json({
-                error: "Gemini could not find the configured model. Check GEMINI_MODEL in Render."
+                error: "Gemini quota/rate limit reached. Check the Gemini project limits in AI Studio."
             });
         }
 
         if (status === 503 || status === 504) {
             return res.status(503).json({
-                error: "Gemini is temporarily unavailable. Please try again shortly."
+                error: "Gemini is temporarily unavailable or timed out. Helix is not adding its own timeout; try again shortly."
             });
         }
 
-        console.error("Gemini detail:", error?.message || "Unknown error");
         return res.status(502).json({
-            error: "Helix could not get a response from Gemini. Check the Render logs for details."
+            error: error?.message || "Helix could not get a response from Gemini."
         });
     }
 });
