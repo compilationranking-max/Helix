@@ -33,6 +33,12 @@ async function bootstrapHelixSession() {
         updateLoggedInUser();
         updateProfileView();
 
+        // Populate the Direct Messages inbox from the cloud as soon as
+        // the server session is confirmed.
+        if (typeof fetchFriendsForDM === "function") {
+            await fetchFriendsForDM();
+        }
+
         return true;
     } catch (error) {
         console.error("Helix session bootstrap failed:", error);
