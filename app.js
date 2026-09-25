@@ -7,6 +7,12 @@
 // AUTHENTICATION CHECK
 // =========================================================
 
+function escapeHTML(value) {
+    const div = document.createElement("div");
+    div.textContent = value == null ? "" : String(value);
+    return div.innerHTML;
+}
+
 let loggedInUser = localStorage.getItem("helixLoggedIn") || "";
 let currentDisplayName = localStorage.getItem("helixDisplayName") || "";
 
@@ -32,6 +38,12 @@ async function bootstrapHelixSession() {
 
         updateLoggedInUser();
         updateProfileView();
+
+        // Populate the Direct Messages inbox from the cloud as soon as
+        // the server session is confirmed.
+        if (typeof fetchFriendsForDM === "function") {
+            await fetchFriendsForDM();
+        }
 
         return true;
     } catch (error) {
@@ -197,6 +209,10 @@ if (profileLogoutButton) {
     profileLogoutButton.addEventListener("click", logoutCurrentSession);
 }
 
+
+// =========================================================
+// HELIX — CLOUD DIRECT MESSAGES
+// =========================================================
 
 // =========================================================
 // HELIX AI HOME
@@ -3354,6 +3370,21 @@ console.log(
 
 })();
 // =========================================================
+// HELIX — DM INTERACTION CLEANUP
+// =========================================================
+
+(() => {
+    const dmRoot = document.getElementById("dm-view");
+    if (!dmRoot) return;
+
+    // Remove any leftover demo quick-reply controls from older versions.
+    ["On my way", "Check build", "Coffee?"].forEach((word) => {
+        dmRoot.querySelectorAll("button").forEach((button) => {
+            if (button.textContent.trim() === word) button.closest("div")?.remove();
+        });
+    });
+})();
+// =========================================================
 // HELIX — MESSAGE DOM REPAIR
 // =========================================================
 (() => {
@@ -4114,257 +4145,221 @@ bootstrapHelixSession().then((authenticated) => {
 // =========================================================
 
 // =========================================================
-// HELIX — REAL CLOUD FRIEND DMS
+// HELIX — ISOLATED CLOUD DMS
 // =========================================================
-(function setupRealCloudDM() {
-    const dmView = document.getElementById("dm-view");
-    const friendList = document.getElementById("conversation-list");
-    const friendCount = document.getElementById("dm-friends-count");
+(function () {
+    const root = document.getElementById("dm-view");
+    const list = document.getElementById("conversation-list");
+    const count = document.getElementById("dm-friends-count");
     const mainSearch = document.getElementById("chat-search");
-    const messageForm = document.getElementById("message-form");
-    const messageInput = document.getElementById("message-input");
-    const messagesBox = document.getElementById("messages");
-    const chatName = document.getElementById("chat-user-name");
-    const chatStatus = document.getElementById("chat-status");
-    const chatAvatar = document.getElementById("chat-avatar");
-    const messageSearchButton = document.getElementById("chat-search-button");
-    const messageSearchPanel = document.getElementById("chat-message-search");
+    const searchButton = document.getElementById("chat-search-button");
+    const messageSearch = document.getElementById("chat-message-search");
     const messageSearchInput = document.getElementById("message-search-input");
     const messageSearchClose = document.getElementById("chat-search-close");
+    const form = document.getElementById("message-form");
+    const input = document.getElementById("message-input");
+    const messages = document.getElementById("messages");
+    const headerAvatar = document.getElementById("chat-avatar");
+    const headerName = document.getElementById("chat-user-name");
+    const headerStatus = document.getElementById("chat-status");
 
-    if (!dmView || !friendList || !messageForm || !messagesBox) return;
+    if (!root || !list || !form || !input || !messages) return;
 
-    const cloudDM = new Map();
-    let activeFriend = null;
-    let pollTimer = null;
-    let lastFriendSignature = "";
+    let friends = [];
+    let activeUsername = null;
+    let currentMessages = [];
+    let refreshTimer = null;
 
-    const safe = (value) => {
-        const div = document.createElement("div");
-        div.textContent = value == null ? "" : String(value);
-        return div.innerHTML;
-    };
+    const safe = (value) => escapeHTML(value);
 
-    function friendSignature(friends) {
-        return friends.map((friend) => `${friend.username}|${friend.displayName || ""}`).sort().join("||");
+    function sameFriends(a, b) {
+        return a.length === b.length && a.every((x, i) =>
+            x.username === b[i]?.username && x.displayName === b[i]?.displayName
+        );
     }
 
-    function renderFriends(friends, force = false) {
-        const signature = friendSignature(friends);
-        if (!force && signature === lastFriendSignature) return;
-        lastFriendSignature = signature;
+    function filterFriends() {
+        const query = (mainSearch?.value || "").trim().toLowerCase();
+        list.querySelectorAll(".conversation").forEach((item) => {
+            item.hidden = Boolean(query && !item.textContent.toLowerCase().includes(query));
+        });
+    }
 
-        if (friendCount) friendCount.textContent = String(friends.length);
+    function renderFriends(next) {
+        const normalized = next.map((friend) => ({
+            username: String(friend.username),
+            displayName: String(friend.displayName || friend.username)
+        }));
 
-        friendList.replaceChildren();
-
-        if (!friends.length) {
-            friendList.innerHTML = `
-                <div class="dm-empty-state">
-                    <span class="dm-empty-icon">◈</span>
-                    <strong>No friends yet</strong>
-                    <p>Add a friend to start a Direct Message.</p>
-                </div>`;
+        if (count) count.textContent = String(normalized.length);
+        if (sameFriends(friends, normalized) && list.querySelector(".conversation")) {
+            filterFriends();
             return;
         }
 
-        friends.forEach((friend) => {
-            const username = friend.username;
-            const displayName = friend.displayName || username;
-            const existing = cloudDM.get(username);
-            cloudDM.set(username, {
-                ...(existing || {}),
-                username,
-                displayName,
-                messages: existing?.messages || []
-            });
-
+        friends = normalized;
+        list.replaceChildren();
+        normalized.forEach((friend) => {
             const button = document.createElement("button");
             button.type = "button";
-            button.className = "conversation" + (username === activeFriend ? " active" : "");
-            button.dataset.user = username;
-            button.innerHTML = `
-                <span class="conversation-avatar">${safe(displayName.slice(0, 2).toUpperCase())}</span>
-                <span class="conversation-copy">
-                    <strong>${safe(displayName)}</strong>
-                    <small>-${safe(username)}</small>
-                    <span class="conversation-preview">${safe(cloudDM.get(username).lastPreview || "Start a conversation")}</span>
-                </span>
-                <span class="conversation-arrow" aria-hidden="true">↗</span>`;
-            button.addEventListener("click", () => openFriend(username));
-            friendList.appendChild(button);
+            button.className = "conversation" + (friend.username === activeUsername ? " active" : "");
+            button.dataset.user = friend.username;
+            const avatar = document.createElement("span");
+            avatar.className = "conversation-avatar";
+            avatar.textContent = friend.displayName.slice(0, 2).toUpperCase();
+            const copy = document.createElement("span");
+            copy.className = "conversation-copy";
+            copy.innerHTML = `<strong>${safe(friend.displayName)}</strong><small>-${safe(friend.username)}</small><span class="conversation-preview">${friend.username === activeUsername ? "Open conversation" : "Start a conversation"}</span>`;
+            const arrow = document.createElement("span");
+            arrow.className = "conversation-arrow";
+            arrow.textContent = "↗";
+            button.append(avatar, copy, arrow);
+            button.addEventListener("click", () => openFriend(friend));
+            list.appendChild(button);
         });
-
-        applyFriendSearch();
-    }
-
-    function applyFriendSearch() {
-        const query = (mainSearch?.value || "").trim().toLowerCase();
-        document.querySelectorAll("#conversation-list .conversation").forEach((conversation) => {
-            const text = conversation.textContent.toLowerCase();
-            conversation.hidden = Boolean(query && !text.includes(query));
-        });
+        filterFriends();
     }
 
     async function loadFriends() {
         try {
             const response = await fetch("/api/network/state", { credentials: "include" });
             const data = await response.json().catch(() => ({}));
-            if (!response.ok) throw new Error(data.error || "Could not load friends.");
+            if (!response.ok) return;
             renderFriends(Array.isArray(data.friends) ? data.friends : []);
         } catch (error) {
-            console.warn("Cloud DM friend list unavailable:", error);
+            console.warn("Helix DM friend refresh failed:", error);
         }
     }
 
-    function renderMessages(messages) {
-        messagesBox.replaceChildren();
-        if (!messages.length) return;
+    function showConversationHint(text) {
+        messages.replaceChildren();
+        if (text) {
+            const hint = document.createElement("div");
+            hint.className = "dm-conversation-hint";
+            hint.textContent = text;
+            messages.appendChild(hint);
+        }
+    }
 
-        messages.forEach((message) => {
+    function renderMessages() {
+        messages.replaceChildren();
+        const query = (messageSearchInput?.value || "").trim().toLowerCase();
+        const visible = query
+            ? currentMessages.filter((item) => String(item.text).toLowerCase().includes(query))
+            : currentMessages;
+
+        if (!visible.length) {
+            // Intentionally leave the chat area blank when a conversation has no messages.
+            if (query) showConversationHint("No matching messages.");
+            return;
+        }
+
+        visible.forEach((item) => {
             const row = document.createElement("div");
-            row.className = "message " + (message.sender === loggedInUser ? "sent" : "received");
-            row.dataset.messageText = message.text.toLowerCase();
-
+            row.className = "message " + (item.sender === loggedInUser ? "sent" : "received");
             const bubble = document.createElement("div");
             bubble.className = "message-bubble";
             const p = document.createElement("p");
-            p.textContent = message.text;
+            p.textContent = item.text;
             bubble.appendChild(p);
-
             const meta = document.createElement("div");
             meta.className = "message-meta";
             const time = document.createElement("span");
             time.className = "message-time";
-            time.textContent = new Date(message.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+            time.textContent = new Date(item.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
             meta.appendChild(time);
-
-            if (message.sender === loggedInUser) {
+            if (item.sender === loggedInUser) {
                 const status = document.createElement("span");
                 status.className = "message-status";
-                status.textContent = message.readAt ? "✓✓" : "✓";
+                status.textContent = "✓✓";
                 meta.appendChild(status);
             }
-
             row.append(bubble, meta);
-            messagesBox.appendChild(row);
+            messages.appendChild(row);
         });
-
-        applyMessageSearch();
-        messagesBox.scrollTop = messagesBox.scrollHeight;
-    }
-
-    function applyMessageSearch() {
-        const query = (messageSearchInput?.value || "").trim().toLowerCase();
-        messagesBox.querySelectorAll(".message").forEach((message) => {
-            const matches = !query || (message.dataset.messageText || "").includes(query);
-            message.hidden = !matches;
-            message.classList.toggle("search-match", Boolean(query && matches));
-        });
+        messages.scrollTop = messages.scrollHeight;
     }
 
     async function loadMessages(username) {
-        const response = await fetch(`/api/dm/messages?with=${encodeURIComponent(username)}`, { credentials: "include" });
-        const data = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(data.error || "Could not load conversation.");
-        const conversation = cloudDM.get(username);
-        if (!conversation) return;
-        conversation.messages = Array.isArray(data.messages) ? data.messages : [];
-        conversation.lastPreview = conversation.messages.length
-            ? conversation.messages[conversation.messages.length - 1].text
-            : "Start a conversation";
-        renderMessages(conversation.messages);
-        lastFriendSignature = "";
-        await loadFriends();
-    }
-
-    async function openFriend(username) {
-        const friend = cloudDM.get(username);
-        if (!friend) return;
-        activeFriend = username;
-
-        document.querySelectorAll("#conversation-list .conversation").forEach((item) => {
-            item.classList.toggle("active", item.dataset.user === username);
-        });
-
-        if (chatAvatar) chatAvatar.textContent = friend.displayName.slice(0, 2).toUpperCase();
-        if (chatName) chatName.innerHTML = `${safe(friend.displayName)} <small>-${safe(friend.username)}</small>`;
-        if (chatStatus) chatStatus.textContent = "Friend on Helix";
-        if (messageInput) messageInput.disabled = false;
-
         try {
-            await loadMessages(username);
+            const response = await fetch(`/api/dm/messages?with=${encodeURIComponent(username)}`, { credentials: "include" });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(data.error || "Could not load conversation.");
+            currentMessages = Array.isArray(data.messages) ? data.messages : [];
+            renderMessages();
         } catch (error) {
-            messagesBox.replaceChildren();
-            if (chatStatus) chatStatus.textContent = error.message || "Could not load messages";
+            currentMessages = [];
+            if (headerStatus) headerStatus.textContent = error.message || "Could not load conversation.";
         }
     }
 
-    async function sendMessage(text) {
-        if (!activeFriend || !text.trim()) return;
+    async function openFriend(friend) {
+        activeUsername = friend.username;
+        list.querySelectorAll(".conversation").forEach((item) =>
+            item.classList.toggle("active", item.dataset.user === activeUsername)
+        );
+        if (headerAvatar) headerAvatar.textContent = friend.displayName.slice(0, 2).toUpperCase();
+        if (headerName) headerName.innerHTML = `${safe(friend.displayName)} <small>-${safe(friend.username)}</small>`;
+        if (headerStatus) headerStatus.textContent = "Friend on Helix";
+        input.disabled = false;
+        await loadMessages(activeUsername);
+    }
 
+    async function sendMessage(text) {
+        if (!activeUsername || !text.trim()) return false;
         const response = await fetch("/api/dm/messages", {
             method: "POST",
             credentials: "include",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ to: activeFriend, text: text.trim() })
+            body: JSON.stringify({ to: activeUsername, text: text.trim() })
         });
         const data = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(data.error || "Could not send message.");
-
-        await loadMessages(activeFriend);
+        await loadMessages(activeUsername);
+        return true;
     }
 
-    messageForm.addEventListener("submit", async (event) => {
+    form.addEventListener("submit", async (event) => {
         event.preventDefault();
-        const text = messageInput?.value || "";
-        if (!activeFriend || !text.trim()) return;
-
-        const sendButton = messageForm.querySelector("button[type=submit]");
-        if (sendButton) sendButton.disabled = true;
-
+        event.stopPropagation();
+        const value = input.value;
+        if (!value.trim() || !activeUsername) return;
         try {
-            await sendMessage(text);
-            messageInput.value = "";
-            messageInput.focus();
+            await sendMessage(value);
+            input.value = "";
+            input.focus();
         } catch (error) {
-            if (chatStatus) chatStatus.textContent = error.message || "Message failed to send";
-        } finally {
-            if (sendButton) sendButton.disabled = false;
+            if (headerStatus) headerStatus.textContent = error.message || "Message failed.";
         }
     });
 
-    messageInput?.addEventListener("keydown", (event) => {
+    input.addEventListener("keydown", (event) => {
         if (event.key === "Enter" && !event.shiftKey) {
             event.preventDefault();
-            messageForm.requestSubmit();
+            form.requestSubmit();
         }
     });
 
-    mainSearch?.addEventListener("input", applyFriendSearch);
+    mainSearch?.addEventListener("input", filterFriends);
 
-    messageSearchButton?.addEventListener("click", () => {
-        if (!messageSearchPanel) return;
-        messageSearchPanel.hidden = !messageSearchPanel.hidden;
-        if (!messageSearchPanel.hidden) messageSearchInput?.focus();
+    searchButton?.addEventListener("click", () => {
+        if (!messageSearch) return;
+        messageSearch.hidden = false;
+        messageSearchInput?.focus();
     });
 
-    messageSearchInput?.addEventListener("input", applyMessageSearch);
-
+    messageSearchInput?.addEventListener("input", renderMessages);
     messageSearchClose?.addEventListener("click", () => {
         if (messageSearchInput) messageSearchInput.value = "";
-        applyMessageSearch();
-        if (messageSearchPanel) messageSearchPanel.hidden = true;
+        if (messageSearch) messageSearch.hidden = true;
+        renderMessages();
     });
 
-    messageInput?.setAttribute("disabled", "disabled");
+    input.disabled = true;
+    showConversationHint("");
     loadFriends();
-
-    clearInterval(pollTimer);
-    pollTimer = setInterval(async () => {
+    refreshTimer = setInterval(async () => {
         await loadFriends();
-        if (activeFriend) {
-            try { await loadMessages(activeFriend); } catch (error) { /* keep the existing chat visible */ }
-        }
-    }, 3000);
+        if (activeUsername) await loadMessages(activeUsername);
+    }, 5000);
 })();
