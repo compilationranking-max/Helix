@@ -408,6 +408,20 @@
             <span id="connection-count">0</span>
         </div>
 
+        <div class="dm-friends-section" id="dm-friends-section">
+            <div class="dm-suggestions-heading">
+                <span>FRIENDS</span>
+                <span id="dm-friends-count">0</span>
+            </div>
+            <div class="conversation-list" id="conversation-list">
+                <div class="dm-empty-state">
+                    <span class="dm-empty-icon">◈</span>
+                    <strong>No friends yet</strong>
+                    <p>Add a friend to start a Direct Message.</p>
+                </div>
+            </div>
+        </div>
+
         <div class="dm-suggestions-section">
             <div class="dm-suggestions-heading">
                 <span>SUGGESTIONS</span>
@@ -421,23 +435,44 @@
             </div>
         </div>
 
-        <div class="conversation-list" id="conversation-list">
-            <div class="dm-empty-state">
-                <span class="dm-empty-icon">◈</span>
-                <strong>No conversations yet</strong>
-                <p>Your Direct Console will appear here when you connect with someone.</p>
-            </div>
-        </div>
-
 </aside>
 
     <!-- DM CHAT -->
-    <section class="chat-panel dm-chat-empty-panel" aria-label="Direct messages">
-        <div class="dm-chat-empty-state">
-            <span class="dm-empty-icon" aria-hidden="true">◈</span>
-            <strong>No conversations yet</strong>
-            <p>Your Direct Console will appear here when you connect with someone.</p>
+    <section class="chat-panel dm-chat-panel" aria-label="Direct messages">
+        <header class="dm-chat-header">
+            <div class="dm-chat-header-profile">
+                <div class="avatar-badge" id="chat-avatar">H</div>
+                <div>
+                    <h3 id="chat-user-name">Select a friend</h3>
+                    <span id="chat-status">Your private Direct Message channel</span>
+                </div>
+            </div>
+            <div class="dm-chat-header-actions">
+                <button type="button" id="chat-search-button" aria-label="Search messages" title="Search messages">⌕</button>
+                <button type="button" id="chat-info-button" aria-label="Conversation info" title="Conversation info">ⓘ</button>
+            </div>
+        </header>
+
+        <div class="chat-message-search" id="chat-message-search" hidden>
+            <span aria-hidden="true">⌕</span>
+            <input id="message-search-input" type="search" placeholder="Search messages..." autocomplete="off">
+            <button type="button" id="chat-search-close" aria-label="Close search">×</button>
         </div>
+
+        <div class="messages" id="messages" aria-live="polite">
+            <div class="dm-chat-empty-state" id="dm-chat-empty-state">
+                <span class="dm-empty-icon" aria-hidden="true">◈</span>
+                <strong>Your Direct Console is ready</strong>
+                <p>Select one of your friends to start chatting.</p>
+            </div>
+        </div>
+
+        <form class="message-form" id="message-form">
+            <div class="message-input-shell">
+                <input id="message-input" type="text" maxlength="4000" placeholder="Message your friend..." autocomplete="off" aria-label="Message your friend">
+                <button type="submit" class="message-send-button" aria-label="Send message">→</button>
+            </div>
+        </form>
     </section>
 
 <aside class="dm-info-panel" id="dm-info-panel" hidden>
