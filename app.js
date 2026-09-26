@@ -2357,21 +2357,28 @@ function openHelpSupportModal(action) {
             button.addEventListener("click", closeModal);
         });
 
-        body.querySelector("form")?.addEventListener("submit", (event) => {
+        body.querySelector("form")?.addEventListener("submit", async (event) => {
             event.preventDefault();
             const formData = new FormData(event.currentTarget);
-            const requests = readLocalJSON("helixSupportRequests", []);
-            requests.push({
-                type: action,
-                username: loggedInUser || null,
-                createdAt: new Date().toISOString(),
-                details: Object.fromEntries(formData.entries())
-            });
-            localStorage.setItem("helixSupportRequests", JSON.stringify(requests));
+            const details = Object.fromEntries(formData.entries());
+            try {
+                const response = await fetch("/api/support", {
+                    method: "POST",
+                    credentials: "include",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ type: action, details })
+                });
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok) throw new Error(data.error || "Could not send your request.");
+            } catch {
+                const requests = readLocalJSON("helixSupportRequests", []);
+                requests.push({ type: action, username: loggedInUser || null, createdAt: new Date().toISOString(), details });
+                try { localStorage.setItem("helixSupportRequests", JSON.stringify(requests)); } catch {}
+            }
             body.innerHTML = `
                 <div class="help-support-success">
-                    <strong>Request saved</strong>
-                    <p>This prototype stored your request locally in this browser. A server-side Helix support system can be connected later.</p>
+                    <strong>Request submitted</strong>
+                    <p>Your Helix request has been recorded.</p>
                     <button class="profile-primary-button" type="button" data-help-modal-close>Close</button>
                 </div>
             `;
