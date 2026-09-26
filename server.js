@@ -90,7 +90,7 @@ if (!GEMINI_API_KEY) {
 }
 
 app.use(cors());
-app.use(express.json({ limit: "2mb" }));
+app.use(express.json({ limit: "16mb" }));
 app.use(express.static(__dirname));
 
 const networkDataDir = path.join(__dirname, "data");
@@ -190,10 +190,41 @@ async function initializeDatabase() {
             id UUID PRIMARY KEY,
             sender_username TEXT NOT NULL REFERENCES helix_users(username) ON DELETE CASCADE,
             recipient_username TEXT NOT NULL REFERENCES helix_users(username) ON DELETE CASCADE,
-            body TEXT NOT NULL CHECK (char_length(body) BETWEEN 1 AND 4000),
+            body TEXT NOT NULL DEFAULT '',
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-            read_at TIMESTAMPTZ
+            read_at TIMESTAMPTZ,
+            media_data BYTEA,
+            media_mime TEXT,
+            media_name TEXT,
+            media_size INTEGER,
+            media_kind TEXT
         );
+
+        ALTER TABLE helix_messages
+            ADD COLUMN IF NOT EXISTS media_data BYTEA;
+        ALTER TABLE helix_messages
+            ADD COLUMN IF NOT EXISTS media_mime TEXT;
+        ALTER TABLE helix_messages
+            ADD COLUMN IF NOT EXISTS media_name TEXT;
+        ALTER TABLE helix_messages
+            ADD COLUMN IF NOT EXISTS media_size INTEGER;
+        ALTER TABLE helix_messages
+            ADD COLUMN IF NOT EXISTS media_kind TEXT;
+        ALTER TABLE helix_messages
+            ALTER COLUMN body SET DEFAULT '';
+
+        ALTER TABLE helix_messages
+            DROP CONSTRAINT IF EXISTS helix_messages_body_check;
+        ALTER TABLE helix_messages
+            ADD CONSTRAINT helix_messages_body_check CHECK (
+                char_length(body) BETWEEN 0 AND 4000
+                AND (char_length(body) > 0 OR media_data IS NOT NULL)
+            );
+        ALTER TABLE helix_messages
+            DROP CONSTRAINT IF EXISTS helix_messages_media_size_check;
+        ALTER TABLE helix_messages
+            ADD CONSTRAINT helix_messages_media_size_check
+            CHECK (media_size IS NULL OR (media_size > 0 AND media_size <= 10485760));
 
         CREATE INDEX IF NOT EXISTS helix_messages_conversation_idx
             ON helix_messages (sender_username, recipient_username, created_at);
@@ -929,7 +960,16 @@ app.post("/api/profile/display-name", async (req, res) => {
 
 async function getCloudNetworkState(username) {
     const friendsResult = await dbPool.query(`
-        SELECT u.username, u.display_name AS "displayName"
+        SELECT
+            u.username,
+            u.display_name AS "displayName",
+            COALESCE((
+                SELECT COUNT(*)::int
+                FROM helix_messages m
+                WHERE m.sender_username = u.username
+                  AND m.recipient_username = $1
+                  AND m.read_at IS NULL
+            ), 0) AS "unreadCount"
         FROM helix_friendships f
         JOIN helix_users u ON u.username = CASE WHEN f.user_a = $1 THEN f.user_b ELSE f.user_a END
         WHERE f.user_a = $1 OR f.user_b = $1
@@ -1333,7 +1373,12 @@ app.get("/api/dm/messages", async (req, res) => {
 
         const result = await dbPool.query(`
             SELECT id, sender_username AS "sender", recipient_username AS "recipient",
-                   body AS "text", created_at AS "createdAt", read_at AS "readAt"
+                   body AS "text", created_at AS "createdAt", read_at AS "readAt",
+                   CASE WHEN media_data IS NOT NULL THEN '/api/dm/media/' || id::text ELSE NULL END AS "mediaUrl",
+                   media_mime AS "mediaMime",
+                   media_name AS "mediaName",
+                   media_size AS "mediaSize",
+                   media_kind AS "mediaKind"
             FROM helix_messages
             WHERE (sender_username = $1 AND recipient_username = $2)
                OR (sender_username = $2 AND recipient_username = $1)
@@ -1368,7 +1413,12 @@ app.get("/api/dm/notification-feed", async (req, res) => {
         const result = await dbPool.query(`
             SELECT
                 m.id,
-                m.body AS "text",
+                CASE
+                    WHEN m.body <> '' THEN m.body
+                    WHEN m.media_kind = 'video' THEN '🎥 Video'
+                    ELSE '📷 Photo'
+                END AS "text",
+                m.media_kind AS "mediaKind",
                 m.created_at AS "createdAt",
                 m.sender_username AS "sender",
                 COALESCE(u.display_name, m.sender_username) AS "senderDisplayName"
@@ -1419,12 +1469,27 @@ app.get("/api/dm/unread-count", async (req, res) => {
     }
 });
 
+function parseDMMediaData(value) {
+    if (typeof value !== "string") return null;
+
+    const match = /^data:((?:image|video)\/[A-Za-z0-9.+-]+);base64,([A-Za-z0-9+/=]+)$/.exec(value.trim());
+    if (!match) return null;
+
+    const mime = match[1].toLowerCase();
+    const buffer = Buffer.from(match[2], "base64");
+
+    if (!buffer.length || buffer.length > 10 * 1024 * 1024) return null;
+
+    return { mime, buffer };
+}
+
 app.post("/api/dm/messages", async (req, res) => {
     const user = await requireCurrentUser(req, res);
     if (!user) return;
 
     const recipient = normalizeUsername(req.body?.to);
     const body = typeof req.body?.text === "string" ? req.body.text.trim() : "";
+    const incomingMedia = req.body?.media;
 
     if (!validUsername(recipient) || recipient === user.username) {
         return res.status(400).json({ error: "Invalid recipient." });
@@ -1439,31 +1504,129 @@ app.post("/api/dm/messages", async (req, res) => {
         return res.status(403).json({ error: "This user is not accepting direct messages." });
     }
 
-    if (!body || body.length > 4000) {
-        return res.status(400).json({ error: "Message must be between 1 and 4000 characters." });
+    if (!body && !incomingMedia) {
+        return res.status(400).json({ error: "Enter a message or attach a photo/video." });
+    }
+
+    if (body.length > 4000) {
+        return res.status(400).json({ error: "Message is too long. Maximum is 4000 characters." });
+    }
+
+    let media = null;
+
+    if (incomingMedia) {
+        if (typeof incomingMedia !== "object" || Array.isArray(incomingMedia)) {
+            return res.status(400).json({ error: "Invalid media attachment." });
+        }
+
+        const parsed = parseDMMediaData(incomingMedia.dataUrl);
+
+        if (!parsed) {
+            return res.status(400).json({ error: "Choose a valid photo or video file up to 10 MB." });
+        }
+
+        const declaredSize = Number(incomingMedia.size || 0);
+        if (declaredSize && declaredSize !== parsed.buffer.length) {
+            return res.status(400).json({ error: "The attachment size could not be verified." });
+        }
+
+        media = {
+            buffer: parsed.buffer,
+            mime: parsed.mime,
+            name: typeof incomingMedia.name === "string"
+                ? incomingMedia.name.trim().slice(0, 180) || "attachment"
+                : "attachment",
+            size: parsed.buffer.length,
+            kind: parsed.mime.startsWith("video/") ? "video" : "image"
+        };
     }
 
     try {
         if (!dbPool) return res.status(503).json({ error: "Cloud messaging is not configured." });
         await requireDatabase();
+
         if (!(await areCloudFriends(user.username, recipient))) {
             return res.status(403).json({ error: "You can only message friends on Helix." });
         }
 
         const result = await dbPool.query(`
-            INSERT INTO helix_messages (id, sender_username, recipient_username, body)
-            VALUES ($1, $2, $3, $4)
-            RETURNING id, sender_username AS "sender", recipient_username AS "recipient",
-                      body AS "text", created_at AS "createdAt", read_at AS "readAt"
-        `, [crypto.randomUUID(), user.username, recipient, body]);
+            INSERT INTO helix_messages (
+                id, sender_username, recipient_username, body,
+                media_data, media_mime, media_name, media_size, media_kind
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            RETURNING
+                id,
+                sender_username AS "sender",
+                recipient_username AS "recipient",
+                body AS "text",
+                created_at AS "createdAt",
+                read_at AS "readAt",
+                CASE WHEN media_data IS NOT NULL THEN '/api/dm/media/' || id::text ELSE NULL END AS "mediaUrl",
+                media_mime AS "mediaMime",
+                media_name AS "mediaName",
+                media_size AS "mediaSize",
+                media_kind AS "mediaKind"
+        `, [
+            crypto.randomUUID(),
+            user.username,
+            recipient,
+            body,
+            media?.buffer || null,
+            media?.mime || null,
+            media?.name || null,
+            media?.size || null,
+            media?.kind || null
+        ]);
 
-        await logActivity(user.username, "dm.message_sent", { to: recipient });
-        res.status(201).json({ ok: true, message: result.rows[0] });
+        await logActivity(user.username, "dm.message_sent", {
+            to: recipient,
+            mediaKind: media?.kind || null
+        });
+
+        return res.status(201).json({ ok: true, message: result.rows[0] });
     } catch (error) {
         console.error("DM send failed:", error);
-        res.status(500).json({ error: "Could not send the message." });
+        return res.status(500).json({ error: "Could not send the message." });
     }
 });
+
+app.get("/api/dm/media/:messageId", async (req, res) => {
+    const user = await requireCurrentUser(req, res);
+    if (!user) return;
+
+    const messageId = String(req.params.messageId || "");
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(messageId)) {
+        return res.status(400).json({ error: "Invalid media." });
+    }
+
+    try {
+        await requireDatabase();
+
+        const result = await dbPool.query(`
+            SELECT media_data, media_mime, media_name
+            FROM helix_messages
+            WHERE id = $1
+              AND media_data IS NOT NULL
+              AND (sender_username = $2 OR recipient_username = $2)
+        `, [messageId, user.username]);
+
+        const row = result.rows[0];
+        if (!row) return res.status(404).json({ error: "Media not found." });
+
+        res.setHeader("Content-Type", row.media_mime || "application/octet-stream");
+        res.setHeader("Content-Disposition", `inline; filename*=UTF-8''${encodeURIComponent(row.media_name || "attachment")}`);
+        res.setHeader("Cache-Control", "private, max-age=3600");
+        res.setHeader("X-Content-Type-Options", "nosniff");
+
+        return res.end(row.media_data);
+    } catch (error) {
+        console.error("DM media load failed:", error);
+        return res.status(500).json({ error: "Could not load this attachment." });
+    }
+});
+
+
 
 async function getAIImageUsage(username) {
     if (dbPool) {
