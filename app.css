@@ -10566,3 +10566,35 @@ body.helix-reduced-motion *::after {
     flex: 0 0 auto;
 }
 
+
+/* DM CHAT SURFACE / MEDIA FINAL FIX */
+#dm-view .messages {
+    background-color: #05070d !important;
+    background-image:
+        radial-gradient(rgba(118, 210, 255, 0.12) 0.8px, transparent 0.9px),
+        radial-gradient(circle at 50% 0%, rgba(0, 229, 255, 0.025), transparent 35%) !important;
+    background-size: 12px 12px, 100% 100% !important;
+    background-position: 0 0, center !important;
+    background-repeat: repeat, no-repeat !important;
+    background-attachment: local, local !important;
+}
+
+#dm-view .message-send-button {
+    border: 0 !important;
+    background: transparent !important;
+    outline: 0 !important;
+    box-shadow: none !important;
+}
+
+#dm-view .message-send-button:hover:not(:disabled) {
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+#dm-view .message-media {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
