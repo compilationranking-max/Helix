@@ -10174,3 +10174,80 @@ body.helix-reduced-motion *::after {
     text-align: center;
 }
 
+
+/* Public account-settings controls */
+.blocked-account-add {
+    display: flex;
+    gap: 10px;
+    margin: 0 0 8px;
+}
+
+.blocked-account-add input {
+    flex: 1;
+    min-width: 0;
+    height: 42px;
+    padding: 0 12px;
+    border: 1px solid rgba(112, 139, 190, 0.25);
+    border-radius: 10px;
+    background: rgba(8, 14, 25, 0.82);
+    color: #eafaff;
+    outline: none;
+}
+
+.blocked-account-add input:focus {
+    border-color: rgba(0, 229, 255, 0.48);
+    box-shadow: 0 0 0 2px rgba(0, 229, 255, 0.06);
+}
+
+.blocked-account-feedback {
+    min-height: 15px;
+    margin: 0 0 10px;
+    color: #6b8192;
+    font-size: 9px;
+}
+
+.account-activity-list {
+    display: grid;
+    gap: 8px;
+    max-height: 420px;
+    overflow-y: auto;
+}
+
+.account-activity-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 11px 12px;
+    border: 1px solid rgba(112, 139, 190, 0.13);
+    border-radius: 10px;
+    background: rgba(8, 14, 25, 0.68);
+}
+
+.account-activity-item strong {
+    color: #e7f7fb;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.account-activity-item small {
+    color: #647a8b;
+    font-size: 8px;
+    white-space: nowrap;
+}
+
+@media (max-width: 650px) {
+    .blocked-account-add {
+        flex-direction: column;
+    }
+
+    .blocked-account-add .profile-secondary-button {
+        width: 100%;
+    }
+
+    .account-activity-item {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 5px;
+    }
+}
