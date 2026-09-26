@@ -1050,7 +1050,7 @@ function buildConversationInput(history, message) {
     }));
 }
 
-async function generateGeminiResponse(message, history = []) {
+async function generateGeminiResponse(message, history = [], image = null) {
     if (!process.env.GEMINI_API_KEY) {
         const error = new Error("GEMINI_API_KEY is not configured.");
         error.status = 503;
@@ -1061,9 +1061,18 @@ async function generateGeminiResponse(message, history = []) {
         + encodeURIComponent(MODEL) + ":generateContent";
 
     const isLowLatencyGemini3Model =
-        /gemini-3\.8-flash|gemini-3\.7-flash/i.test(MODEL);
+        /gemini-3\\.8-flash|gemini-3\\.7-flash/i.test(MODEL);
 
     const contents = buildConversationInput(history, message);
+
+    if (image && contents.length) {
+        contents[contents.length - 1].parts.push({
+            inlineData: {
+                mimeType: image.mimeType,
+                data: image.data
+            }
+        });
+    }
 
     const body = {
         systemInstruction: {
