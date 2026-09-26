@@ -2535,7 +2535,10 @@ document.querySelectorAll("[data-settings-action]").forEach((button) => {
     };
 
     function save() {
-        localStorage.setItem(storageKey, JSON.stringify(settings));
+        try {
+            localStorage.setItem(storageKey, JSON.stringify(settings));
+        } catch {}
+        saveCloudSettingGroup("appearance", settings);
     }
 
     function apply() {
@@ -2582,6 +2585,16 @@ document.querySelectorAll("[data-settings-action]").forEach((button) => {
     });
 
     apply();
+
+    window.addEventListener("helix-cloud-settings-loaded", (event) => {
+        const cloud = event.detail?.appearance;
+        if (!cloud) return;
+        settings = { ...defaults, ...cloud };
+        try {
+            localStorage.setItem(storageKey, JSON.stringify(settings));
+        } catch {}
+        apply();
+    });
 })();
 
 
@@ -2620,7 +2633,10 @@ document.querySelectorAll("[data-settings-action]").forEach((button) => {
     const customInput = document.getElementById("detox-custom-minutes");
 
     function saveDetoxSettings() {
-        localStorage.setItem(detoxStorageKey, JSON.stringify(detoxSettings));
+        try {
+            localStorage.setItem(detoxStorageKey, JSON.stringify(detoxSettings));
+        } catch {}
+        saveCloudSettingGroup("detox", detoxSettings);
     }
 
     function loadLockUntil() {
@@ -2929,6 +2945,17 @@ document.querySelectorAll("[data-settings-action]").forEach((button) => {
 
     renderDetoxSettings();
 
+    window.addEventListener("helix-cloud-settings-loaded", (event) => {
+        const cloud = event.detail?.detox;
+        if (!cloud) return;
+        detoxSettings = { ...defaultSettings, ...cloud };
+        try {
+            localStorage.setItem(detoxStorageKey, JSON.stringify(detoxSettings));
+        } catch {}
+        if (getDetoxLimitMs() <= 0) resetContinuousUsage();
+        renderDetoxSettings();
+    });
+
     if (loadLockUntil() > Date.now()) {
         showLockScreen();
     } else if (getDetoxLimitMs() > 0) {
@@ -2974,6 +3001,7 @@ document.querySelectorAll("[data-settings-action]").forEach((button) => {
         } catch {
             // Settings remain active for this page even if storage is unavailable.
         }
+        saveCloudSettingGroup("notifications", notificationSettings);
     }
 
     function updateBrowserNotificationNote(message = "") {
@@ -3231,6 +3259,20 @@ document.querySelectorAll("[data-settings-action]").forEach((button) => {
     });
 
     renderNotificationSettings();
+
+    window.addEventListener("helix-cloud-settings-loaded", (event) => {
+        const cloud = event.detail?.notifications;
+        if (!cloud) return;
+        notificationSettings = { ...notificationDefaults, ...cloud };
+        try {
+            localStorage.setItem(notificationStorageKey, JSON.stringify(notificationSettings));
+        } catch {}
+        renderNotificationSettings();
+        if (!notificationSettings["dm-alerts"]) {
+            document.title = "Helix";
+            lastKnownUnreadDMCount = null;
+        }
+    });
 })();
 
 
@@ -3260,7 +3302,10 @@ document.querySelectorAll("[data-settings-action]").forEach((button) => {
     };
 
     function savePrivacySettings() {
-        localStorage.setItem(privacyStorageKey, JSON.stringify(privacySettings));
+        try {
+            localStorage.setItem(privacyStorageKey, JSON.stringify(privacySettings));
+        } catch {}
+        saveCloudSettingGroup("privacy", privacySettings);
     }
 
     function renderPrivacySettings() {
@@ -3328,6 +3373,17 @@ document.querySelectorAll("[data-settings-action]").forEach((button) => {
     });
 
     renderPrivacySettings();
+
+    window.addEventListener("helix-cloud-settings-loaded", (event) => {
+        const cloud = event.detail?.privacy;
+        if (!cloud) return;
+        privacySettings = { ...privacyDefaults, ...cloud };
+        try {
+            localStorage.setItem(privacyStorageKey, JSON.stringify(privacySettings));
+        } catch {}
+        renderPrivacySettings();
+    });
+
     window.helixRenderPrivacy = renderPrivacySettings;
 })();
 
