@@ -906,7 +906,7 @@ app.post("/api/profile/display-name", async (req, res) => {
         if (dbPool) {
             await requireDatabase();
             const result = await dbPool.query(
-                "UPDATE helix_users SET display_name = $1 WHERE username = $2 RETURNING username, display_name, created_at, profile_photo",
+                "UPDATE helix_users SET display_name = $1 WHERE username = $2 RETURNING username, display_name, created_at, profile_photo, email, phone",
                 [displayName, user.username]
             );
             await logActivity(user.username, "account.display_name_updated");
