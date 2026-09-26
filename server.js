@@ -26,6 +26,7 @@ const PORT = Number(process.env.PORT) || 3000;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || "";
 const MODEL = process.env.GEMINI_MODEL || "gemini-3.8-flash";
 const MAX_HISTORY_MESSAGES = 20;
+const DAILY_AI_IMAGE_LIMIT = 5;
 
 const HELIX_AI_INSTRUCTIONS = `
 You are HELIX AI, the built-in AI assistant of the Helix platform.
@@ -144,6 +145,13 @@ async function initializeDatabase() {
             ON helix_friend_requests (to_username, status);
         CREATE INDEX IF NOT EXISTS helix_friend_requests_from_idx
             ON helix_friend_requests (from_username, status);
+
+        CREATE TABLE IF NOT EXISTS helix_ai_image_usage (
+            username TEXT NOT NULL REFERENCES helix_users(username) ON DELETE CASCADE,
+            usage_date DATE NOT NULL,
+            upload_count INTEGER NOT NULL DEFAULT 0 CHECK (upload_count >= 0),
+            PRIMARY KEY (username, usage_date)
+        );
     `);
 }
 
