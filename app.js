@@ -2904,17 +2904,6 @@ document.querySelectorAll("[data-settings-action]").forEach((button) => {
 // =========================================================
 
 (() => {
-    const notificationDefaults = {
-        "dm-alerts": true,
-        "friend-requests": true,
-        "accepted-requests": true,
-        "likes": true,
-        "comments": true,
-        "mentions": true,
-        "follows": true,
-        "system-announcements": true
-    };
-
     const notificationStorageKey = "helixNotificationSettings:v2";
     const notificationDefaults = {
         "dm-alerts": false,
@@ -4708,6 +4697,10 @@ bootstrapHelixSession().then((authenticated) => {
             const data = await response.json().catch(() => ({}));
             const unread = Math.max(0, Number(data.unread || 0));
 
+            if (window.helixHandleNotificationUnreadCount) {
+                window.helixHandleNotificationUnreadCount(unread);
+            }
+
             if (unread > 0) {
                 const displayCount = unread >= 9 ? "+9" : "+" + unread;
                 dmNavUnread.textContent = displayCount;
@@ -5016,6 +5009,7 @@ bootstrapHelixSession().then((authenticated) => {
         currentMessages = [];
         showConversationHint("");
         await loadMessages(activeUsername, { force: true, scrollToBottom: true });
+        await refreshDMUnreadBadge();
         input.focus();
     }
 
@@ -5169,4 +5163,8 @@ bootstrapHelixSession().then((authenticated) => {
     }
 
     refreshDMLoop();
+
+    if (window.helixHandleNotificationUnreadCount && !document.getElementById("dm-nav-unread")) {
+        window.helixHandleNotificationUnreadCount(0);
+    }
 })();
