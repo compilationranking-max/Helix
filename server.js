@@ -933,6 +933,43 @@ app.get("/api/dm/messages", async (req, res) => {
     }
 });
 
+app.get("/api/dm/notification-feed", async (req, res) => {
+    const user = await requireCurrentUser(req, res);
+    if (!user) return;
+
+    try {
+        if (!dbPool) {
+            return res.json({ unread: 0, messages: [] });
+        }
+
+        await requireDatabase();
+
+        const result = await dbPool.query(`
+            SELECT
+                m.id,
+                m.body AS "text",
+                m.created_at AS "createdAt",
+                m.sender_username AS "sender",
+                COALESCE(u.display_name, m.sender_username) AS "senderDisplayName"
+            FROM helix_messages m
+            JOIN helix_users u ON u.username = m.sender_username
+            WHERE m.recipient_username = $1
+              AND m.read_at IS NULL
+            ORDER BY m.created_at ASC
+            LIMIT 100
+        `, [user.username]);
+
+        return res.json({
+            ok: true,
+            unread: result.rows.length,
+            messages: result.rows
+        });
+    } catch (error) {
+        console.error("DM notification feed failed:", error);
+        return res.status(500).json({ error: "Could not load DM notifications." });
+    }
+});
+
 app.get("/api/dm/unread-count", async (req, res) => {
     const user = await requireCurrentUser(req, res);
     if (!user) return;
