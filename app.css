@@ -10054,3 +10054,22 @@ body.helix-reduced-motion *::after {
     }
 }
 
+
+/* AI connection status states */
+.ai-sidebar-status.online {
+    color: #52e37b !important;
+}
+
+.ai-sidebar-status.online .status-dot {
+    background: #52e37b !important;
+    box-shadow: 0 0 10px rgba(82, 227, 123, 0.55) !important;
+}
+
+.ai-sidebar-status.offline {
+    color: #536879 !important;
+}
+
+.ai-sidebar-status.offline .status-dot {
+    background: #697b8c !important;
+    box-shadow: none !important;
+}
