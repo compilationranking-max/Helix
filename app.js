@@ -4487,6 +4487,32 @@ bootstrapHelixSession().then((authenticated) => {
     const headerName = document.getElementById("chat-user-name");
     const headerStatus = document.getElementById("chat-status");
 
+    const dmNavUnread = document.getElementById("dm-nav-unread");
+
+    async function refreshDMUnreadBadge() {
+        if (!dmNavUnread) return;
+
+        try {
+            const response = await fetch("/api/dm/unread-count", { credentials: "include" });
+            if (!response.ok) return;
+
+            const data = await response.json().catch(() => ({}));
+            const unread = Math.max(0, Number(data.unread || 0));
+
+            if (unread > 0) {
+                const displayCount = unread >= 9 ? "+9" : "+" + unread;
+                dmNavUnread.textContent = displayCount;
+                dmNavUnread.hidden = false;
+                dmNavUnread.setAttribute("aria-label", unread + " unread Direct Message" + (unread === 1 ? "" : "s"));
+            } else {
+                dmNavUnread.hidden = true;
+                dmNavUnread.removeAttribute("aria-label");
+            }
+        } catch {
+            // Unread indicators are best-effort and must never interrupt DMs.
+        }
+    }
+
     if (!root || !list || !form || !input || !messages) return;
 
     let friends = [];
@@ -4924,6 +4950,7 @@ bootstrapHelixSession().then((authenticated) => {
                 if (activeUsername && !isSending) {
                     await loadMessages(activeUsername);
                 }
+                await refreshDMUnreadBadge();
             } finally {
                 dmRefreshRunning = false;
             }
