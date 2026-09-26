@@ -2265,28 +2265,32 @@ function downloadHelixJSON(filename, payload) {
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-function exportHelixData(type) {
+async function exportHelixData(type) {
+    setDataDownloadStatus("Preparing export...", "Collecting your cloud account data and local browser data.");
     const accountRecord = getCurrentAccountRecord();
-    const profilePhoto = loggedInUser
-        ? localStorage.getItem(`helixProfilePhoto:${loggedInUser}`)
-        : null;
-
+    let cloudData = null;
+    try {
+        const response = await fetch("/api/account/export", { credentials: "include", cache: "no-store" });
+        const data = await response.json().catch(() => ({}));
+        if (response.ok && data.ok) cloudData = data;
+    } catch (error) {
+        console.warn("Cloud export unavailable:", error);
+    }
+    const profilePhoto = loggedInUser ? localStorage.getItem(`helixProfilePhoto:${loggedInUser}`) : null;
     const payload = {
         exportedAt: new Date().toISOString(),
         exportType: type,
-        account: {
+        account: cloudData?.account || {
             username: loggedInUser || null,
             displayName: accountRecord?.displayName || getCurrentDisplayName(),
             createdAt: accountRecord?.createdAt || null,
-            email: accountRecord?.email || accountRecord?.linkedEmail || null,
-            phone: accountRecord?.phone || accountRecord?.linkedPhone || null
+            email: accountRecord?.email || null,
+            phone: accountRecord?.phone || null
         },
-        profile: {
-            profilePhoto: profilePhoto || null
-        },
+        profile: { profilePhoto: profilePhoto || cloudData?.account?.hasProfilePhoto || null },
+        cloud: cloudData || null,
         localData: collectHelixLocalData()
     };
-
     if (type === "content") {
         payload.content = {
             posts: readLocalJSON("helixPosts", readLocalJSON("helixActivityPosts", [])),
@@ -2297,29 +2301,25 @@ function exportHelixData(type) {
             recentlyViewed: readLocalJSON("helixRecentlyViewed", [])
         };
     }
-
     const suffix = type === "content" ? "content-export" : "account-data";
     const safeUsername = (loggedInUser || "user").replace(/[^a-z0-9_-]/gi, "_");
-
     downloadHelixJSON(
         `helix-${safeUsername}-${suffix}.json`,
         payload
     );
-
-    setDataDownloadStatus(
-        "Export downloaded",
-        type === "content"
-            ? "Your profile, locally stored content and media references were packaged into a JSON file."
-            : "Your Helix account information and locally stored Helix data were packaged into a JSON file."
-    );
+    setDataDownloadStatus("Export downloaded", cloudData ? "Your cloud account, settings, activity and local data were packaged into a JSON file." : "Your available Helix browser data was packaged into a JSON file.");
 }
 
-function clearHelixLocalData() {
+async function clearHelixLocalData() {
     const confirmed = window.confirm(
-        "Clear all Helix data stored in this browser? You will be signed out and this cannot be undone."
+        "Clear all Helix data stored in this browser? You will be signed out, but your cloud account will remain."
     );
 
     if (!confirmed) return;
+
+    try {
+        await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+    } catch {}
 
     localStorage.clear();
     sessionStorage.clear();
