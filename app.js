@@ -3697,6 +3697,49 @@ async function openAccountActivityModal() {
 })();
 
 // =========================================================
+// Cloud block controls
+(async () => {
+    const blockInput = document.getElementById("blocked-username-input");
+    const blockButton = document.getElementById("block-username-button");
+    const blockFeedback = document.getElementById("blocked-account-feedback");
+
+    blockButton?.addEventListener("click", async () => {
+        const username = (blockInput?.value || "").trim();
+        if (!username) {
+            if (blockFeedback) blockFeedback.textContent = "Enter a username to block.";
+            return;
+        }
+        if (username === loggedInUser) {
+            if (blockFeedback) blockFeedback.textContent = "You cannot block your own account.";
+            return;
+        }
+
+        blockButton.disabled = true;
+        try {
+            const response = await fetch("/api/blocked", {
+                method: "POST",
+                credentials: "include",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username })
+            });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(data.error || "Could not block that account.");
+
+            if (blockInput) blockInput.value = "";
+            if (blockFeedback) blockFeedback.textContent = "Account blocked.";
+            window.helixRenderBlockedAccounts?.();
+        } catch (error) {
+            if (blockFeedback) blockFeedback.textContent = error.message || "Could not block that account.";
+        } finally {
+            blockButton.disabled = false;
+        }
+    });
+
+    window.addEventListener("helix-cloud-settings-loaded", () => {
+        window.helixRenderBlockedAccounts?.();
+    });
+})();
+
 // INITIALIZATION
 // =========================================================
 
