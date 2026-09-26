@@ -140,6 +140,13 @@ function getCurrentDisplayName() {
     );
 }
 
+function getCurrentTime() {
+    return new Date().toLocaleTimeString([], {
+        hour: "numeric",
+        minute: "2-digit"
+    });
+}
+
 function setCurrentProfileUser(user) {
     if (!user) return;
 
