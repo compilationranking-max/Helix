@@ -654,6 +654,238 @@ app.post("/api/auth/logout", async (req, res) => {
     }
 });
 
+app.get("/api/settings", async (req, res) => {
+    const user = await requireCurrentUser(req, res);
+    if (!user) return;
+    try {
+        const settings = await getUserSettings(user.username);
+        return res.json({ ok: true, settings });
+    } catch (error) {
+        console.error("Settings load failed:", error);
+        return res.status(500).json({ error: "Could not load your settings." });
+    }
+});
+
+app.patch("/api/settings/:group", async (req, res) => {
+    const user = await requireCurrentUser(req, res);
+    if (!user) return;
+    try {
+        const settings = await saveUserSettingGroup(user.username, req.params.group, req.body?.values);
+        await logActivity(user.username, "settings.updated", { group: req.params.group });
+        return res.json({ ok: true, settings });
+    } catch (error) {
+        console.error("Settings update failed:", error);
+        return res.status(Number(error?.status || 500)).json({ error: error?.message || "Could not save your settings." });
+    }
+});
+
+app.post("/api/profile/contact", async (req, res) => {
+    const user = await requireCurrentUser(req, res);
+    if (!user) return;
+
+    const type = req.body?.type;
+    const value = typeof req.body?.value === "string" ? req.body.value.trim() : "";
+
+    if (!["email", "phone"].includes(type)) return res.status(400).json({ error: "Invalid contact type." });
+    if (type === "email" && !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(value)) return res.status(400).json({ error: "Enter a valid email address." });
+    if (type === "phone" && value.replace(/\\D/g, "").length < 7) return res.status(400).json({ error: "Enter a valid phone number." });
+
+    try {
+        if (dbPool) {
+            await requireDatabase();
+            const result = await dbPool.query(
+                "UPDATE helix_users SET " + (type === "email" ? "email" : "phone") + " = $1 WHERE username = $2 RETURNING username, display_name, created_at, profile_photo, email, phone",
+                [value, user.username]
+            );
+            await logActivity(user.username, "account.contact_updated", { type });
+            return res.json({ ok: true, user: result.rows[0] });
+        }
+
+        const data = loadNetworkData();
+        const localUser = data.users[user.username];
+        if (!localUser) return res.status(404).json({ error: "Helix account was not found." });
+        localUser[type] = value;
+        saveNetworkData(data);
+        await logActivity(user.username, "account.contact_updated", { type });
+        return res.json({ ok: true, user: publicUser(data, user.username) });
+    } catch (error) {
+        console.error("Contact update failed:", error);
+        return res.status(500).json({ error: "Could not update your contact information." });
+    }
+});
+
+app.post("/api/profile/password", async (req, res) => {
+    const user = await requireCurrentUser(req, res);
+    if (!user) return;
+
+    const currentPassword = typeof req.body?.currentPassword === "string" ? req.body.currentPassword : "";
+    const newPassword = typeof req.body?.newPassword === "string" ? req.body.newPassword : "";
+    if (newPassword.length < 8) return res.status(400).json({ error: "New password must be at least 8 characters." });
+
+    try {
+        if (!dbPool) return res.status(503).json({ error: "Password changes require the cloud database." });
+        await requireDatabase();
+        const result = await dbPool.query("SELECT password_hash, password_salt FROM helix_users WHERE username = $1", [user.username]);
+        const row = result.rows[0];
+        if (!row || !(await verifyPassword(currentPassword, row.password_salt, row.password_hash))) return res.status(401).json({ error: "Current password is incorrect." });
+
+        const credentials = await hashPassword(newPassword);
+        await dbPool.query("UPDATE helix_users SET password_hash = $1, password_salt = $2 WHERE username = $3", [credentials.hash, credentials.salt, user.username]);
+        await dbPool.query("DELETE FROM helix_sessions WHERE username = $1", [user.username]);
+        await logActivity(user.username, "account.password_changed");
+        clearSessionCookie(res);
+        return res.json({ ok: true, requiresLogin: true });
+    } catch (error) {
+        console.error("Password change failed:", error);
+        return res.status(500).json({ error: "Could not change your password." });
+    }
+});
+
+app.post("/api/auth/logout-all", async (req, res) => {
+    const user = await requireCurrentUser(req, res);
+    if (!user) return;
+    try {
+        if (dbPool) {
+            await requireDatabase();
+            await dbPool.query("DELETE FROM helix_sessions WHERE username = $1", [user.username]);
+        }
+        await logActivity(user.username, "account.logged_out_all_sessions");
+        clearSessionCookie(res);
+        return res.json({ ok: true });
+    } catch (error) {
+        console.error("Logout all failed:", error);
+        return res.status(500).json({ error: "Could not end all sessions." });
+    }
+});
+
+app.get("/api/blocked", async (req, res) => {
+    const user = await requireCurrentUser(req, res);
+    if (!user) return;
+    try {
+        if (!dbPool) return res.json({ ok: true, blocked: [] });
+        await requireDatabase();
+        const result = await dbPool.query(
+            `SELECT b.blocked_username AS "username", COALESCE(u.display_name, b.blocked_username) AS "displayName", b.created_at AS "createdAt"
+             FROM helix_blocked_accounts b
+             LEFT JOIN helix_users u ON u.username = b.blocked_username
+             WHERE b.blocker_username = $1 ORDER BY b.created_at DESC`,
+            [user.username]
+        );
+        return res.json({ ok: true, blocked: result.rows });
+    } catch (error) {
+        console.error("Blocked list failed:", error);
+        return res.status(500).json({ error: "Could not load blocked accounts." });
+    }
+});
+
+app.post("/api/blocked", async (req, res) => {
+    const user = await requireCurrentUser(req, res);
+    if (!user) return;
+    const blockedUsername = normalizeUsername(req.body?.username);
+    if (!validUsername(blockedUsername) || blockedUsername === user.username) return res.status(400).json({ error: "Invalid account." });
+    try {
+        if (!dbPool) return res.status(503).json({ error: "Blocking requires the cloud database." });
+        await requireDatabase();
+        const target = await dbPool.query("SELECT username FROM helix_users WHERE username = $1", [blockedUsername]);
+        if (!target.rowCount) return res.status(404).json({ error: "That account does not exist." });
+        await dbPool.query("INSERT INTO helix_blocked_accounts (blocker_username, blocked_username) VALUES ($1, $2) ON CONFLICT DO NOTHING", [user.username, blockedUsername]);
+        await dbPool.query("DELETE FROM helix_friendships WHERE user_a = LEAST($1,$2) AND user_b = GREATEST($1,$2)", [user.username, blockedUsername]);
+        await dbPool.query("DELETE FROM helix_friend_requests WHERE (from_username = $1 AND to_username = $2) OR (from_username = $2 AND to_username = $1)", [user.username, blockedUsername]);
+        await logActivity(user.username, "account.blocked", { username: blockedUsername });
+        return res.json({ ok: true });
+    } catch (error) {
+        console.error("Block failed:", error);
+        return res.status(500).json({ error: "Could not block that account." });
+    }
+});
+
+app.delete("/api/blocked/:username", async (req, res) => {
+    const user = await requireCurrentUser(req, res);
+    if (!user) return;
+    const blockedUsername = normalizeUsername(req.params.username);
+    try {
+        if (!dbPool) return res.status(503).json({ error: "Unblocking requires the cloud database." });
+        await requireDatabase();
+        await dbPool.query("DELETE FROM helix_blocked_accounts WHERE blocker_username = $1 AND blocked_username = $2", [user.username, blockedUsername]);
+        await logActivity(user.username, "account.unblocked", { username: blockedUsername });
+        return res.json({ ok: true });
+    } catch (error) {
+        console.error("Unblock failed:", error);
+        return res.status(500).json({ error: "Could not unblock that account." });
+    }
+});
+
+app.get("/api/activity", async (req, res) => {
+    const user = await requireCurrentUser(req, res);
+    if (!user) return;
+    try {
+        if (!dbPool) return res.json({ ok: true, activity: [] });
+        await requireDatabase();
+        const result = await dbPool.query(
+            `SELECT id, event_type AS "eventType", details, created_at AS "createdAt"
+             FROM helix_activity_log WHERE username = $1 ORDER BY created_at DESC LIMIT 100`,
+            [user.username]
+        );
+        return res.json({ ok: true, activity: result.rows });
+    } catch (error) {
+        console.error("Activity load failed:", error);
+        return res.status(500).json({ error: "Could not load account activity." });
+    }
+});
+
+app.post("/api/support", async (req, res) => {
+    const user = await requireCurrentUser(req, res);
+    if (!user) return;
+    const type = typeof req.body?.type === "string" ? req.body.type.trim().slice(0, 40) : "support";
+    const details = req.body?.details && typeof req.body.details === "object" ? req.body.details : {};
+    try {
+        if (!dbPool) return res.status(503).json({ error: "Support submissions require the cloud database." });
+        await requireDatabase();
+        await dbPool.query("INSERT INTO helix_support_requests (id, username, request_type, details) VALUES ($1, $2, $3, $4::jsonb)", [crypto.randomUUID(), user.username, type, JSON.stringify(details)]);
+        await logActivity(user.username, "support.requested", { type });
+        return res.json({ ok: true });
+    } catch (error) {
+        console.error("Support submission failed:", error);
+        return res.status(500).json({ error: "Could not send your support request." });
+    }
+});
+
+app.get("/api/account/export", async (req, res) => {
+    const user = await requireCurrentUser(req, res);
+    if (!user) return;
+    try {
+        if (!dbPool) return res.status(503).json({ error: "Account export requires the cloud database." });
+        await requireDatabase();
+        const profile = await dbPool.query("SELECT username, display_name AS \"displayName\", created_at AS \"createdAt\", email, phone, profile_photo IS NOT NULL AS \"hasProfilePhoto\" FROM helix_users WHERE username = $1", [user.username]);
+        const friends = await dbPool.query("SELECT CASE WHEN user_a = $1 THEN user_b ELSE user_a END AS username, created_at AS \"createdAt\" FROM helix_friendships WHERE user_a = $1 OR user_b = $1", [user.username]);
+        const blocked = await dbPool.query("SELECT blocked_username AS username, created_at AS \"createdAt\" FROM helix_blocked_accounts WHERE blocker_username = $1", [user.username]);
+        const activity = await dbPool.query("SELECT event_type AS \"eventType\", details, created_at AS \"createdAt\" FROM helix_activity_log WHERE username = $1 ORDER BY created_at DESC LIMIT 500", [user.username]);
+        const settings = await getUserSettings(user.username);
+        return res.json({ ok: true, exportedAt: new Date().toISOString(), account: profile.rows[0] || null, friends: friends.rows, blocked: blocked.rows, activity: activity.rows, settings });
+    } catch (error) {
+        console.error("Account export failed:", error);
+        return res.status(500).json({ error: "Could not export your account data." });
+    }
+});
+
+app.delete("/api/account", async (req, res) => {
+    const user = await requireCurrentUser(req, res);
+    if (!user) return;
+    const password = typeof req.body?.password === "string" ? req.body.password : "";
+    try {
+        if (!dbPool) return res.status(503).json({ error: "Account deletion requires the cloud database." });
+        await requireDatabase();
+        const result = await dbPool.query("SELECT password_hash, password_salt FROM helix_users WHERE username = $1", [user.username]);
+        const row = result.rows[0];
+        if (!row || !(await verifyPassword(password, row.password_salt, row.password_hash))) return res.status(401).json({ error: "Password is incorrect." });
+        await dbPool.query("DELETE FROM helix_users WHERE username = $1", [user.username]);
+        clearSessionCookie(res);
+        return res.json({ ok: true });
+    } catch (error) {
+        console.error("Account deletion failed:", error);
+        return res.status(500).json({ error: "Could not delete your account." });
+    }
+});
 app.post("/api/profile/display-name", async (req, res) => {
     const user = await requireCurrentUser(req, res);
     if (!user) return;
@@ -672,7 +904,7 @@ app.post("/api/profile/display-name", async (req, res) => {
             );
             return res.json({
                 ok: true,
-                user: { username: result.rows[0].username, displayName: result.rows[0].display_name, createdAt: result.rows[0].created_at }
+                user: { username: result.rows[0].username, displayName: result.rows[0].display_name, createdAt: result.rows[0].created_at, email: result.rows[0].email || null, phone: result.rows[0].phone || null, profilePhoto: publicProfilePhotoUrl(result.rows[0].username) || null }
             });
         }
 
