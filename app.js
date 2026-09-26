@@ -5082,7 +5082,11 @@ bootstrapHelixSession().then((authenticated) => {
                 x.sender === y.sender &&
                 x.recipient === y.recipient &&
                 x.text === y.text &&
-                x.createdAt === y.createdAt;
+                x.createdAt === y.createdAt &&
+                (x.mediaUrl || null) === (y.mediaUrl || null) &&
+                (x.mediaName || null) === (y.mediaName || null) &&
+                (x.mediaSize || null) === (y.mediaSize || null) &&
+                (x.mediaKind || null) === (y.mediaKind || null);
         });
     }
 
