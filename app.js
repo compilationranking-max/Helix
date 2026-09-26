@@ -5060,6 +5060,7 @@ bootstrapHelixSession().then((authenticated) => {
     let refreshTimer = null;
     let messageLoadSerial = 0;
     let isSending = false;
+    let pendingMedia = null;
 
     const safe = (value) => escapeHTML(value);
 
@@ -5067,7 +5068,8 @@ bootstrapHelixSession().then((authenticated) => {
         return a.length === b.length && a.every((x, i) =>
             x.username === b[i]?.username &&
             x.displayName === b[i]?.displayName &&
-            (x.profilePhoto || null) === (b[i]?.profilePhoto || null)
+            (x.profilePhoto || null) === (b[i]?.profilePhoto || null) &&
+            Number(x.unreadCount || 0) === Number(b[i]?.unreadCount || 0)
         );
     }
 
@@ -5095,7 +5097,8 @@ bootstrapHelixSession().then((authenticated) => {
         const normalized = next.map((friend) => ({
             username: String(friend.username),
             displayName: String(friend.displayName || friend.username),
-            profilePhoto: friend.profilePhoto || null
+            profilePhoto: friend.profilePhoto || null,
+            unreadCount: Number(friend.unreadCount || 0)
         }));
 
         if (count) count.textContent = String(normalized.length);
@@ -5141,11 +5144,16 @@ bootstrapHelixSession().then((authenticated) => {
             copy.className = "conversation-copy";
             copy.innerHTML = `<strong>${safe(friend.displayName)}</strong><small>-${safe(friend.username)}</small><span class="conversation-preview">${friend.username === activeUsername ? "Open conversation" : "Start a conversation"}</span>`;
 
+            const unread = document.createElement("span");
+            unread.className = "conversation-unread";
+            unread.textContent = `(${Math.max(0, friend.unreadCount)})`;
+            unread.hidden = friend.unreadCount <= 0;
+
             const arrow = document.createElement("span");
             arrow.className = "conversation-arrow";
             arrow.textContent = "↗";
 
-            button.append(avatar, copy, arrow);
+            button.append(avatar, copy, unread, arrow);
             button.addEventListener("click", () => openFriend(friend));
             list.appendChild(button);
         });
@@ -5185,10 +5193,45 @@ bootstrapHelixSession().then((authenticated) => {
         searchResultCount.title = `${matchCount} of ${totalCount} messages match`;
     }
 
+    function messageDateKey(value) {
+        const date = new Date(value);
+        return Number.isNaN(date.getTime())
+            ? ""
+            : `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+    }
+
+    function formatMessageDate(value) {
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return "";
+
+        const today = new Date();
+        const yesterday = new Date(today);
+        yesterday.setDate(today.getDate() - 1);
+
+        if (messageDateKey(date) === messageDateKey(today)) return "Today";
+        if (messageDateKey(date) === messageDateKey(yesterday)) return "Yesterday";
+
+        return date.toLocaleDateString([], {
+            month: "long",
+            day: "numeric",
+            year: "numeric"
+        });
+    }
+
+    function formatFileSize(bytes) {
+        const size = Number(bytes || 0);
+        if (!size) return "0 B";
+        if (size < 1024 * 1024) return `${Math.max(1, Math.round(size / 1024))} KB`;
+        return `${(size / (1024 * 1024)).toFixed(size >= 10 * 1024 * 1024 ? 0 : 1)} MB`;
+    }
+
     function renderMessages({ scrollToBottom = false } = {}) {
         const query = (messageSearchInput?.value || "").trim().toLowerCase();
         const visible = query
-            ? currentMessages.filter((item) => String(item.text || "").toLowerCase().includes(query))
+            ? currentMessages.filter((item) =>
+                String(item.text || "").toLowerCase().includes(query)
+                || String(item.mediaName || "").toLowerCase().includes(query)
+            )
             : currentMessages;
 
         updateSearchResultCount(visible.length, currentMessages.length, query);
@@ -5206,17 +5249,68 @@ bootstrapHelixSession().then((authenticated) => {
 
         const fragment = document.createDocumentFragment();
         const rows = [];
+        let previousDateKey = null;
 
         visible.forEach((item) => {
+            const currentDateKey = messageDateKey(item.createdAt);
+
+            if (currentDateKey && currentDateKey !== previousDateKey) {
+                const separator = document.createElement("div");
+                separator.className = "message-date-separator";
+
+                const separatorLine = document.createElement("span");
+                separatorLine.className = "message-date-line";
+
+                const separatorLabel = document.createElement("span");
+                separatorLabel.className = "message-date-label";
+                separatorLabel.textContent = formatMessageDate(item.createdAt);
+
+                const separatorLineRight = document.createElement("span");
+                separatorLineRight.className = "message-date-line";
+
+                separator.append(separatorLine, separatorLabel, separatorLineRight);
+                fragment.appendChild(separator);
+                previousDateKey = currentDateKey;
+            }
+
             const row = document.createElement("div");
             row.className = "message " + (item.sender === loggedInUser ? "sent" : "received");
 
             const bubble = document.createElement("div");
             bubble.className = "message-bubble";
 
-            const p = document.createElement("p");
-            p.textContent = item.text;
-            bubble.appendChild(p);
+            if (item.mediaUrl) {
+                if (item.mediaKind === "video") {
+                    const video = document.createElement("video");
+                    video.className = "message-media message-video";
+                    video.src = item.mediaUrl;
+                    video.controls = true;
+                    video.preload = "metadata";
+                    video.playsInline = true;
+                    video.setAttribute("aria-label", item.mediaName || "Shared video");
+                    bubble.appendChild(video);
+                } else {
+                    const image = document.createElement("img");
+                    image.className = "message-media message-image";
+                    image.src = item.mediaUrl;
+                    image.alt = item.mediaName || "Shared photo";
+                    image.loading = "lazy";
+                    bubble.appendChild(image);
+                }
+
+                if (item.mediaName) {
+                    const mediaName = document.createElement("div");
+                    mediaName.className = "message-media-name";
+                    mediaName.textContent = item.mediaName;
+                    bubble.appendChild(mediaName);
+                }
+            }
+
+            if (item.text) {
+                const p = document.createElement("p");
+                p.textContent = item.text;
+                bubble.appendChild(p);
+            }
 
             const meta = document.createElement("div");
             meta.className = "message-meta";
@@ -5341,6 +5435,12 @@ bootstrapHelixSession().then((authenticated) => {
         if (messageSearchInput) messageSearchInput.value = "";
         if (messageSearch) messageSearch.hidden = true;
         searchButton?.setAttribute("aria-expanded", "false");
+        clearPendingMedia();
+
+        const selectedFriend = friends.find((item) => item.username === activeUsername);
+        if (selectedFriend) {
+            selectedFriend.unreadCount = 0;
+        }
 
         input.disabled = false;
         currentMessages = [];
@@ -5350,11 +5450,11 @@ bootstrapHelixSession().then((authenticated) => {
         input.focus();
     }
 
-    async function sendMessage(text) {
+    async function sendMessage(text, media = null) {
         const recipient = activeUsername;
         const trimmed = String(text || "").trim();
 
-        if (!recipient || !trimmed || isSending) return false;
+        if (!recipient || (!trimmed && !media) || isSending) return false;
 
         isSending = true;
         if (sendButton) sendButton.disabled = true;
@@ -5364,7 +5464,17 @@ bootstrapHelixSession().then((authenticated) => {
                 method: "POST",
                 credentials: "include",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ to: recipient, text: trimmed })
+                body: JSON.stringify({
+                    to: recipient,
+                    text: trimmed,
+                    media: media
+                        ? {
+                            dataUrl: media.dataUrl,
+                            name: media.name,
+                            size: media.size
+                        }
+                        : null
+                })
             });
 
             const data = await response.json().catch(() => ({}));
@@ -5384,6 +5494,56 @@ bootstrapHelixSession().then((authenticated) => {
         }
     }
 
+    function updateMediaPreview() {
+        const preview = document.getElementById("dm-media-preview");
+        const thumb = document.getElementById("dm-media-preview-thumb");
+        const name = document.getElementById("dm-media-preview-name");
+        const size = document.getElementById("dm-media-preview-size");
+
+        if (!preview || !thumb || !name || !size) return;
+
+        thumb.replaceChildren();
+
+        if (!pendingMedia) {
+            preview.hidden = true;
+            return;
+        }
+
+        preview.hidden = false;
+        name.textContent = pendingMedia.name || "Attachment";
+        size.textContent = formatFileSize(pendingMedia.size);
+
+        if (pendingMedia.kind === "video") {
+            const video = document.createElement("video");
+            video.src = pendingMedia.dataUrl;
+            video.muted = true;
+            video.playsInline = true;
+            video.preload = "metadata";
+            thumb.appendChild(video);
+        } else {
+            const image = document.createElement("img");
+            image.src = pendingMedia.dataUrl;
+            image.alt = "Selected photo";
+            thumb.appendChild(image);
+        }
+    }
+
+    function clearPendingMedia() {
+        pendingMedia = null;
+        const mediaInput = document.getElementById("dm-media-input");
+        if (mediaInput) mediaInput.value = "";
+        updateMediaPreview();
+    }
+
+    function readFileAsDataUrl(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.addEventListener("load", () => resolve(String(reader.result || "")));
+            reader.addEventListener("error", () => reject(new Error("Could not read that file.")));
+            reader.readAsDataURL(file);
+        });
+    }
+
     form.addEventListener("submit", async (event) => {
         event.preventDefault();
         event.stopPropagation();
@@ -5391,22 +5551,82 @@ bootstrapHelixSession().then((authenticated) => {
         if (isSending) return;
 
         const value = input.value.trim();
-        if (!value || !activeUsername) return;
+        const media = pendingMedia;
 
-        // Clear only the submitted message. This prevents duplicate submits and
-        // also lets the user type the next message while the request completes.
+        if (!value && !media) return;
+
         input.value = "";
 
         try {
-            await sendMessage(value);
+            await sendMessage(value, media);
+            clearPendingMedia();
             input.focus();
         } catch (error) {
-            // Restore the message so a failed send can be retried.
             if (!input.value.trim()) input.value = value;
+
+            if (media && !pendingMedia) {
+                pendingMedia = media;
+                updateMediaPreview();
+            }
+
             if (headerStatus) headerStatus.textContent = error.message || "Message failed.";
             input.focus();
         }
     });
+
+    const mediaInput = document.getElementById("dm-media-input");
+    const mediaButton = document.getElementById("dm-attach-button");
+    const mediaRemoveButton = document.getElementById("dm-media-preview-remove");
+
+    mediaButton?.addEventListener("click", () => {
+        if (!activeUsername || isSending) return;
+        mediaInput?.click();
+    });
+
+    mediaInput?.addEventListener("change", async () => {
+        const file = mediaInput.files?.[0];
+        if (!file) return;
+
+        const maxBytes = 10 * 1024 * 1024;
+
+        if (!(file.type.startsWith("image/") || file.type.startsWith("video/"))) {
+            headerStatus && (headerStatus.textContent = "Only photos and videos can be attached.");
+            clearPendingMedia();
+            return;
+        }
+
+        if (file.size > maxBytes) {
+            headerStatus && (headerStatus.textContent = "That file is over the 10 MB limit.");
+            clearPendingMedia();
+            return;
+        }
+
+        try {
+            headerStatus && (headerStatus.textContent = "Preparing attachment...");
+            const dataUrl = await readFileAsDataUrl(file);
+
+            pendingMedia = {
+                dataUrl,
+                name: file.name,
+                size: file.size,
+                kind: file.type.startsWith("video/") ? "video" : "image"
+            };
+
+            updateMediaPreview();
+
+            if (headerStatus) headerStatus.textContent = "Attachment ready.";
+            input.focus();
+        } catch (error) {
+            clearPendingMedia();
+            if (headerStatus) headerStatus.textContent = error.message || "Could not prepare attachment.";
+        }
+    });
+
+    mediaRemoveButton?.addEventListener("click", () => {
+        clearPendingMedia();
+        input.focus();
+    });
+
 
     window.addEventListener("helix-profile-photo-updated", async (event) => {
         const updatedUsername = event.detail?.username;
