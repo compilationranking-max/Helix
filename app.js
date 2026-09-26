@@ -38,10 +38,28 @@ async function bootstrapHelixSession() {
 
         if (Object.prototype.hasOwnProperty.call(data.user, "profilePhoto")) {
             const photoKey = `helixProfilePhoto:${loggedInUser}`;
-            if (data.user.profilePhoto) {
-                localStorage.setItem(photoKey, data.user.profilePhoto);
-            } else {
-                localStorage.removeItem(photoKey);
+            const photo = data.user.profilePhoto || "";
+
+            // Old versions stored the complete base64 image in helixUsers,
+            // which could consume most of the browser's localStorage quota.
+            const localUsers = readLocalJSON("helixUsers", {});
+            if (localUsers?.[loggedInUser]?.profilePhoto?.startsWith("data:image/")) {
+                delete localUsers[loggedInUser].profilePhoto;
+                try {
+                    localStorage.setItem("helixUsers", JSON.stringify(localUsers));
+                } catch {
+                    // AI chat should still work even if storage is already full.
+                }
+            }
+
+            try {
+                if (photo) {
+                    localStorage.setItem(photoKey, photo);
+                } else {
+                    localStorage.removeItem(photoKey);
+                }
+            } catch {
+                // The public URL is fetched again on the next authenticated load.
             }
         }
 
@@ -143,7 +161,11 @@ function setCurrentProfileUser(user) {
                 ? { profilePhoto: user.profilePhoto || null }
                 : {})
         };
-        localStorage.setItem("helixUsers", JSON.stringify(users));
+        try {
+            localStorage.setItem("helixUsers", JSON.stringify(users));
+        } catch {
+            // Storage quota must never block messaging.
+        }
     }
 }
 
@@ -292,7 +314,22 @@ function saveAIChatSessions() {
         .sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0))
         .slice(0, AI_CHAT_LIST_LIMIT);
 
-    localStorage.setItem(aiChatsKey, JSON.stringify(aiChatSessions));
+    try {
+        localStorage.setItem(aiChatsKey, JSON.stringify(aiChatSessions));
+    } catch (error) {
+        // A full browser quota should not prevent sending messages to Helix AI.
+        // Keep a smaller recent history as a fallback.
+        try {
+            const reduced = aiChatSessions.slice(0, 12).map((chat) => ({
+                ...chat,
+                messages: chat.messages.slice(-AI_HISTORY_LIMIT)
+            }));
+            aiChatSessions = reduced;
+            localStorage.setItem(aiChatsKey, JSON.stringify(reduced));
+        } catch {
+            // Persistence becomes best-effort; the live conversation remains usable.
+        }
+    }
 }
 
 function getAIChatTitle(messages) {
@@ -331,7 +368,13 @@ function saveCurrentAIChatSession() {
 
 function saveAIConversation() {
     aiConversation = aiConversation.slice(-AI_HISTORY_LIMIT);
-    localStorage.setItem(aiStorageKey, JSON.stringify(aiConversation));
+
+    try {
+        localStorage.setItem(aiStorageKey, JSON.stringify(aiConversation));
+    } catch {
+        // Do not fail an AI request because browser storage is full.
+    }
+
     saveCurrentAIChatSession();
 }
 
@@ -833,7 +876,8 @@ async function sendAIMessage() {
 
         addAIMessage(data.reply, "assistant");
         checkHelixAIStatus();
-    } catch {
+    } catch (error) {
+        console.error("Helix AI send failed:", error);
         checkHelixAIStatus();
 
         // Keep transport/provider failures out of the conversation itself.
@@ -842,6 +886,8 @@ async function sendAIMessage() {
             aiInput.value = message;
             aiInput.focus();
         }
+
+        showAIChatToast(error?.message || "Helix AI could not send your message.");
     } finally {
         setAIProcessing(false);
         aiInput?.focus();
