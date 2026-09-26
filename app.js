@@ -102,18 +102,8 @@ function playHelixIntro() {
     const intro = document.getElementById("helix-intro");
     if (!intro) return;
 
-    // The login page sets this flag immediately before opening app.html.
-    // This prevents the animation from appearing on ordinary app refreshes.
-    const shouldShow = sessionStorage.getItem("helixShowIntro") === "1";
-
-    if (!shouldShow) {
-        intro.remove();
-        return;
-    }
-
-    sessionStorage.removeItem("helixShowIntro");
-
-    // Let the browser paint the initial frame before starting the sequence.
+    // The intro is part of the app shell, so every full page load/reload
+    // gets the same dragon + HELIX sequence as the post-login launch.
     requestAnimationFrame(() => {
         requestAnimationFrame(() => {
             intro.classList.add("is-playing");
