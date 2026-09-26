@@ -1010,6 +1010,40 @@ async function generateGeminiResponse(message, history = []) {
     return reply;
 }
 
+async function checkGeminiReachability() {
+    if (!GEMINI_API_KEY) {
+        return { reachable: false, error: "GEMINI_API_KEY is not configured on the server." };
+    }
+
+    const url = "https://generativelanguage.googleapis.com/v1beta/models/"
+        + encodeURIComponent(MODEL);
+
+    try {
+        const response = await fetch(url, {
+            method: "GET",
+            headers: {
+                "x-goog-api-key": GEMINI_API_KEY
+            }
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+            return {
+                reachable: false,
+                error: data?.error?.message || `Gemini model check returned HTTP ${response.status}.`
+            };
+        }
+
+        return { reachable: true, error: null };
+    } catch (error) {
+        return {
+            reachable: false,
+            error: error?.message || "Could not reach the Gemini API."
+        };
+    }
+}
+
 app.get("/api/health", async (req, res) => {
     let databaseConnected = false;
 
@@ -1023,9 +1057,13 @@ app.get("/api/health", async (req, res) => {
         }
     }
 
+    const ai = await checkGeminiReachability();
+
     res.json({
         ok: true,
         aiConfigured: Boolean(GEMINI_API_KEY),
+        reachable: ai.reachable,
+        aiError: ai.error,
         provider: "gemini",
         model: MODEL,
         transport: "direct-rest",
