@@ -10073,3 +10073,83 @@ body.helix-reduced-motion *::after {
     background: #697b8c !important;
     box-shadow: none !important;
 }
+
+
+
+/* =========================================================
+   HELIX — DM UNREAD + FRIEND PROFILE CYAN GLOW
+   ========================================================= */
+
+.dm-nav-badge {
+    width: 26px;
+    height: 26px;
+    flex: 0 0 26px;
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(0, 229, 255, 0.9);
+    border-radius: 50%;
+    color: #00e5ff;
+    background: rgba(0, 229, 255, 0.10);
+    font: 800 8px/1 "SFMono-Regular", Consolas, monospace;
+    letter-spacing: -0.02em;
+    text-shadow: 0 0 8px rgba(0, 229, 255, 0.78);
+    box-shadow:
+        0 0 0 1px rgba(0, 229, 255, 0.16),
+        0 0 10px rgba(0, 229, 255, 0.44),
+        0 0 20px rgba(0, 229, 255, 0.18);
+    animation: helixDmUnreadPulse 1.8s ease-in-out infinite;
+}
+
+.nav-item:hover .dm-nav-badge,
+.nav-item.active .dm-nav-badge {
+    border-color: #63efff;
+    box-shadow:
+        0 0 0 1px rgba(0, 229, 255, 0.24),
+        0 0 12px rgba(0, 229, 255, 0.58),
+        0 0 24px rgba(0, 229, 255, 0.24);
+}
+
+@keyframes helixDmUnreadPulse {
+    0%, 100% {
+        box-shadow:
+            0 0 0 1px rgba(0, 229, 255, 0.16),
+            0 0 10px rgba(0, 229, 255, 0.44),
+            0 0 20px rgba(0, 229, 255, 0.18);
+    }
+    50% {
+        box-shadow:
+            0 0 0 1px rgba(0, 229, 255, 0.28),
+            0 0 13px rgba(0, 229, 255, 0.68),
+            0 0 28px rgba(0, 229, 255, 0.28);
+    }
+}
+
+#friends-view .friend-row-avatar,
+#dm-view .conversation-avatar,
+#dm-view .dm-chat-header-profile .avatar-badge,
+#dm-view #info-avatar,
+.friend-avatar {
+    border-color: rgba(0, 229, 255, 0.78) !important;
+    box-shadow:
+        0 0 0 1px rgba(0, 229, 255, 0.20),
+        0 0 9px rgba(0, 229, 255, 0.48),
+        0 0 20px rgba(0, 229, 255, 0.20) !important;
+    animation: helixFriendAvatarGlow 2.4s ease-in-out infinite;
+}
+
+@keyframes helixFriendAvatarGlow {
+    0%, 100% {
+        box-shadow:
+            0 0 0 1px rgba(0, 229, 255, 0.18),
+            0 0 9px rgba(0, 229, 255, 0.40),
+            0 0 18px rgba(0, 229, 255, 0.16);
+    }
+    50% {
+        box-shadow:
+            0 0 0 1px rgba(0, 229, 255, 0.30),
+            0 0 12px rgba(0, 229, 255, 0.64),
+            0 0 26px rgba(0, 229, 255, 0.28);
+    }
+}
