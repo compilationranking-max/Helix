@@ -279,7 +279,7 @@ async function currentUser(req) {
     if (!token) return null;
 
     const result = await dbPool.query(`
-        SELECT u.username, u.display_name, u.created_at, u.profile_photo
+        SELECT u.username, u.display_name, u.created_at, u.profile_photo, u.email, u.phone
         FROM helix_sessions s
         JOIN helix_users u ON u.username = s.username
         WHERE s.token_hash = $1 AND s.expires_at > NOW()
@@ -291,7 +291,9 @@ async function currentUser(req) {
         username: row.username,
         displayName: row.display_name,
         createdAt: row.created_at,
-        profilePhoto: publicProfilePhotoUrl(row.username) || null
+        profilePhoto: publicProfilePhotoUrl(row.username) || null,
+        email: row.email || null,
+        phone: row.phone || null
     };
 }
 
@@ -442,7 +444,9 @@ app.post("/api/auth/register", async (req, res) => {
                     username: result.rows[0].username,
                     displayName: result.rows[0].display_name,
                     createdAt: result.rows[0].created_at,
-                    profilePhoto: publicProfilePhotoUrl(result.rows[0].username) || null
+                    profilePhoto: publicProfilePhotoUrl(result.rows[0].username) || null,
+                    email: result.rows[0].email || null,
+                    phone: result.rows[0].phone || null
                 }
             });
         }
@@ -478,7 +482,7 @@ app.post("/api/auth/login", async (req, res) => {
         if (dbPool) {
             await requireDatabase();
             const result = await dbPool.query(
-                "SELECT username, display_name, password_hash, password_salt, created_at, profile_photo FROM helix_users WHERE username = $1",
+                "SELECT username, display_name, password_hash, password_salt, created_at, profile_photo, email, phone FROM helix_users WHERE username = $1",
                 [username]
             );
             const user = result.rows[0];
@@ -499,7 +503,9 @@ app.post("/api/auth/login", async (req, res) => {
                     username: user.username,
                     displayName: user.display_name,
                     createdAt: user.created_at,
-                    profilePhoto: publicProfilePhotoUrl(user.username) || null
+                    profilePhoto: publicProfilePhotoUrl(user.username) || null,
+                    email: user.email || null,
+                    phone: user.phone || null
                 }
             });
         }
