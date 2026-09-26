@@ -3601,6 +3601,9 @@ async function openAccountActivityModal() {
         const index = Number(button.dataset.unblockIndex);
         if (!Number.isInteger(index) || index < 0 || index >= blocked.length) return;
 
+        const entry = blocked[index];
+        const identity = getBlockedIdentity(entry);
+
         blocked.splice(index, 1);
         saveBlockedUsers(blocked);
         renderBlockedAccounts();
@@ -3608,12 +3611,75 @@ async function openAccountActivityModal() {
         const status = document.getElementById("profile-action-message");
         if (status) status.textContent = "Account unblocked.";
 
+        if (identity.username && loggedInUser) {
+            fetch("/api/blocked/" + encodeURIComponent(identity.username), {
+                method: "DELETE",
+                credentials: "include"
+            }).catch(() => {});
+        }
+
         if (typeof window.helixRenderPrivacy === "function") {
             window.helixRenderPrivacy();
         }
     });
 
-    renderBlockedAccounts();
+    async function syncBlockedAccountsFromCloud() {
+        try {
+            const response = await fetch("/api/blocked", { credentials: "include", cache: "no-store" });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok || !Array.isArray(data.blocked)) return;
+
+            try {
+                localStorage.setItem(storageKey, JSON.stringify(data.blocked));
+            } catch {}
+
+            renderBlockedAccounts();
+
+            const privacyCount = document.getElementById("privacy-blocked-count");
+            const privacyList = document.getElementById("privacy-blocked-users");
+            if (privacyCount) privacyCount.textContent = String(data.blocked.length);
+            if (privacyList) {
+                privacyList.innerHTML = data.blocked.length
+                    ? "<span>⊘</span><div><strong>" + data.blocked.length + " blocked account" + (data.blocked.length === 1 ? "" : "s") + "</strong><small>Manage blocked accounts from Safety → Blocked accounts.</small></div>"
+                    : "<span>⊘</span><div><strong>No blocked users</strong><small>Accounts you block will appear here, and you can manage them from Blocked Accounts.</small></div>";
+            }
+        } catch {}
+    }
+
+    document.getElementById("block-username-button")?.addEventListener("click", async () => {
+        const field = document.getElementById("blocked-username-input");
+        const username = (field?.value || "").trim();
+        const status = document.getElementById("blocked-account-feedback");
+
+        if (!username) {
+            if (status) status.textContent = "Enter a username to block.";
+            return;
+        }
+        if (username === loggedInUser) {
+            if (status) status.textContent = "You cannot block your own account.";
+            return;
+        }
+
+        try {
+            const response = await fetch("/api/blocked", {
+                method: "POST",
+                credentials: "include",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username })
+            });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(data.error || "Could not block that account.");
+
+            if (field) field.value = "";
+            if (status) status.textContent = "Account blocked.";
+            await syncBlockedAccountsFromCloud();
+        } catch (error) {
+            if (status) status.textContent = error.message || "Could not block that account.";
+        }
+    });
+
+    syncBlockedAccountsFromCloud();
+
     window.helixRenderBlockedAccounts = renderBlockedAccounts;
 })();
 
