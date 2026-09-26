@@ -425,7 +425,32 @@
                 </section>
             </div>
 
-            <section class="dm-view" id="dm-view" data-main-section="direct-messages" hidden>
+                        <div class="helix-modal dm-nickname-modal" id="dm-nickname-modal" hidden>
+                <div class="helix-modal-backdrop" data-dm-nickname-close></div>
+                <section class="helix-modal-panel dm-nickname-panel" role="dialog" aria-modal="true" aria-labelledby="dm-nickname-title">
+                    <button class="helix-modal-close" type="button" aria-label="Close dialog" data-dm-nickname-close>×</button>
+                    <p class="system-label">DIRECT MESSAGES / PERSONAL LABEL</p>
+                    <h2 id="dm-nickname-title">Keep a custom nickname for a friend</h2>
+                    <p class="helix-modal-description">This nickname is private and only changes how this friend appears to you.</p>
+
+                    <form id="dm-nickname-form" class="dm-nickname-form">
+                        <label class="helix-modal-label" for="dm-nickname-friend">Friend</label>
+                        <select class="helix-modal-input" id="dm-nickname-friend" required></select>
+
+                        <label class="helix-modal-label" for="dm-nickname-value">Custom nickname</label>
+                        <input class="helix-modal-input" id="dm-nickname-value" type="text" maxlength="50" autocomplete="off" placeholder="e.g. Bro, Frost, Physics Guy" required>
+
+                        <p class="dm-nickname-error" id="dm-nickname-error" role="alert"></p>
+
+                        <div class="helix-modal-actions">
+                            <button class="profile-secondary-button" type="button" id="dm-nickname-remove">Remove nickname</button>
+                            <button class="profile-primary-button" type="submit" id="dm-nickname-save">Save nickname</button>
+                        </div>
+                    </form>
+                </section>
+            </div>
+
+<section class="dm-view" id="dm-view" data-main-section="direct-messages" hidden>
 
     <div class="dm-instagram-shell">
 
