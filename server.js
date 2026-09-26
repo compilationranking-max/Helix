@@ -1192,19 +1192,53 @@ app.get("/api/health", async (req, res) => {
 });
 
 
+app.get("/api/chat/image-usage", async (req, res) => {
+    const user = await requireCurrentUser(req, res);
+    if (!user) return;
+
+    try {
+        const usage = await getAIImageUsage(user.username);
+        return res.json({
+            ok: true,
+            dailyLimit: DAILY_AI_IMAGE_LIMIT,
+            used: usage.used,
+            remaining: usage.remaining
+        });
+    } catch (error) {
+        console.error("AI image usage check failed:", error);
+        return res.status(500).json({ error: "Could not check the daily photo upload limit." });
+    }
+});
+
 app.post("/api/chat", async (req, res) => {
+    const user = await requireCurrentUser(req, res);
+    if (!user) return;
+
     try {
         const message = typeof req.body.message === "string"
             ? req.body.message.trim()
             : "";
+        const image = parseAIImageData(req.body.image);
 
-        if (!message) {
-            return res.status(400).json({ error: "Please enter a message for Helix AI." });
+        if (!message && !image) {
+            return res.status(400).json({ error: "Please enter a message or choose a photo for Helix AI." });
         }
 
+        if (req.body.image && !image) {
+            return res.status(400).json({ error: "That photo could not be read. Please choose a PNG, JPEG, or WebP image." });
+        }
+
+        let imageUsage = null;
+        if (image) imageUsage = await claimAIImageUpload(user.username);
+
         const history = Array.isArray(req.body.history) ? req.body.history : [];
-        const reply = await generateGeminiResponse(message, history);
-        res.json({ reply });
+        const prompt = message || "Analyze this image and explain what is shown. If it contains a question, solve or explain it step by step.";
+        const reply = await generateGeminiResponse(prompt, history, image);
+
+        return res.json({
+            reply,
+            imageUploadsRemaining: imageUsage?.remaining ?? null
+        });
     } catch (error) {
         console.error("Helix AI request failed:", error?.message || error);
         const status = Number(error?.status || 502);
@@ -1217,7 +1251,10 @@ app.post("/api/chat", async (req, res) => {
 
         if (status === 429) {
             return res.status(429).json({
-                error: "Gemini quota/rate limit reached. Check the Gemini project limits in AI Studio."
+                error: Number.isInteger(error?.remaining)
+                    ? "Daily photo upload limit reached. Try again tomorrow."
+                    : "Gemini quota/rate limit reached. Check the Gemini project limits in AI Studio.",
+                imageUploadsRemaining: Number.isInteger(error?.remaining) ? error.remaining : null
             });
         }
 
