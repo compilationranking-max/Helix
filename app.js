@@ -707,23 +707,21 @@ function playAIWelcomeDragon() {
 }
 
 function restoreMathPlaceholders(value, mathParts) {
-    return value.replace(/@@AI_MATH_(\\d+)@@/g, (_, index) => {
+    return value.replace(/@@AI_MATH_(\d+)@@/g, function (_, index) {
         const part = mathParts[Number(index)];
         if (!part) return "";
         const safeMath = escapeHTML(part.value);
         return part.display
-            ? `<div class="ai-math-display">\\[\\n${safeMath}\\n\\]</div>`
-            : `<span class="ai-math-inline">\\(${safeMath}\\)</span>`;
+            ? "<div class=\"ai-math-display\">\\[\n" + safeMath + "\n\\]</div>"
+            : "<span class=\"ai-math-inline\">\\(" + safeMath + "\\)</span>";
     });
 }
 
 function formatAIInline(value, mathParts) {
     let html = value;
-
-    html = html.replace(/\\*\\*([^*\\n]+?)\\*\\*/g, "<strong>$1</strong>");
-    html = html.replace(/(?<!\\*)\\*([^*\\n]+?)\\*(?!\\*)/g, "<em>$1</em>");
-    html = html.replace(/\`([^\`\\n]+?)\`/g, "<code>$1</code>");
-
+    html = html.replace(/\*\*([^*\n]+?)\*\*/g, "<strong>$1</strong>");
+    html = html.replace(/(?<!\*)\*([^*\n]+?)\*(?!\*)/g, "<em>$1</em>");
+    html = html.replace(/`([^`\n]+?)`/g, "<code>$1</code>");
     return restoreMathPlaceholders(html, mathParts);
 }
 
@@ -731,61 +729,56 @@ function formatAIContent(text) {
     const mathParts = [];
     let working = String(text ?? "");
 
-    // Protect display math first so line breaks inside equations survive the
-    // lightweight Markdown formatting pass.
-    working = working.replace(/\\$\\$([\\s\\S]*?)\\$\\$/g, (_, value) => {
+    working = working.replace(/\$\$([\s\S]*?)\$\$/g, function (_, value) {
         const index = mathParts.push({ value, display: true }) - 1;
-        return `@@AI_MATH_${index}@@`;
+        return "@@AI_MATH_" + index + "@@";
     });
 
-    working = working.replace(/\\\\\\[([\\s\\S]*?)\\\\\\]/g, (_, value) => {
+    working = working.replace(/\\\[([\s\S]*?)\\\]/g, function (_, value) {
         const index = mathParts.push({ value, display: true }) - 1;
-        return `@@AI_MATH_${index}@@`;
+        return "@@AI_MATH_" + index + "@@";
     });
 
-    working = working.replace(/\\\\\\(([\\s\\S]*?)\\\\\\)/g, (_, value) => {
+    working = working.replace(/\\\(([\s\S]*?)\\\)/g, function (_, value) {
         const index = mathParts.push({ value, display: false }) - 1;
-        return `@@AI_MATH_${index}@@`;
+        return "@@AI_MATH_" + index + "@@";
     });
 
-    working = working.replace(/(?<!\\)\\$([^$\\n]+?)\\$/g, (_, value) => {
+    working = working.replace(/(?<!\\)\$([^$\n]+?)\$/g, function (_, value) {
         const index = mathParts.push({ value, display: false }) - 1;
-        return `@@AI_MATH_${index}@@`;
+        return "@@AI_MATH_" + index + "@@";
     });
 
     working = escapeHTML(working);
 
-    return working.split("\\n").map((line) => {
-        if (!line.trim()) {
-            return '<div class="ai-content-spacer"></div>';
-        }
+    return working.split("\n").map(function (line) {
+        if (!line.trim()) return "<div class=\"ai-content-spacer\"></div>";
 
-        const heading = line.match(/^#{1,4}\\s+(.+)$/);
+        const heading = line.match(/^#{1,4}\s+(.+)$/);
         if (heading) {
-            return `<h3 class="ai-content-heading">${formatAIInline(heading[1], mathParts)}</h3>`;
+            return "<h3 class=\"ai-content-heading\">" + formatAIInline(heading[1], mathParts) + "</h3>";
         }
 
-        const bullet = line.match(/^[-*]\\s+(.+)$/);
+        const bullet = line.match(/^[-*]\s+(.+)$/);
         if (bullet) {
-            return `<div class="ai-content-bullet"><span>•</span><div>${formatAIInline(bullet[1], mathParts)}</div></div>`;
+            return "<div class=\"ai-content-bullet\"><span>•</span><div>" + formatAIInline(bullet[1], mathParts) + "</div></div>";
         }
 
-        const numbered = line.match(/^(\\d+)\\.\\s+(.+)$/);
+        const numbered = line.match(/^(\d+)\.\s+(.+)$/);
         if (numbered) {
-            return `<div class="ai-content-numbered"><span>${numbered[1]}.</span><div>${formatAIInline(numbered[2], mathParts)}</div></div>`;
+            return "<div class=\"ai-content-numbered\"><span>" + numbered[1] + ".</span><div>" + formatAIInline(numbered[2], mathParts) + "</div></div>";
         }
 
-        return `<div class="ai-content-line">${formatAIInline(line, mathParts)}</div>`;
+        return "<div class=\"ai-content-line\">" + formatAIInline(line, mathParts) + "</div>";
     }).join("");
 }
 
 function typesetAIMath() {
     if (!aiMessages || !window.MathJax?.typesetPromise) return;
-    window.MathJax.typesetPromise([aiMessages]).catch((error) => {
+    window.MathJax.typesetPromise([aiMessages]).catch(function (error) {
         console.warn("Helix AI math rendering failed:", error);
     });
 }
-
 function renderAIMessage(text, type, time, imageDataUrl = "") {
     if (!aiMessages) return;
 
