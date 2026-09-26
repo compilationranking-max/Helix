@@ -1032,7 +1032,7 @@ async function claimAIImageUpload(username) {
 
 function parseAIImageData(value) {
     if (typeof value !== 'string') return null;
-    const match = /^data:(image\\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/.exec(value.trim());
+    const match = /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/.exec(value.trim());
     if (!match) return null;
     const base64 = match[2];
     const buffer = Buffer.from(base64, 'base64');
@@ -1074,7 +1074,7 @@ async function generateGeminiResponse(message, history = [], image = null) {
         + encodeURIComponent(MODEL) + ":generateContent";
 
     const isLowLatencyGemini3Model =
-        /gemini-3\\.8-flash|gemini-3\\.7-flash/i.test(MODEL);
+        /gemini-3\.8-flash|gemini-3\.7-flash/i.test(MODEL);
 
     const contents = buildConversationInput(history, message);
 
