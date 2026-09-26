@@ -4999,6 +4999,130 @@ bootstrapHelixSession().then((authenticated) => {
 // =========================================================
 
 // =========================================================
+// PRIVATE DM NICKNAMES
+(() => {
+    const modal = document.getElementById("dm-nickname-modal");
+    const form = document.getElementById("dm-nickname-form");
+    const friendSelect = document.getElementById("dm-nickname-friend");
+    const nicknameInput = document.getElementById("dm-nickname-value");
+    const error = document.getElementById("dm-nickname-error");
+    const removeButton = document.getElementById("dm-nickname-remove");
+    const saveButton = document.getElementById("dm-nickname-save");
+    const composeButton = document.querySelector(".dm-compose-button");
+
+    function closeNicknameModal() {
+        if (modal) modal.hidden = true;
+        if (error) error.textContent = "";
+    }
+
+    function populateFriends() {
+        const snapshot = Array.isArray(window.helixDMFriendsSnapshot) ? window.helixDMFriendsSnapshot : [];
+        if (!friendSelect) return;
+
+        friendSelect.replaceChildren();
+
+        snapshot.forEach((friend) => {
+            const option = document.createElement("option");
+            option.value = friend.username;
+            option.textContent = (friend.customNickname || friend.displayName) + " — " + friend.username;
+            friendSelect.appendChild(option);
+        });
+
+        const hasFriends = snapshot.length > 0;
+        friendSelect.disabled = !hasFriends;
+        if (saveButton) saveButton.disabled = !hasFriends;
+        if (removeButton) removeButton.disabled = !hasFriends;
+
+        if (!hasFriends && error) {
+            error.textContent = "Add a friend first to create a nickname.";
+        }
+    }
+
+    function updateInputForFriend() {
+        const snapshot = Array.isArray(window.helixDMFriendsSnapshot) ? window.helixDMFriendsSnapshot : [];
+        const friend = snapshot.find((item) => item.username === friendSelect?.value);
+        if (nicknameInput) nicknameInput.value = friend?.customNickname || "";
+        if (error) error.textContent = "";
+    }
+
+    function openDMNicknameModal() {
+        populateFriends();
+        updateInputForFriend();
+        if (modal) modal.hidden = false;
+        friendSelect?.focus();
+    }
+
+    friendSelect?.addEventListener("change", updateInputForFriend);
+
+    form?.addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        const friendUsername = friendSelect?.value || "";
+        const nickname = (nicknameInput?.value || "").trim().replace(/\s+/g, " ");
+
+        if (!friendUsername) return;
+
+        if (!nickname || nickname.length > 50 || /[\u0000-\u001F\u007F]/.test(nickname)) {
+            if (error) error.textContent = "Choose a nickname from 1–50 characters.";
+            return;
+        }
+
+        saveButton.disabled = true;
+        saveButton.textContent = "Saving...";
+
+        try {
+            const response = await fetch("/api/dm/nicknames/" + encodeURIComponent(friendUsername), {
+                method: "PUT",
+                credentials: "include",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ nickname })
+            });
+
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(data.error || "Could not save that nickname.");
+
+            window.helixSetDMNickname?.(friendUsername, nickname);
+            closeNicknameModal();
+        } catch (err) {
+            if (error) error.textContent = err.message || "Could not save that nickname.";
+        } finally {
+            saveButton.disabled = false;
+            saveButton.textContent = "Save nickname";
+        }
+    });
+
+    removeButton?.addEventListener("click", async () => {
+        const friendUsername = friendSelect?.value || "";
+        if (!friendUsername) return;
+
+        removeButton.disabled = true;
+
+        try {
+            const response = await fetch("/api/dm/nicknames/" + encodeURIComponent(friendUsername), {
+                method: "DELETE",
+                credentials: "include"
+            });
+
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(data.error || "Could not remove that nickname.");
+
+            window.helixSetDMNickname?.(friendUsername, "");
+            closeNicknameModal();
+        } catch (err) {
+            if (error) error.textContent = err.message || "Could not remove that nickname.";
+        } finally {
+            removeButton.disabled = false;
+        }
+    });
+
+    document.querySelectorAll("[data-dm-nickname-close]").forEach((button) => {
+        button.addEventListener("click", closeNicknameModal);
+    });
+
+    composeButton?.addEventListener("click", openDMNicknameModal);
+    window.helixOpenDMNicknameModal = openDMNicknameModal;
+})();
+
 // HELIX — ISOLATED CLOUD DMS
 // =========================================================
 (function () {
@@ -5068,6 +5192,7 @@ bootstrapHelixSession().then((authenticated) => {
         return a.length === b.length && a.every((x, i) =>
             x.username === b[i]?.username &&
             x.displayName === b[i]?.displayName &&
+            (x.customNickname || null) === (b[i]?.customNickname || null) &&
             (x.profilePhoto || null) === (b[i]?.profilePhoto || null) &&
             Number(x.unreadCount || 0) === Number(b[i]?.unreadCount || 0)
         );
@@ -5101,6 +5226,7 @@ bootstrapHelixSession().then((authenticated) => {
         const normalized = next.map((friend) => ({
             username: String(friend.username),
             displayName: String(friend.displayName || friend.username),
+            customNickname: friend.customNickname ? String(friend.customNickname) : "",
             profilePhoto: friend.profilePhoto || null,
             unreadCount: Number(friend.unreadCount || 0)
         }));
@@ -5112,6 +5238,7 @@ bootstrapHelixSession().then((authenticated) => {
         }
 
         friends = normalized;
+        window.helixDMFriendsSnapshot = friends.map((item) => ({ ...item }));
         list.replaceChildren();
 
         if (!normalized.length) {
@@ -5146,7 +5273,8 @@ bootstrapHelixSession().then((authenticated) => {
 
             const copy = document.createElement("span");
             copy.className = "conversation-copy";
-            copy.innerHTML = `<strong>${safe(friend.displayName)}</strong><small>-${safe(friend.username)}</small><span class="conversation-preview">${friend.username === activeUsername ? "Open conversation" : "Start a conversation"}</span>`;
+            const visibleName = friend.customNickname || friend.displayName;
+            copy.innerHTML = "<strong>" + safe(visibleName) + "</strong><small>-" + safe(friend.username) + "</small><span class=\"conversation-preview\">" + (friend.username === activeUsername ? "Open conversation" : "Start a conversation") + "</span>";
 
             const unread = document.createElement("span");
             unread.className = "conversation-unread";
@@ -5164,6 +5292,15 @@ bootstrapHelixSession().then((authenticated) => {
 
         filterFriends();
     }
+
+    window.helixSetDMNickname = function (username, nickname) {
+        const friend = friends.find((item) => item.username === username);
+        if (!friend) return;
+        friend.customNickname = nickname || "";
+        window.helixDMFriendsSnapshot = friends.map((item) => ({ ...item }));
+        renderFriends(friends);
+        if (activeUsername === username) openFriend(friend);
+    };
 
     async function loadFriends() {
         try {
@@ -5389,13 +5526,14 @@ bootstrapHelixSession().then((authenticated) => {
     }
 
     async function openFriend(friend) {
+        const visibleName = friend.customNickname || friend.displayName;
         activeUsername = friend.username;
         list.querySelectorAll(".conversation").forEach((item) =>
             item.classList.toggle("active", item.dataset.user === activeUsername)
         );
 
         if (headerAvatar) {
-            headerAvatar.textContent = friend.displayName.slice(0, 2).toUpperCase();
+            headerAvatar.textContent = visibleName.slice(0, 2).toUpperCase();
             headerAvatar.classList.toggle("has-profile-photo", Boolean(friend.profilePhoto));
             if (friend.profilePhoto) {
                 headerAvatar.style.backgroundImage = `url("${friend.profilePhoto}")`;
@@ -5412,7 +5550,7 @@ bootstrapHelixSession().then((authenticated) => {
 
         const infoAvatar = document.getElementById("info-avatar");
         if (infoAvatar) {
-            infoAvatar.textContent = friend.displayName.slice(0, 2).toUpperCase();
+            infoAvatar.textContent = visibleName.slice(0, 2).toUpperCase();
             infoAvatar.classList.toggle("has-profile-photo", Boolean(friend.profilePhoto));
             if (friend.profilePhoto) {
                 infoAvatar.style.backgroundImage = `url("${friend.profilePhoto}")`;
@@ -5428,10 +5566,10 @@ bootstrapHelixSession().then((authenticated) => {
         }
 
         const infoName = document.getElementById("info-name");
-        if (infoName) infoName.innerHTML = `${safe(friend.displayName)} <small>-${safe(friend.username)}</small>`;
+        if (infoName) infoName.innerHTML = "<span>" + safe(visibleName) + "</span> <small>-" + safe(friend.username) + "</small>";
 
         if (headerName) {
-            headerName.innerHTML = `${safe(friend.displayName)} <small>-${safe(friend.username)}</small>`;
+            headerName.innerHTML = "<span>" + safe(visibleName) + "</span> <small>-" + safe(friend.username) + "</small>";
         }
 
         if (headerStatus) headerStatus.textContent = "Friend on Helix";
