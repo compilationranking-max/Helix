@@ -529,6 +529,117 @@ app.get("/api/auth/me", async (req, res) => {
     }
 });
 
+const SERVER_SETTING_DEFAULTS = {
+    privacy: {
+        "private-account": false,
+        "friend-requests": "EVERYONE",
+        "direct-messages": "EVERYONE",
+        "mentions-tags": "EVERYONE",
+        "activity-visibility": "VISIBLE"
+    },
+    notifications: {
+        "dm-alerts": false,
+        "friend-requests": false,
+        "accepted-requests": false,
+        likes: false,
+        comments: false,
+        mentions: false,
+        follows: false,
+        "system-announcements": false
+    },
+    appearance: {
+        theme: "DARK",
+        "accent-intensity": "HIGH",
+        "compact-mode": false,
+        "animation-intensity": "FULL",
+        "reduced-motion": false,
+        "layout-density": "COMFORTABLE"
+    },
+    detox: { mode: "off", minutes: 0 }
+};
+
+function cloneSettingDefaults() {
+    return JSON.parse(JSON.stringify(SERVER_SETTING_DEFAULTS));
+}
+
+function mergeSettings(row) {
+    const defaults = cloneSettingDefaults();
+    return {
+        privacy: { ...defaults.privacy, ...(row?.privacy || {}) },
+        notifications: { ...defaults.notifications, ...(row?.notifications || {}) },
+        appearance: { ...defaults.appearance, ...(row?.appearance || {}) },
+        detox: { ...defaults.detox, ...(row?.detox || {}) }
+    };
+}
+
+async function getUserSettings(username) {
+    if (!dbPool) {
+        const data = loadNetworkData();
+        data.settings = data.settings || {};
+        return mergeSettings(data.settings[username] || null);
+    }
+
+    await requireDatabase();
+    const result = await dbPool.query(
+        "SELECT privacy, notifications, appearance, detox FROM helix_user_settings WHERE username = $1",
+        [username]
+    );
+    return mergeSettings(result.rows[0] || null);
+}
+
+async function saveUserSettingGroup(username, group, values) {
+    const allowedGroups = new Set(["privacy", "notifications", "appearance", "detox"]);
+    if (!allowedGroups.has(group)) {
+        throw Object.assign(new Error("Invalid settings group."), { status: 400 });
+    }
+
+    const current = await getUserSettings(username);
+    const next = {
+        ...current,
+        [group]: {
+            ...current[group],
+            ...(values && typeof values === "object" && !Array.isArray(values) ? values : {})
+        }
+    };
+
+    if (!dbPool) {
+        const data = loadNetworkData();
+        data.settings = data.settings || {};
+        data.settings[username] = next;
+        saveNetworkData(data);
+        return next;
+    }
+
+    await requireDatabase();
+    await dbPool.query(
+        "INSERT INTO helix_user_settings (username, privacy, notifications, appearance, detox, updated_at) VALUES ($1, $2::jsonb, $3::jsonb, $4::jsonb, $5::jsonb, NOW()) ON CONFLICT (username) DO UPDATE SET privacy = EXCLUDED.privacy, notifications = EXCLUDED.notifications, appearance = EXCLUDED.appearance, detox = EXCLUDED.detox, updated_at = NOW()",
+        [username, JSON.stringify(next.privacy), JSON.stringify(next.notifications), JSON.stringify(next.appearance), JSON.stringify(next.detox)]
+    );
+
+    return next;
+}
+
+async function logActivity(username, eventType, details = {}) {
+    try {
+        if (dbPool) {
+            await requireDatabase();
+            await dbPool.query(
+                "INSERT INTO helix_activity_log (id, username, event_type, details) VALUES ($1, $2, $3, $4::jsonb)",
+                [crypto.randomUUID(), username, eventType, JSON.stringify(details || {})]
+            );
+            return;
+        }
+
+        const data = loadNetworkData();
+        data.activity = data.activity || {};
+        data.activity[username] = Array.isArray(data.activity[username]) ? data.activity[username] : [];
+        data.activity[username].unshift({ id: crypto.randomUUID(), eventType, details: details || {}, createdAt: new Date().toISOString() });
+        data.activity[username] = data.activity[username].slice(0, 200);
+        saveNetworkData(data);
+    } catch (error) {
+        console.warn("Helix activity log failed:", error?.message || error);
+    }
+}
 app.post("/api/auth/logout", async (req, res) => {
     try {
         if (dbPool) {
