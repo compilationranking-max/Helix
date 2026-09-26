@@ -2925,6 +2925,8 @@ document.querySelectorAll("[data-settings-action]").forEach((button) => {
     // for permission until the user explicitly enables DM browser alerts.
     let notificationAudioContext = null;
     let lastKnownUnreadDMCount = null;
+    let notificationFeedInitialized = false;
+    const notifiedDMMessageIds = new Set();
 
     function saveNotificationSettings() {
         try {
@@ -3058,6 +3060,8 @@ document.querySelectorAll("[data-settings-action]").forEach((button) => {
         // Start with the current unread count so enabling notifications does
         // not immediately fire an old-message alert.
         lastKnownUnreadDMCount = null;
+        notificationFeedInitialized = false;
+        notifiedDMMessageIds.clear();
         window.helixNotificationEnabled = true;
 
         return true;
@@ -3070,25 +3074,72 @@ document.querySelectorAll("[data-settings-action]").forEach((button) => {
         renderNotificationSettings();
     }
 
-    function showNewDMNotification(count) {
+    function showNewDMNotification(message) {
         if (!notificationSettings["dm-alerts"] || !("Notification" in window) || Notification.permission !== "granted") {
             return;
         }
 
         try {
-            const displayCount = count === 1 ? "1 new message" : `${count} new messages`;
-            const notification = new Notification("Helix", {
-                body: displayCount + " waiting in Direct Messages.",
+            const sender = message?.senderDisplayName || message?.sender || "Helix";
+            const text = String(message?.text || "New direct message.").replace(/\\s+/g, " ").trim();
+            const body = text.length > 180 ? text.slice(0, 177) + "..." : text;
+
+            const notification = new Notification(sender, {
+                body,
                 icon: "images/helix-logo.png",
-                tag: "helix-dm",
+                tag: `helix-dm-${message?.id || Date.now()}`,
                 renotify: true
             });
 
-            window.setTimeout(() => notification.close(), 6500);
+            notification.onclick = () => {
+                window.focus();
+                document.getElementById("nav-console")?.click();
+            };
+
+            window.setTimeout(() => notification.close(), 8000);
         } catch {
             // Browser notifications are best-effort.
         }
     }
+
+    function notifyNewDMMessage(message) {
+        if (!message?.id || notifiedDMMessageIds.has(message.id)) return;
+
+        notifiedDMMessageIds.add(message.id);
+
+        if (notificationSettings["dm-alerts"]) {
+            playDMAlertSound();
+            showNewDMNotification(message);
+        }
+    }
+
+    window.helixHandleNotificationFeed = function (messages, unread) {
+        const feed = Array.isArray(messages) ? messages : [];
+        const nextUnread = Math.max(0, Number(unread || 0));
+
+        if (!notificationFeedInitialized) {
+            feed.forEach((message) => {
+                if (message?.id) notifiedDMMessageIds.add(message.id);
+            });
+            notificationFeedInitialized = true;
+            lastKnownUnreadDMCount = nextUnread;
+
+            if (notificationSettings["dm-alerts"] && nextUnread > 0) {
+                document.title = `(${nextUnread}) Helix`;
+            }
+            return;
+        }
+
+        feed.forEach((message) => notifyNewDMMessage(message));
+
+        if (notificationSettings["dm-alerts"] && nextUnread > 0) {
+            document.title = `(${nextUnread}) Helix`;
+        } else {
+            document.title = "Helix";
+        }
+
+        lastKnownUnreadDMCount = nextUnread;
+    };
 
     window.helixHandleNotificationUnreadCount = function (unread) {
         const nextUnread = Math.max(0, Number(unread || 0));
@@ -3103,12 +3154,6 @@ document.querySelectorAll("[data-settings-action]").forEach((button) => {
         if (lastKnownUnreadDMCount === null) {
             lastKnownUnreadDMCount = nextUnread;
             return;
-        }
-
-        if (nextUnread > lastKnownUnreadDMCount) {
-            const difference = nextUnread - lastKnownUnreadDMCount;
-            playDMAlertSound();
-            showNewDMNotification(difference);
         }
 
         lastKnownUnreadDMCount = nextUnread;
@@ -4691,13 +4736,16 @@ bootstrapHelixSession().then((authenticated) => {
         if (!dmNavUnread) return;
 
         try {
-            const response = await fetch("/api/dm/unread-count", { credentials: "include" });
+            const response = await fetch("/api/dm/notification-feed", { credentials: "include" });
             if (!response.ok) return;
 
             const data = await response.json().catch(() => ({}));
             const unread = Math.max(0, Number(data.unread || 0));
+            const feed = Array.isArray(data.messages) ? data.messages : [];
 
-            if (window.helixHandleNotificationUnreadCount) {
+            if (window.helixHandleNotificationFeed) {
+                window.helixHandleNotificationFeed(feed, unread);
+            } else if (window.helixHandleNotificationUnreadCount) {
                 window.helixHandleNotificationUnreadCount(unread);
             }
 
