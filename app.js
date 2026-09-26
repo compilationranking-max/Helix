@@ -264,6 +264,18 @@ const aiInput = document.getElementById("ai-input");
 const aiMessages = document.getElementById("ai-messages");
 const aiTyping = document.getElementById("ai-typing");
 const aiSendButton = document.getElementById("ai-send-button");
+const aiAttachButton = document.getElementById("ai-attach-button");
+const aiAttachmentMenu = document.getElementById("ai-attachment-menu");
+const aiUploadPhotoButton = document.getElementById("ai-upload-photo-button");
+const aiPhotoInput = document.getElementById("ai-photo-input");
+const aiPhotoLimit = document.getElementById("ai-photo-limit");
+const aiPhotoChip = document.getElementById("ai-photo-chip");
+const aiPhotoPreview = document.getElementById("ai-photo-preview");
+const aiPhotoName = document.getElementById("ai-photo-name");
+const aiPhotoChipStatus = document.getElementById("ai-photo-chip-status");
+const aiRemovePhotoButton = document.getElementById("ai-remove-photo-button");
+let pendingAIImage = null;
+let aiRequestInFlight = false;
 let aiStorageKey = `helixAIConversation:${loggedInUser || "User"}`;
 let aiChatsKey = `helixAIChats:${loggedInUser || "User"}`;
 const AI_HISTORY_LIMIT = 20;
@@ -694,7 +706,87 @@ function playAIWelcomeDragon() {
     }, 3650);
 }
 
-function renderAIMessage(text, type, time) {
+function restoreMathPlaceholders(value, mathParts) {
+    return value.replace(/@@AI_MATH_(\\d+)@@/g, (_, index) => {
+        const part = mathParts[Number(index)];
+        if (!part) return "";
+        const safeMath = escapeHTML(part.value);
+        return part.display
+            ? `<div class="ai-math-display">\\[\\n${safeMath}\\n\\]</div>`
+            : `<span class="ai-math-inline">\\(${safeMath}\\)</span>`;
+    });
+}
+
+function formatAIInline(value, mathParts) {
+    let html = value;
+
+    html = html.replace(/\\*\\*([^*\\n]+?)\\*\\*/g, "<strong>$1</strong>");
+    html = html.replace(/(?<!\\*)\\*([^*\\n]+?)\\*(?!\\*)/g, "<em>$1</em>");
+    html = html.replace(/\`([^\`\\n]+?)\`/g, "<code>$1</code>");
+
+    return restoreMathPlaceholders(html, mathParts);
+}
+
+function formatAIContent(text) {
+    const mathParts = [];
+    let working = String(text ?? "");
+
+    // Protect display math first so line breaks inside equations survive the
+    // lightweight Markdown formatting pass.
+    working = working.replace(/\\$\\$([\\s\\S]*?)\\$\\$/g, (_, value) => {
+        const index = mathParts.push({ value, display: true }) - 1;
+        return `@@AI_MATH_${index}@@`;
+    });
+
+    working = working.replace(/\\\\\\[([\\s\\S]*?)\\\\\\]/g, (_, value) => {
+        const index = mathParts.push({ value, display: true }) - 1;
+        return `@@AI_MATH_${index}@@`;
+    });
+
+    working = working.replace(/\\\\\\(([\\s\\S]*?)\\\\\\)/g, (_, value) => {
+        const index = mathParts.push({ value, display: false }) - 1;
+        return `@@AI_MATH_${index}@@`;
+    });
+
+    working = working.replace(/(?<!\\)\\$([^$\\n]+?)\\$/g, (_, value) => {
+        const index = mathParts.push({ value, display: false }) - 1;
+        return `@@AI_MATH_${index}@@`;
+    });
+
+    working = escapeHTML(working);
+
+    return working.split("\\n").map((line) => {
+        if (!line.trim()) {
+            return '<div class="ai-content-spacer"></div>';
+        }
+
+        const heading = line.match(/^#{1,4}\\s+(.+)$/);
+        if (heading) {
+            return `<h3 class="ai-content-heading">${formatAIInline(heading[1], mathParts)}</h3>`;
+        }
+
+        const bullet = line.match(/^[-*]\\s+(.+)$/);
+        if (bullet) {
+            return `<div class="ai-content-bullet"><span>•</span><div>${formatAIInline(bullet[1], mathParts)}</div></div>`;
+        }
+
+        const numbered = line.match(/^(\\d+)\\.\\s+(.+)$/);
+        if (numbered) {
+            return `<div class="ai-content-numbered"><span>${numbered[1]}.</span><div>${formatAIInline(numbered[2], mathParts)}</div></div>`;
+        }
+
+        return `<div class="ai-content-line">${formatAIInline(line, mathParts)}</div>`;
+    }).join("");
+}
+
+function typesetAIMath() {
+    if (!aiMessages || !window.MathJax?.typesetPromise) return;
+    window.MathJax.typesetPromise([aiMessages]).catch((error) => {
+        console.warn("Helix AI math rendering failed:", error);
+    });
+}
+
+function renderAIMessage(text, type, time, imageDataUrl = "") {
     if (!aiMessages) return;
 
     const message = document.createElement("article");
@@ -706,7 +798,26 @@ function renderAIMessage(text, type, time) {
 
     const bubble = document.createElement("div");
     bubble.className = "ai-message-bubble";
-    bubble.textContent = text;
+
+    if (imageDataUrl && type === "user") {
+        const image = document.createElement("img");
+        image.className = "ai-message-image";
+        image.src = imageDataUrl;
+        image.alt = "Uploaded image";
+        bubble.appendChild(image);
+    }
+
+    if (type === "assistant") {
+        const content = document.createElement("div");
+        content.className = "ai-message-content";
+        content.innerHTML = formatAIContent(text);
+        bubble.appendChild(content);
+    } else {
+        const content = document.createElement("div");
+        content.className = "ai-message-content";
+        content.textContent = text;
+        bubble.appendChild(content);
+    }
 
     const timeElement = document.createElement("time");
     timeElement.className = "ai-message-time";
@@ -716,6 +827,8 @@ function renderAIMessage(text, type, time) {
     message.append(avatar, bubble);
     aiMessages.appendChild(message);
     aiMessages.scrollTop = aiMessages.scrollHeight;
+
+    if (type === "assistant") typesetAIMath();
 }
 
 function renderAIConversation() {
@@ -733,12 +846,13 @@ function renderAIConversation() {
     document.getElementById("ai-welcome")?.toggleAttribute("hidden", aiConversation.length > 0);
     aiMessages.scrollTop = aiMessages.scrollHeight;
     updateAIChatState();
+    typesetAIMath();
 }
 
-function addAIMessage(text, type, persist = true) {
+function addAIMessage(text, type, persist = true, imageDataUrl = "") {
     const time = getCurrentTime();
 
-    renderAIMessage(text, type, time);
+    renderAIMessage(text, type, time, imageDataUrl);
 
     if (persist) {
         aiConversation.push({
@@ -833,17 +947,116 @@ async function checkHelixAIStatus() {
     }
 }
 
+async function fetchAIImageUsage() {
+    if (!aiPhotoLimit) return;
+
+    try {
+        const response = await fetchHelixAI("/api/chat/image-usage", {
+            method: "GET",
+            credentials: "include"
+        });
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+            aiPhotoLimit.textContent = "Photo uploads unavailable right now";
+            return;
+        }
+
+        aiPhotoLimit.textContent =
+            `${data.remaining} photo upload${data.remaining === 1 ? "" : "s"} left today`;
+    } catch {
+        aiPhotoLimit.textContent = "5 photo uploads per day";
+    }
+}
+
+function setAIAttachmentMenu(open) {
+    if (!aiAttachmentMenu || !aiAttachButton) return;
+    aiAttachmentMenu.hidden = !open;
+    aiAttachButton.setAttribute("aria-expanded", String(open));
+
+    if (open) fetchAIImageUsage();
+}
+
+function clearPendingAIImage() {
+    pendingAIImage = null;
+    if (aiPhotoInput) aiPhotoInput.value = "";
+    if (aiPhotoChip) aiPhotoChip.hidden = true;
+    if (aiPhotoPreview) aiPhotoPreview.removeAttribute("src");
+    if (aiPhotoName) aiPhotoName.textContent = "Photo ready";
+    if (aiPhotoChipStatus) aiPhotoChipStatus.textContent = "Ready for Helix to analyze";
+}
+
+async function prepareAIPhoto(file) {
+    const objectUrl = URL.createObjectURL(file);
+
+    try {
+        const image = await new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => resolve(img);
+            img.onerror = () => reject(new Error("Could not read that image."));
+            img.src = objectUrl;
+        });
+
+        const maxDimension = 1280;
+        const scale = Math.min(
+            1,
+            maxDimension / Math.max(image.naturalWidth, image.naturalHeight)
+        );
+
+        const width = Math.max(1, Math.round(image.naturalWidth * scale));
+        const height = Math.max(1, Math.round(image.naturalHeight * scale));
+
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+
+        const context = canvas.getContext("2d");
+        if (!context) throw new Error("Your browser could not prepare the photo.");
+
+        context.drawImage(image, 0, 0, width, height);
+
+        let dataUrl = canvas.toDataURL("image/jpeg", 0.78);
+
+        if (dataUrl.length > 1150000) {
+            dataUrl = canvas.toDataURL("image/jpeg", 0.62);
+        }
+
+        if (dataUrl.length > 1400000) {
+            throw new Error("That photo is too large to analyze. Please choose a smaller image.");
+        }
+
+        return dataUrl;
+    } finally {
+        URL.revokeObjectURL(objectUrl);
+    }
+}
+
 async function sendAIMessage() {
-    const message = aiInput?.value.trim();
+    if (aiRequestInFlight || !aiInput || !aiForm) return;
 
-    if (!message || !aiInput || !aiForm || aiSendButton?.disabled) return;
+    const message = aiInput.value.trim();
+    const image = pendingAIImage;
 
-    addAIMessage(message, "user");
+    if (!message && !image) return;
+
+    aiRequestInFlight = true;
+    const originalImage = image;
+
+    addAIMessage(
+        message || "Analyze this image and explain what is shown.",
+        "user",
+        true,
+        image?.dataUrl || ""
+    );
+
     aiInput.value = "";
     document.getElementById("ai-welcome")?.setAttribute("hidden", "true");
     setAIProcessing(true);
 
     try {
+        setAIAttachmentMenu(false);
+        clearPendingAIImage();
+
         let response;
         let data = {};
         let lastError = null;
@@ -852,10 +1065,14 @@ async function sendAIMessage() {
             try {
                 response = await fetchHelixAI("/api/chat", {
                     method: "POST",
+                    credentials: "include",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
                         message,
-                        history: aiConversation.map(({ role, content }) => ({ role, content }))
+                        image: image?.dataUrl || null,
+                        history: aiConversation
+                            .slice(0, -1)
+                            .map(({ role, content }) => ({ role, content }))
                     })
                 });
 
@@ -867,13 +1084,11 @@ async function sendAIMessage() {
                 lastError = new Error(data.error || "Helix AI is temporarily unavailable.");
 
                 if (!retryable || attempt === 2) throw lastError;
-
-                await new Promise((resolve) => setTimeout(resolve, 700 * (attempt + 1)));
+                await new Promise((resolve) => setTimeout(resolve, 650 * (attempt + 1)));
             } catch (error) {
                 lastError = error;
-
                 if (attempt === 2) throw error;
-                await new Promise((resolve) => setTimeout(resolve, 700 * (attempt + 1)));
+                await new Promise((resolve) => setTimeout(resolve, 650 * (attempt + 1)));
             }
         }
 
@@ -886,26 +1101,104 @@ async function sendAIMessage() {
         }
 
         addAIMessage(data.reply, "assistant");
+
+        if (Number.isInteger(data.imageUploadsRemaining) && aiPhotoLimit) {
+            aiPhotoLimit.textContent =
+                `${data.imageUploadsRemaining} photo upload${data.imageUploadsRemaining === 1 ? "" : "s"} left today`;
+        }
+
         checkHelixAIStatus();
     } catch (error) {
         console.error("Helix AI send failed:", error);
         checkHelixAIStatus();
 
-        // Keep transport/provider failures out of the conversation itself.
-        // The user message stays visible and the input is restored for retry.
         if (aiInput) {
             aiInput.value = message;
             aiInput.focus();
         }
 
-        showAIChatToast(error?.message || "Helix AI could not send your message.");
+        if (originalImage && !pendingAIImage) {
+            pendingAIImage = originalImage;
+            if (aiPhotoPreview) aiPhotoPreview.src = originalImage.dataUrl;
+            if (aiPhotoName) aiPhotoName.textContent = originalImage.name || "Photo ready";
+            if (aiPhotoChipStatus) aiPhotoChipStatus.textContent = "Send again to analyze this photo";
+            if (aiPhotoChip) aiPhotoChip.hidden = false;
+        }
+
+        showAIChatToast(error?.message || "Helix AI could not analyze the request.");
     } finally {
+        aiRequestInFlight = false;
         setAIProcessing(false);
         aiInput?.focus();
     }
 }
 
 checkHelixAIStatus();
+
+aiAttachButton?.addEventListener("click", (event) => {
+    event.preventDefault();
+    setAIAttachmentMenu(Boolean(aiAttachmentMenu?.hidden));
+});
+
+aiUploadPhotoButton?.addEventListener("click", (event) => {
+    event.preventDefault();
+    setAIAttachmentMenu(false);
+    aiPhotoInput?.click();
+});
+
+aiPhotoInput?.addEventListener("change", async () => {
+    const file = aiPhotoInput.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+        showAIChatToast("Choose a PNG, JPEG, or WebP image.");
+        aiPhotoInput.value = "";
+        return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+        showAIChatToast("That photo is larger than 10 MB.");
+        aiPhotoInput.value = "";
+        return;
+    }
+
+    try {
+        if (aiPhotoChipStatus) aiPhotoChipStatus.textContent = "Preparing photo...";
+        const dataUrl = await prepareAIPhoto(file);
+
+        pendingAIImage = {
+            dataUrl,
+            name: file.name,
+            mimeType: "image/jpeg"
+        };
+
+        if (aiPhotoPreview) aiPhotoPreview.src = dataUrl;
+        if (aiPhotoName) aiPhotoName.textContent = file.name;
+        if (aiPhotoChipStatus) aiPhotoChipStatus.textContent = "Ready for Helix to analyze";
+        if (aiPhotoChip) aiPhotoChip.hidden = false;
+
+        fetchAIImageUsage();
+    } catch (error) {
+        clearPendingAIImage();
+        showAIChatToast(error?.message || "Could not prepare that photo.");
+    }
+});
+
+aiRemovePhotoButton?.addEventListener("click", (event) => {
+    event.preventDefault();
+    clearPendingAIImage();
+});
+
+document.addEventListener("click", (event) => {
+    if (
+        aiAttachmentMenu &&
+        !aiAttachmentMenu.hidden &&
+        !event.target.closest("#ai-attachment-menu") &&
+        !event.target.closest("#ai-attach-button")
+    ) {
+        setAIAttachmentMenu(false);
+    }
+});
 
 aiSendButton?.addEventListener("click", (event) => {
     event.preventDefault();
