@@ -113,6 +113,51 @@ async function initializeDatabase() {
         ALTER TABLE helix_users
             ADD COLUMN IF NOT EXISTS profile_photo TEXT;
 
+        ALTER TABLE helix_users
+            ADD COLUMN IF NOT EXISTS email TEXT;
+
+        ALTER TABLE helix_users
+            ADD COLUMN IF NOT EXISTS phone TEXT;
+
+        CREATE TABLE IF NOT EXISTS helix_user_settings (
+            username TEXT PRIMARY KEY REFERENCES helix_users(username) ON DELETE CASCADE,
+            privacy JSONB NOT NULL DEFAULT '{}'::jsonb,
+            notifications JSONB NOT NULL DEFAULT '{}'::jsonb,
+            appearance JSONB NOT NULL DEFAULT '{}'::jsonb,
+            detox JSONB NOT NULL DEFAULT '{}'::jsonb,
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+
+        CREATE TABLE IF NOT EXISTS helix_blocked_accounts (
+            blocker_username TEXT NOT NULL REFERENCES helix_users(username) ON DELETE CASCADE,
+            blocked_username TEXT NOT NULL REFERENCES helix_users(username) ON DELETE CASCADE,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            PRIMARY KEY (blocker_username, blocked_username),
+            CHECK (blocker_username <> blocked_username)
+        );
+
+        CREATE TABLE IF NOT EXISTS helix_activity_log (
+            id UUID PRIMARY KEY,
+            username TEXT NOT NULL REFERENCES helix_users(username) ON DELETE CASCADE,
+            event_type TEXT NOT NULL,
+            details JSONB NOT NULL DEFAULT '{}'::jsonb,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+
+        CREATE INDEX IF NOT EXISTS helix_activity_log_user_idx
+            ON helix_activity_log (username, created_at DESC);
+
+        CREATE TABLE IF NOT EXISTS helix_support_requests (
+            id UUID PRIMARY KEY,
+            username TEXT NOT NULL REFERENCES helix_users(username) ON DELETE CASCADE,
+            request_type TEXT NOT NULL,
+            details JSONB NOT NULL DEFAULT '{}'::jsonb,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+
+        CREATE INDEX IF NOT EXISTS helix_support_requests_user_idx
+            ON helix_support_requests (username, created_at DESC);
+
         CREATE UNIQUE INDEX IF NOT EXISTS helix_users_username_lower_idx
             ON helix_users (LOWER(username));
 
@@ -412,7 +457,9 @@ app.post("/api/auth/register", async (req, res) => {
             passwordHash: credentials.hash,
             passwordSalt: credentials.salt,
             createdAt: new Date().toISOString(),
-            profilePhoto: null
+            profilePhoto: null,
+            email: null,
+            phone: null
         };
         saveNetworkData(data);
         return res.status(201).json({ ok: true, user: publicUser(data, username) });
