@@ -933,6 +933,34 @@ app.get("/api/dm/messages", async (req, res) => {
     }
 });
 
+app.get("/api/dm/unread-count", async (req, res) => {
+    const user = await requireCurrentUser(req, res);
+    if (!user) return;
+
+    try {
+        if (!dbPool) {
+            return res.json({ unread: 0 });
+        }
+
+        await requireDatabase();
+
+        const result = await dbPool.query(`
+            SELECT COUNT(*)::int AS "unread"
+            FROM helix_messages
+            WHERE recipient_username = $1
+              AND read_at IS NULL
+        `, [user.username]);
+
+        return res.json({
+            ok: true,
+            unread: Math.max(0, Number(result.rows[0]?.unread || 0))
+        });
+    } catch (error) {
+        console.error("DM unread count failed:", error);
+        return res.status(500).json({ error: "Could not load unread message count." });
+    }
+});
+
 app.post("/api/dm/messages", async (req, res) => {
     const user = await requireCurrentUser(req, res);
     if (!user) return;
