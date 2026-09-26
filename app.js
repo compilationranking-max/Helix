@@ -36,6 +36,19 @@ async function bootstrapHelixSession() {
         localStorage.setItem("helixLoggedIn", loggedInUser);
         localStorage.setItem("helixDisplayName", currentDisplayName);
 
+        const localAccounts = readLocalJSON("helixUsers", {});
+        if (localAccounts && typeof localAccounts === "object" && !Array.isArray(localAccounts)) {
+            localAccounts[loggedInUser] = {
+                ...(localAccounts[loggedInUser] || {}),
+                username: loggedInUser,
+                displayName: currentDisplayName,
+                createdAt: data.user.createdAt || localAccounts[loggedInUser]?.createdAt || new Date().toISOString(),
+                ...(Object.prototype.hasOwnProperty.call(data.user, "email") ? { email: data.user.email || null } : {}),
+                ...(Object.prototype.hasOwnProperty.call(data.user, "phone") ? { phone: data.user.phone || null } : {})
+            };
+            try { localStorage.setItem("helixUsers", JSON.stringify(localAccounts)); } catch {}
+        }
+
         if (Object.prototype.hasOwnProperty.call(data.user, "profilePhoto")) {
             const photoKey = `helixProfilePhoto:${loggedInUser}`;
             const photo = data.user.profilePhoto || "";
