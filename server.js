@@ -169,6 +169,12 @@ async function verifyPassword(password, saltHex, hashHex) {
     return expected.length === derived.length && crypto.timingSafeEqual(expected, derived);
 }
 
+function publicProfilePhotoUrl(username) {
+    return validUsername(username)
+        ? `/api/users/${encodeURIComponent(username)}/photo`
+        : null;
+}
+
 async function currentUser(req) {
     if (!dbPool) return null;
     await requireDatabase();
@@ -188,7 +194,7 @@ async function currentUser(req) {
         username: row.username,
         displayName: row.display_name,
         createdAt: row.created_at,
-        profilePhoto: row.profile_photo || null
+        profilePhoto: publicProfilePhotoUrl(row.username) || null
     };
 }
 
@@ -212,7 +218,7 @@ async function publicUserFromDb(username) {
             username: row.username,
             displayName: row.display_name,
             createdAt: row.created_at,
-            profilePhoto: row.profile_photo || null
+            profilePhoto: publicProfilePhotoUrl(row.username) || null
         }
         : null;
 }
@@ -233,7 +239,7 @@ function publicUser(data, username) {
     return {
         username,
         displayName: user?.displayName || username,
-        profilePhoto: user?.profilePhoto || null
+        profilePhoto: user?.profilePhoto ? publicProfilePhotoUrl(username) : null
     };
 }
 
@@ -339,7 +345,7 @@ app.post("/api/auth/register", async (req, res) => {
                     username: result.rows[0].username,
                     displayName: result.rows[0].display_name,
                     createdAt: result.rows[0].created_at,
-                    profilePhoto: result.rows[0].profile_photo || null
+                    profilePhoto: publicProfilePhotoUrl(result.rows[0].username) || null
                 }
             });
         }
@@ -394,7 +400,7 @@ app.post("/api/auth/login", async (req, res) => {
                     username: user.username,
                     displayName: user.display_name,
                     createdAt: user.created_at,
-                    profilePhoto: user.profile_photo || null
+                    profilePhoto: publicProfilePhotoUrl(user.username) || null
                 }
             });
         }
@@ -473,7 +479,7 @@ app.post("/api/profile/display-name", async (req, res) => {
 
 async function getCloudNetworkState(username) {
     const friendsResult = await dbPool.query(`
-        SELECT u.username, u.display_name AS "displayName", u.profile_photo AS "profilePhoto"
+        SELECT u.username, u.display_name AS "displayName"
         FROM helix_friendships f
         JOIN helix_users u ON u.username = CASE WHEN f.user_a = $1 THEN f.user_b ELSE f.user_a END
         WHERE f.user_a = $1 OR f.user_b = $1
@@ -497,7 +503,10 @@ async function getCloudNetworkState(username) {
     `, [username]);
 
     return {
-        friends: friendsResult.rows,
+        friends: friendsResult.rows.map((friend) => ({
+            ...friend,
+            profilePhoto: publicProfilePhotoUrl(friend.username)
+        })),
         incoming: incomingResult.rows,
         outgoing: outgoingResult.rows
     };
@@ -541,7 +550,7 @@ app.post("/api/network/sync", async (req, res) => {
                 ok: true,
                 username: row.username,
                 displayName: row.display_name,
-                profilePhoto: row.profile_photo || null,
+                profilePhoto: publicProfilePhotoUrl(row.username) || null,
                 ...await getCloudNetworkState(user.username)
             });
         }
@@ -586,7 +595,7 @@ app.get("/api/network/search", async (req, res) => {
             await requireDatabase();
             const pattern = `%${query}%`;
             const result = await dbPool.query(`
-                SELECT u.username, u.display_name AS "displayName", u.profile_photo AS "profilePhoto"
+                SELECT u.username, u.display_name AS "displayName"
                 FROM helix_users u
                 WHERE u.username <> $1
                   AND ($2 = '%%' OR LOWER(u.username) LIKE $2 OR LOWER(u.display_name) LIKE $2)
@@ -603,7 +612,12 @@ app.get("/api/network/search", async (req, res) => {
                 ORDER BY LOWER(u.display_name), LOWER(u.username)
                 LIMIT 20
             `, [user.username, pattern]);
-            return res.json({ results: result.rows });
+            return res.json({
+                results: result.rows.map((user) => ({
+                    ...user,
+                    profilePhoto: publicProfilePhotoUrl(user.username)
+                }))
+            });
         }
 
         const data = loadNetworkData();
@@ -753,7 +767,7 @@ app.post("/api/profile/photo", async (req, res) => {
                     username: row.username,
                     displayName: row.display_name,
                     createdAt: row.created_at,
-                    profilePhoto: row.profile_photo || null
+                    profilePhoto: publicProfilePhotoUrl(row.username) || null
                 }
             });
         }
