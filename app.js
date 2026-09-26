@@ -2915,14 +2915,57 @@ document.querySelectorAll("[data-settings-action]").forEach((button) => {
         "system-announcements": true
     };
 
-    const notificationStorageKey = "helixNotificationSettings";
+    const notificationStorageKey = "helixNotificationSettings:v2";
+    const notificationDefaults = {
+        "dm-alerts": false,
+        "friend-requests": false,
+        "accepted-requests": false,
+        "likes": false,
+        "comments": false,
+        "mentions": false,
+        "follows": false,
+        "system-announcements": false
+    };
+
     let notificationSettings = {
         ...notificationDefaults,
         ...readLocalJSON(notificationStorageKey, {})
     };
 
+    // Browser notifications are a user-controlled permission. Nothing asks
+    // for permission until the user explicitly enables DM browser alerts.
+    let notificationAudioContext = null;
+    let lastKnownUnreadDMCount = null;
+
     function saveNotificationSettings() {
-        localStorage.setItem(notificationStorageKey, JSON.stringify(notificationSettings));
+        try {
+            localStorage.setItem(notificationStorageKey, JSON.stringify(notificationSettings));
+        } catch {
+            // Settings remain active for this page even if storage is unavailable.
+        }
+    }
+
+    function updateBrowserNotificationNote(message = "") {
+        const note = document.getElementById("settings-notification-note");
+        if (!note) return;
+
+        if (message) {
+            note.textContent = message;
+            return;
+        }
+
+        if (!("Notification" in window)) {
+            note.textContent = "This browser does not support browser notifications.";
+            return;
+        }
+
+        if (Notification.permission === "granted") {
+            note.textContent = "Browser permission granted. Helix can alert you about new DMs while this tab is open.";
+        } else if (Notification.permission === "denied") {
+            note.textContent = "Browser notifications are blocked. Allow them in your browser site settings to use DM alerts.";
+        } else {
+            note.textContent = "Off by default. Turning this on will ask your browser for notification permission.";
+        }
     }
 
     function renderNotificationSettings() {
@@ -2933,11 +2976,177 @@ document.querySelectorAll("[data-settings-action]").forEach((button) => {
             state.textContent = notificationSettings[key] ? "ON" : "OFF";
             button.classList.toggle("is-disabled", !notificationSettings[key]);
         });
+
+        updateBrowserNotificationNote();
     }
 
+    function primeNotificationAudio() {
+        if (!("AudioContext" in window || "webkitAudioContext" in window)) return;
+
+        try {
+            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+            notificationAudioContext ||= new AudioContextClass();
+
+            if (notificationAudioContext.state === "suspended") {
+                notificationAudioContext.resume().catch(() => {});
+            }
+        } catch {
+            notificationAudioContext = null;
+        }
+    }
+
+    function playDMAlertSound() {
+        if (!notificationSettings["dm-alerts"]) return;
+        if (!notificationAudioContext) return;
+
+        try {
+            if (notificationAudioContext.state === "suspended") {
+                notificationAudioContext.resume().catch(() => {});
+            }
+
+            const now = notificationAudioContext.currentTime;
+
+            // Two short tones give a subtle bell-like alert without requiring
+            // an external audio file or autoplay permission outside the toggle click.
+            [0, 0.12].forEach((offset, index) => {
+                const oscillator = notificationAudioContext.createOscillator();
+                const gain = notificationAudioContext.createGain();
+
+                oscillator.type = "sine";
+                oscillator.frequency.setValueAtTime(index === 0 ? 880 : 1174, now + offset);
+
+                gain.gain.setValueAtTime(0.0001, now + offset);
+                gain.gain.exponentialRampToValueAtTime(0.055, now + offset + 0.012);
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + offset + 0.22);
+
+                oscillator.connect(gain);
+                gain.connect(notificationAudioContext.destination);
+
+                oscillator.start(now + offset);
+                oscillator.stop(now + offset + 0.24);
+            });
+        } catch {
+            // Notification audio is best-effort.
+        }
+    }
+
+    async function enableDMBrowserAlerts() {
+        primeNotificationAudio();
+
+        if (!("Notification" in window)) {
+            notificationSettings["dm-alerts"] = false;
+            saveNotificationSettings();
+            renderNotificationSettings();
+            updateBrowserNotificationNote("This browser does not support browser notifications.");
+            return false;
+        }
+
+        let permission = Notification.permission;
+
+        if (permission === "default") {
+            permission = await Notification.requestPermission();
+        }
+
+        if (permission !== "granted") {
+            notificationSettings["dm-alerts"] = false;
+            saveNotificationSettings();
+            renderNotificationSettings();
+
+            updateBrowserNotificationNote(
+                permission === "denied"
+                    ? "Permission was denied. Enable Helix notifications in your browser site settings, then turn this back on."
+                    : "Notification permission was not granted."
+            );
+
+            return false;
+        }
+
+        notificationSettings["dm-alerts"] = true;
+        saveNotificationSettings();
+        renderNotificationSettings();
+        updateBrowserNotificationNote();
+
+        // Start with the current unread count so enabling notifications does
+        // not immediately fire an old-message alert.
+        lastKnownUnreadDMCount = null;
+        window.helixNotificationEnabled = true;
+
+        return true;
+    }
+
+    async function disableDMBrowserAlerts() {
+        notificationSettings["dm-alerts"] = false;
+        saveNotificationSettings();
+        window.helixNotificationEnabled = false;
+        renderNotificationSettings();
+    }
+
+    function showNewDMNotification(count) {
+        if (!notificationSettings["dm-alerts"] || !("Notification" in window) || Notification.permission !== "granted") {
+            return;
+        }
+
+        try {
+            const displayCount = count === 1 ? "1 new message" : `${count} new messages`;
+            const notification = new Notification("Helix", {
+                body: displayCount + " waiting in Direct Messages.",
+                icon: "images/helix-logo.png",
+                tag: "helix-dm",
+                renotify: true
+            });
+
+            window.setTimeout(() => notification.close(), 6500);
+        } catch {
+            // Browser notifications are best-effort.
+        }
+    }
+
+    window.helixHandleNotificationUnreadCount = function (unread) {
+        const nextUnread = Math.max(0, Number(unread || 0));
+
+        // Tab count only appears while DM browser alerts are enabled.
+        if (notificationSettings["dm-alerts"] && nextUnread > 0) {
+            document.title = `(${nextUnread}) Helix`;
+        } else {
+            document.title = "Helix";
+        }
+
+        if (lastKnownUnreadDMCount === null) {
+            lastKnownUnreadDMCount = nextUnread;
+            return;
+        }
+
+        if (nextUnread > lastKnownUnreadDMCount) {
+            const difference = nextUnread - lastKnownUnreadDMCount;
+            playDMAlertSound();
+            showNewDMNotification(difference);
+        }
+
+        lastKnownUnreadDMCount = nextUnread;
+    };
+
     document.querySelectorAll("[data-notification-setting]").forEach((button) => {
-        button.addEventListener("click", () => {
+        button.addEventListener("click", async () => {
             const key = button.dataset.notificationSetting;
+
+            if (key === "dm-alerts") {
+                if (notificationSettings["dm-alerts"]) {
+                    await disableDMBrowserAlerts();
+                    const status = document.getElementById("profile-action-message");
+                    if (status) status.textContent = "DM browser alerts turned off.";
+                    return;
+                }
+
+                const enabled = await enableDMBrowserAlerts();
+                const status = document.getElementById("profile-action-message");
+                if (status) {
+                    status.textContent = enabled
+                        ? "DM browser alerts enabled."
+                        : "DM browser alerts were not enabled.";
+                }
+                return;
+            }
+
             notificationSettings[key] = !notificationSettings[key];
             saveNotificationSettings();
             renderNotificationSettings();
