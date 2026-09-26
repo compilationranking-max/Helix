@@ -512,10 +512,25 @@
         </div>
 
         <form class="message-form" id="message-form">
-            <div class="message-input-shell">
-                <input id="message-input" type="text" maxlength="4000" placeholder="Message your friend..." autocomplete="off" aria-label="Message your friend">
-                <button type="submit" class="message-send-button" aria-label="Send message">→</button>
+            <div class="dm-media-preview" id="dm-media-preview" hidden>
+                <div class="dm-media-preview-thumb" id="dm-media-preview-thumb"></div>
+                <div class="dm-media-preview-copy">
+                    <strong id="dm-media-preview-name">Attachment</strong>
+                    <small id="dm-media-preview-size">0 MB</small>
+                </div>
+                <button type="button" class="dm-media-preview-remove" id="dm-media-preview-remove" aria-label="Remove attachment">×</button>
             </div>
+            <div class="message-input-shell">
+                <button type="button" class="dm-attach-button" id="dm-attach-button" aria-label="Attach photo or video" title="Attach photo or video">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 12.5 12 8a3.5 3.5 0 0 1 5 5l-6.2 6.2a4.8 4.8 0 0 1-6.8-6.8l7-7a3.8 3.8 0 0 1 5.4 5.4l-6.3 6.3a2 2 0 0 1-2.8-2.8l5.8-5.8"/></svg>
+                </button>
+                <input id="message-input" type="text" maxlength="4000" placeholder="Message your friend..." autocomplete="off" aria-label="Message your friend...">
+                <button type="submit" class="message-send-button" aria-label="Send message" title="Send message">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h13"></path><path d="m13 6 6 6-6 6"></path></svg>
+                </button>
+            </div>
+            <input id="dm-media-input" type="file" accept="image/*,video/*" hidden>
+            <p class="dm-media-hint" id="dm-media-hint">Photos &amp; videos up to 10 MB</p>
         </form>
     </section>
 
