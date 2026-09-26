@@ -956,6 +956,77 @@ app.post("/api/dm/messages", async (req, res) => {
     }
 });
 
+async function getAIImageUsage(username) {
+    if (dbPool) {
+        await requireDatabase();
+        const result = await dbPool.query(
+            'SELECT upload_count FROM helix_ai_image_usage WHERE username = $1 AND usage_date = CURRENT_DATE',
+            [username]
+        );
+        const used = Number(result.rows[0]?.upload_count || 0);
+        return { used, remaining: Math.max(0, DAILY_AI_IMAGE_LIMIT - used) };
+    }
+
+    const data = loadNetworkData();
+    data.aiImageUsage = data.aiImageUsage || {};
+    const today = new Date().toISOString().slice(0, 10);
+    const used = Number(data.aiImageUsage[username]?.[today] || 0);
+    return { used, remaining: Math.max(0, DAILY_AI_IMAGE_LIMIT - used) };
+}
+
+async function claimAIImageUpload(username) {
+    if (dbPool) {
+        await requireDatabase();
+        const claimed = await dbPool.query(
+            `INSERT INTO helix_ai_image_usage (username, usage_date, upload_count)
+             VALUES ($1, CURRENT_DATE, 1)
+             ON CONFLICT (username, usage_date)
+             DO UPDATE SET upload_count = helix_ai_image_usage.upload_count + 1
+             WHERE helix_ai_image_usage.upload_count < $2
+             RETURNING upload_count`,
+            [username, DAILY_AI_IMAGE_LIMIT]
+        );
+
+        if (!claimed.rowCount) {
+            const error = new Error("Daily photo upload limit reached. Try again tomorrow.");
+            error.status = 429;
+            error.remaining = 0;
+            throw error;
+        }
+
+        const used = Number(claimed.rows[0].upload_count);
+        return { used, remaining: Math.max(0, DAILY_AI_IMAGE_LIMIT - used) };
+    }
+
+    const data = loadNetworkData();
+    data.aiImageUsage = data.aiImageUsage || {};
+    const today = new Date().toISOString().slice(0, 10);
+    data.aiImageUsage[username] = data.aiImageUsage[username] || {};
+    const used = Number(data.aiImageUsage[username][today] || 0);
+
+    if (used >= DAILY_AI_IMAGE_LIMIT) {
+        const error = new Error("Daily photo upload limit reached. Try again tomorrow.");
+        error.status = 429;
+        error.remaining = 0;
+        throw error;
+    }
+
+    const next = used + 1;
+    data.aiImageUsage[username][today] = next;
+    saveNetworkData(data);
+    return { used: next, remaining: DAILY_AI_IMAGE_LIMIT - next };
+}
+
+function parseAIImageData(value) {
+    if (typeof value !== 'string') return null;
+    const match = /^data:(image\\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/.exec(value.trim());
+    if (!match) return null;
+    const base64 = match[2];
+    const buffer = Buffer.from(base64, 'base64');
+    if (!buffer.length || buffer.length > 1500000) return null;
+    return { mimeType: match[1], data: base64 };
+}
+
 function buildConversationInput(history, message) {
     const validHistory = Array.isArray(history)
         ? history.filter((item) => (
