@@ -5863,16 +5863,8 @@ body::before {
 }
 
 #dm-view #chat-message-search::before {
-    content: "⌕";
-    position: absolute;
-    left: 14px;
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: 2;
-    color: var(--cyan);
-    font-size: 17px;
-    line-height: 1;
-    pointer-events: none;
+    content: none !important;
+    display: none !important;
 }
 
 #dm-view #chat-search-close {
