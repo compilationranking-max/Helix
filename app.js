@@ -167,6 +167,12 @@ function setCurrentProfileUser(user) {
             createdAt: user.createdAt || users[loggedInUser]?.createdAt || new Date().toISOString(),
             ...(Object.prototype.hasOwnProperty.call(user, "profilePhoto")
                 ? { profilePhoto: user.profilePhoto || null }
+                : {}),
+            ...(Object.prototype.hasOwnProperty.call(user, "email")
+                ? { email: user.email || null }
+                : {}),
+            ...(Object.prototype.hasOwnProperty.call(user, "phone")
+                ? { phone: user.phone || null }
                 : {})
         };
         try {
@@ -1521,20 +1527,27 @@ function openAccountModal(action) {
                 ? `<label class="helix-modal-label" for="account-modal-phone">Phone number</label><input class="helix-modal-input" id="account-modal-phone" type="tel" autocomplete="tel" placeholder="+1 555 010 2048" required>`
                 : action === "password"
                     ? `<label class="helix-modal-label" for="account-modal-current-password">Current password</label><input class="helix-modal-input" id="account-modal-current-password" type="password" autocomplete="current-password" required><label class="helix-modal-label" for="account-modal-new-password">New password</label><input class="helix-modal-input" id="account-modal-new-password" type="password" autocomplete="new-password" minlength="8" required>`
-                    : `<p class="helix-confirmation-copy">This will end every active Helix session for this account.</p>`;
+                    : action === "delete-account"
+                        ? `<label class="helix-modal-label" for="account-modal-delete-password">Current password</label><input class="helix-modal-input" id="account-modal-delete-password" type="password" autocomplete="current-password" required><p class="helix-confirmation-copy">This permanently removes your Helix account, friends, DMs, settings and profile data.</p>`
+                        : `<p class="helix-confirmation-copy">This will end every active Helix session for this account.</p>`;
 
     accountModalTitle.textContent = action === "display-name" ? "Change display name"
         : action === "email" ? "Link Gmail"
         : action === "phone" ? "Add phone"
         : action === "password" ? "Change password"
+        : action === "delete-account" ? "Delete account"
         : "End all sessions";
 
     accountModalDescription.textContent = action === "sessions"
         ? "Confirm network-wide session termination."
         : "Update your Helix identity settings.";
 
-    accountModalSubmit.textContent = action === "sessions" ? "Log out everywhere" : "Save changes";
-    accountModalSubmit.classList.toggle("profile-danger-button", action === "sessions");
+    accountModalSubmit.textContent = action === "sessions"
+        ? "Log out everywhere"
+        : action === "delete-account"
+            ? "Delete permanently"
+            : "Save changes";
+    accountModalSubmit.classList.toggle("profile-danger-button", action === "sessions" || action === "delete-account");
     accountModal.hidden = false;
 
     const firstInput = accountModalFields.querySelector("input");
@@ -1613,67 +1626,131 @@ accountModalForm?.addEventListener("submit", async (event) => {
         return;
     }
 
-    if (activeAccountAction === "email") {
-        const email = document.getElementById("account-modal-email")?.value.trim() || "";
-        const users = readLocalJSON("helixUsers", {});
-        const user = users[loggedInUser];
+    if (activeAccountAction === "email" || activeAccountAction === "phone") {
+        const type = activeAccountAction;
+        const field = document.getElementById("account-modal-" + type);
+        const value = (field?.value || "").trim();
 
-        if (!user || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        if (type === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
             accountModalError.textContent = "Enter a valid email address.";
             return;
         }
-
-        user.email = email;
-        users[loggedInUser] = user;
-        localStorage.setItem("helixUsers", JSON.stringify(users));
-
-    } else if (activeAccountAction === "phone") {
-        const phone = document.getElementById("account-modal-phone")?.value.trim() || "";
-        if (phone.replace(/\D/g, "").length < 7) {
+        if (type === "phone" && value.replace(/\D/g, "").length < 7) {
             accountModalError.textContent = "Enter a valid phone number.";
             return;
         }
 
-        const users = readLocalJSON("helixUsers", {});
-        const user = users[loggedInUser];
-
-        if (!user) {
-            accountModalError.textContent = "Account record could not be found.";
-            return;
+        accountModalSubmit.disabled = true;
+        accountModalSubmit.textContent = "Saving...";
+        try {
+            const response = await fetch("/api/profile/contact", {
+                method: "POST",
+                credentials: "include",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ type, value })
+            });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                accountModalError.textContent = data.error || "Could not update your contact information.";
+                return;
+            }
+            setCurrentProfileUser(data.user || { username: loggedInUser, displayName: getCurrentDisplayName(), [type]: value });
+            updateProfileView();
+            closeAccountModal();
+            if (profileActionMessage) profileActionMessage.textContent = type === "email" ? "Email linked." : "Phone number added.";
+        } catch {
+            accountModalError.textContent = "Helix could not reach the server.";
+        } finally {
+            accountModalSubmit.disabled = false;
+            accountModalSubmit.textContent = "Save changes";
         }
-
-        user.phone = phone;
-        users[loggedInUser] = user;
-        localStorage.setItem("helixUsers", JSON.stringify(users));
+        return;
 
     } else if (activeAccountAction === "password") {
-        const currentPassword = document.getElementById("account-modal-current-password").value;
-        const newPassword = document.getElementById("account-modal-new-password").value;
-        const users = readLocalJSON("helixUsers", {});
-        const user = users[loggedInUser];
-
-        if (!user) {
-            accountModalError.textContent = "Account record could not be found.";
-            return;
-        }
-
+        const currentPassword = document.getElementById("account-modal-current-password")?.value || "";
+        const newPassword = document.getElementById("account-modal-new-password")?.value || "";
         if (newPassword.length < 8) {
             accountModalError.textContent = "New password must be at least 8 characters.";
             return;
         }
+        accountModalSubmit.disabled = true;
+        accountModalSubmit.textContent = "Changing...";
+        try {
+            const response = await fetch("/api/profile/password", {
+                method: "POST",
+                credentials: "include",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ currentPassword, newPassword })
+            });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                accountModalError.textContent = data.error || "Could not change your password.";
+                return;
+            }
+            closeAccountModal();
+            localStorage.removeItem("helixLoggedIn");
+            localStorage.removeItem("helixDisplayName");
+            window.location.href = "index.html";
+        } catch {
+            accountModalError.textContent = "Helix could not reach the server.";
+        } finally {
+            accountModalSubmit.disabled = false;
+        }
+        return;
 
-        // Password verification remains handled by the account system when it is moved server-side.
-        if (user.password && user.password !== currentPassword) {
-            accountModalError.textContent = "Current password is incorrect.";
+    } else if (activeAccountAction === "delete-account") {
+        const password = document.getElementById("account-modal-delete-password")?.value || "";
+        if (!password) {
+            accountModalError.textContent = "Enter your current password.";
             return;
         }
-
-        user.password = newPassword;
-        users[loggedInUser] = user;
-        localStorage.setItem("helixUsers", JSON.stringify(users));
+        if (!window.confirm("Permanently delete your Helix account and all cloud data?")) return;
+        accountModalSubmit.disabled = true;
+        accountModalSubmit.textContent = "Deleting...";
+        try {
+            const response = await fetch("/api/account", {
+                method: "DELETE",
+                credentials: "include",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ password })
+            });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                accountModalError.textContent = data.error || "Could not delete your account.";
+                return;
+            }
+            localStorage.clear();
+            sessionStorage.clear();
+            window.location.href = "index.html";
+        } catch {
+            accountModalError.textContent = "Helix could not reach the server.";
+        } finally {
+            accountModalSubmit.disabled = false;
+            accountModalSubmit.textContent = "Delete permanently";
+        }
+        return;
 
     } else if (activeAccountAction === "sessions") {
-        await logoutCurrentSession();
+        accountModalSubmit.disabled = true;
+        accountModalSubmit.textContent = "Ending...";
+        try {
+            const response = await fetch("/api/auth/logout-all", {
+                method: "POST",
+                credentials: "include"
+            });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                accountModalError.textContent = data.error || "Could not end all sessions.";
+                return;
+            }
+            localStorage.removeItem("helixLoggedIn");
+            localStorage.removeItem("helixDisplayName");
+            window.location.href = "index.html";
+        } catch {
+            accountModalError.textContent = "Helix could not reach the server.";
+        } finally {
+            accountModalSubmit.disabled = false;
+        }
         return;
     }
 
