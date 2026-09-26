@@ -10153,3 +10153,24 @@ body.helix-reduced-motion *::after {
             0 0 26px rgba(0, 229, 255, 0.28);
     }
 }
+
+
+/* Browser DM notification setting */
+.settings-notification-note {
+    margin: -8px 4px 14px;
+    color: #5f7384;
+    font-size: 9px;
+    line-height: 1.6;
+}
+
+.settings-option-row.is-disabled .settings-option-state {
+    color: #61717d !important;
+    border-color: rgba(112, 139, 158, 0.18) !important;
+    background: rgba(112, 139, 158, 0.05) !important;
+}
+
+.settings-option-row[data-notification-setting="dm-alerts"] .settings-option-state {
+    min-width: 42px;
+    text-align: center;
+}
+
