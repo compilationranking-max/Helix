@@ -693,8 +693,8 @@ app.post("/api/profile/contact", async (req, res) => {
     const value = typeof req.body?.value === "string" ? req.body.value.trim() : "";
 
     if (!["email", "phone"].includes(type)) return res.status(400).json({ error: "Invalid contact type." });
-    if (type === "email" && !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(value)) return res.status(400).json({ error: "Enter a valid email address." });
-    if (type === "phone" && value.replace(/\\D/g, "").length < 7) return res.status(400).json({ error: "Enter a valid phone number." });
+    if (type === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return res.status(400).json({ error: "Enter a valid email address." });
+    if (type === "phone" && value.replace(/\D/g, "").length < 7) return res.status(400).json({ error: "Enter a valid phone number." });
 
     try {
         if (dbPool) {
