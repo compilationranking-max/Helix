@@ -1068,6 +1068,11 @@
                                 <span class="settings-section-index">06</span>
                             </div>
 
+                            <div class="blocked-account-add">
+                                <input id="blocked-username-input" type="text" maxlength="32" placeholder="Username to block" autocomplete="off">
+                                <button class="profile-secondary-button" id="block-username-button" type="button">Block account</button>
+                            </div>
+                            <p class="blocked-account-feedback" id="blocked-account-feedback" role="status" aria-live="polite"></p>
                             <div class="blocked-accounts-list" id="blocked-accounts-list" aria-live="polite"></div>
                         </section>
 
@@ -1108,13 +1113,13 @@
                                     <span class="settings-option-arrow">›</span>
                                 </button>
 
-                                <button class="settings-option-row danger-option settings-disabled-row" type="button" data-settings-action="delete-account" disabled aria-disabled="true">
+                                <button class="settings-option-row danger-option" type="button" data-settings-action="delete-account">
                                     <span class="settings-option-icon">!</span>
                                     <span class="settings-option-copy">
                                         <strong>Delete account</strong>
-                                        <small>Permanent account deletion will be available when Helix has a secure server-side account system.</small>
+                                        <small>Permanently delete your Helix account and cloud data. Your current password is required.</small>
                                     </span>
-                                    <span class="settings-option-state">COMING SOON</span>
+                                    <span class="settings-option-state">DELETE</span>
                                 </button>
                             </div>
 
