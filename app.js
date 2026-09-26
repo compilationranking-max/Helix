@@ -65,6 +65,7 @@ async function bootstrapHelixSession() {
 
         updateLoggedInUser();
         updateProfileView();
+        await loadCloudProfileSettings();
 
         // Populate the Direct Messages inbox from the cloud as soon as
         // the server session is confirmed.
@@ -2083,6 +2084,45 @@ settingsItems.forEach((item) => {
     });
 });
 
+async function loadCloudProfileSettings() {
+    if (!loggedInUser) return;
+    try {
+        const response = await fetch("/api/settings", { credentials: "include", cache: "no-store" });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || !data.settings) return;
+        const settings = data.settings;
+        try {
+            localStorage.setItem("helixPrivacySettings", JSON.stringify(settings.privacy || {}));
+            localStorage.setItem("helixNotificationSettings:v2", JSON.stringify(settings.notifications || {}));
+            localStorage.setItem("helixAppearanceSettings", JSON.stringify(settings.appearance || {}));
+            localStorage.setItem("helixDigitalDetox:" + loggedInUser, JSON.stringify(settings.detox || {}));
+        } catch {}
+        window.dispatchEvent(new CustomEvent("helix-cloud-settings-loaded", { detail: settings }));
+    } catch (error) {
+        console.warn("Could not load cloud profile settings:", error);
+    }
+}
+
+async function saveCloudSettingGroup(group, values) {
+    if (!loggedInUser) return false;
+    try {
+        const response = await fetch("/api/settings/" + encodeURIComponent(group), {
+            method: "PATCH",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ values })
+        });
+        if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            console.warn("Cloud settings save failed:", data.error || response.status);
+            return false;
+        }
+        return true;
+    } catch (error) {
+        console.warn("Cloud settings request failed:", error);
+        return false;
+    }
+}
 function setDataDownloadStatus(title, detail) {
     const status = document.getElementById("data-download-status");
     if (!status) return;
