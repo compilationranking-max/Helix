@@ -809,7 +809,11 @@ async function checkHelixAIStatus() {
         const data = await response.json().catch(() => ({}));
 
         if (!response.ok || data.ok !== true || data.reachable !== true) {
-            throw new Error(data.error || "AI service unavailable");
+            statusElement.innerHTML = '<span class="status-dot"></span>AI OFFLINE';
+            statusElement.classList.remove("online");
+            statusElement.classList.add("offline");
+            statusElement.title = data.aiError || "Helix AI is not reachable from the server.";
+            return;
         }
 
         statusElement.innerHTML = '<span class="status-dot"></span>AI ONLINE';
@@ -895,6 +899,12 @@ async function sendAIMessage() {
 }
 
 checkHelixAIStatus();
+
+aiSendButton?.addEventListener("click", (event) => {
+    event.preventDefault();
+    sendAIMessage();
+});
+
 aiForm?.addEventListener("submit", (event) => {
     event.preventDefault();
     sendAIMessage();
