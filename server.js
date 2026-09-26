@@ -497,6 +497,7 @@ app.post("/api/auth/login", async (req, res) => {
                 [hashSessionToken(token), username]
             );
             setSessionCookie(res, token);
+            await logActivity(username, "account.logged_in");
             return res.json({
                 ok: true,
                 user: {
@@ -908,6 +909,7 @@ app.post("/api/profile/display-name", async (req, res) => {
                 "UPDATE helix_users SET display_name = $1 WHERE username = $2 RETURNING username, display_name, created_at, profile_photo",
                 [displayName, user.username]
             );
+            await logActivity(user.username, "account.display_name_updated");
             return res.json({
                 ok: true,
                 user: { username: result.rows[0].username, displayName: result.rows[0].display_name, createdAt: result.rows[0].created_at, email: result.rows[0].email || null, phone: result.rows[0].phone || null, profilePhoto: publicProfilePhotoUrl(result.rows[0].username) || null }
@@ -1114,6 +1116,7 @@ app.post("/api/network/request", async (req, res) => {
             if (pending.rowCount) return res.status(409).json({ error: "A friend request is already pending." });
             const id = crypto.randomUUID();
             const created = await dbPool.query(`INSERT INTO helix_friend_requests (id, from_username, to_username) VALUES ($1,$2,$3) RETURNING id, from_username AS "from", to_username AS "to", status, created_at AS "createdAt"`, [id,user.username,to]);
+            await logActivity(user.username, "network.friend_request_sent", { to });
             return res.status(201).json({ ok: true, request: created.rows[0] });
         }
 
@@ -1170,6 +1173,7 @@ app.post("/api/network/request/:id/respond", async (req, res) => {
                     await client.query("INSERT INTO helix_friendships (user_a,user_b) VALUES (LEAST($1,$2),GREATEST($1,$2)) ON CONFLICT DO NOTHING", [from,user.username]);
                 }
                 await client.query("COMMIT");
+                await logActivity(user.username, action === "accept" ? "network.friend_request_accepted" : "network.friend_request_declined", { from });
                 return res.json({ ok:true });
             } catch (error) { await client.query("ROLLBACK"); throw error; }
             finally { client.release(); }
@@ -1227,6 +1231,8 @@ app.post("/api/profile/photo", async (req, res) => {
             );
 
             const row = result.rows[0];
+
+            await logActivity(user.username, "account.profile_photo_updated");
 
             return res.json({
                 ok: true,
@@ -1451,6 +1457,7 @@ app.post("/api/dm/messages", async (req, res) => {
                       body AS "text", created_at AS "createdAt", read_at AS "readAt"
         `, [crypto.randomUUID(), user.username, recipient, body]);
 
+        await logActivity(user.username, "dm.message_sent", { to: recipient });
         res.status(201).json({ ok: true, message: result.rows[0] });
     } catch (error) {
         console.error("DM send failed:", error);
