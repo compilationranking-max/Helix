@@ -2517,6 +2517,11 @@ document.querySelectorAll("[data-settings-action]").forEach((button) => {
             return;
         }
 
+        if (action === "activity-log") {
+            openAccountActivityModal();
+            return;
+        }
+
         if (messages[action]) {
             const status = document.getElementById("profile-action-message");
             if (status) status.textContent = messages[action];
@@ -2527,6 +2532,44 @@ document.querySelectorAll("[data-settings-action]").forEach((button) => {
 
 
 // =========================================================
+async function openAccountActivityModal() {
+    const modal = document.getElementById("help-support-modal");
+    const title = document.getElementById("help-support-modal-title");
+    const description = document.getElementById("help-support-modal-description");
+    const body = document.getElementById("help-support-modal-body");
+    if (!modal || !title || !description || !body) return;
+    title.textContent = "Account activity";
+    description.textContent = "Recent security and settings activity recorded by Helix.";
+    body.textContent = "Loading activity...";
+    modal.hidden = false;
+    try {
+        const response = await fetch("/api/activity", { credentials: "include", cache: "no-store" });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || "Could not load activity.");
+        body.replaceChildren();
+        const activity = Array.isArray(data.activity) ? data.activity : [];
+        if (!activity.length) {
+            const empty = document.createElement("div");
+            empty.className = "settings-empty-card";
+            empty.innerHTML = "<span>◎</span><div><strong>No activity yet</strong><small>Important account events will appear here.</small></div>";
+            body.appendChild(empty);
+            return;
+        }
+        activity.forEach((item) => {
+            const row = document.createElement("div");
+            row.className = "account-activity-item";
+            const name = document.createElement("strong");
+            name.textContent = String(item.eventType || "account.event");
+            const time = document.createElement("small");
+            time.textContent = new Date(item.createdAt).toLocaleString();
+            row.append(name, time);
+            body.appendChild(row);
+        });
+    } catch (error) {
+        body.textContent = error.message || "Could not load activity.";
+    }
+}
+
 // YOUR ACTIVITY
 // =========================================================
 
