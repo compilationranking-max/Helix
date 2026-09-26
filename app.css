@@ -9777,3 +9777,280 @@ body.helix-reduced-motion *::after {
     background-repeat: no-repeat !important;
 }
 
+
+
+/* =========================================================
+   HELIX AI — MARKDOWN, MATH & PHOTO ATTACHMENTS
+   ========================================================= */
+
+.ai-composer-wrap-inner {
+    position: relative;
+    width: 100%;
+}
+
+.ai-composer-wrap-inner .ai-composer {
+    position: relative;
+    z-index: 2;
+}
+
+.ai-attach-button {
+    width: 38px;
+    height: 38px;
+    flex: 0 0 38px;
+    display: grid;
+    place-items: center;
+    border-radius: 12px;
+    font-size: 22px;
+}
+
+.ai-attachment-menu {
+    position: absolute;
+    left: 0;
+    bottom: calc(100% + 10px);
+    z-index: 20;
+    width: min(290px, calc(100vw - 40px));
+    padding: 8px;
+    border: 1px solid rgba(0, 229, 255, 0.20);
+    border-radius: 14px;
+    background: rgba(6, 12, 21, 0.98);
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.42), 0 0 24px rgba(0, 229, 255, 0.06);
+    backdrop-filter: blur(18px);
+}
+
+.ai-attachment-menu[hidden],
+.ai-photo-chip[hidden] {
+    display: none !important;
+}
+
+.ai-attachment-option {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 10px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    color: #e8f9ff;
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+}
+
+.ai-attachment-option:hover {
+    border-color: rgba(0, 229, 255, 0.15);
+    background: rgba(0, 229, 255, 0.06);
+}
+
+.ai-attachment-option-icon {
+    width: 34px;
+    height: 34px;
+    flex: 0 0 34px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(0, 229, 255, 0.22);
+    border-radius: 10px;
+    color: var(--cyan);
+    background: rgba(0, 229, 255, 0.08);
+    font-size: 16px;
+}
+
+.ai-attachment-option span:last-child {
+    min-width: 0;
+}
+
+.ai-attachment-option strong,
+.ai-attachment-option small {
+    display: block;
+}
+
+.ai-attachment-option strong {
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.ai-attachment-option small {
+    margin-top: 4px;
+    color: #6f8494;
+    font-size: 8px;
+}
+
+.ai-photo-limit {
+    margin: 7px 5px 2px;
+    color: #537283;
+    font: 8px "SFMono-Regular", Consolas, monospace;
+    letter-spacing: .04em;
+}
+
+.ai-photo-chip {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    width: fit-content;
+    max-width: 100%;
+    margin: 8px 0 0;
+    padding: 6px 7px 6px 6px;
+    border: 1px solid rgba(0, 229, 255, 0.18);
+    border-radius: 11px;
+    background: rgba(0, 229, 255, 0.045);
+}
+
+.ai-photo-chip img {
+    width: 34px;
+    height: 34px;
+    flex: 0 0 34px;
+    object-fit: cover;
+    border-radius: 7px;
+    border: 1px solid rgba(0, 229, 255, 0.22);
+}
+
+.ai-photo-chip > span {
+    min-width: 0;
+}
+
+.ai-photo-chip strong,
+.ai-photo-chip small {
+    display: block;
+    max-width: 240px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ai-photo-chip strong {
+    color: #dffaff;
+    font-size: 9px;
+}
+
+.ai-photo-chip small {
+    margin-top: 3px;
+    color: #648092;
+    font-size: 8px;
+}
+
+.ai-photo-chip button {
+    width: 24px;
+    height: 24px;
+    flex: 0 0 24px;
+    border: 1px solid rgba(0, 229, 255, 0.16);
+    border-radius: 50%;
+    color: var(--cyan);
+    background: transparent;
+    cursor: pointer;
+}
+
+.ai-photo-chip button:hover {
+    border-color: rgba(0, 229, 255, 0.44);
+    background: rgba(0, 229, 255, 0.06);
+}
+
+.ai-message-content {
+    min-width: 0;
+}
+
+.ai-message-content + .ai-message-time {
+    margin-top: 8px;
+}
+
+.ai-content-line,
+.ai-content-bullet,
+.ai-content-numbered {
+    line-height: 1.7;
+}
+
+.ai-content-heading {
+    margin: 4px 0 8px;
+    color: #f1fbff;
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.4;
+}
+
+.ai-content-bullet,
+.ai-content-numbered {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin: 4px 0;
+}
+
+.ai-content-bullet > span,
+.ai-content-numbered > span {
+    flex: 0 0 auto;
+    color: var(--cyan);
+    font-family: "SFMono-Regular", Consolas, monospace;
+}
+
+.ai-content-bullet > div,
+.ai-content-numbered > div {
+    min-width: 0;
+}
+
+.ai-content-spacer {
+    height: 7px;
+}
+
+.ai-message-content strong {
+    color: #ffffff;
+    font-weight: 700;
+}
+
+.ai-message-content em {
+    color: #d6edf5;
+}
+
+.ai-message-content code {
+    padding: 2px 5px;
+    border: 1px solid rgba(0, 229, 255, 0.12);
+    border-radius: 5px;
+    color: #8defff;
+    background: rgba(0, 229, 255, 0.06);
+    font-family: "SFMono-Regular", Consolas, monospace;
+    font-size: 11px;
+}
+
+.ai-math-inline {
+    display: inline-block;
+    margin: 0 2px;
+    color: #f2fbff;
+    vertical-align: -0.08em;
+}
+
+.ai-math-display {
+    overflow-x: auto;
+    margin: 9px 0;
+    padding: 5px 0;
+    color: #f2fbff;
+    text-align: center;
+}
+
+.ai-math-display mjx-container,
+.ai-math-inline mjx-container {
+    max-width: 100%;
+}
+
+.ai-message-image {
+    display: block;
+    width: min(360px, 100%);
+    max-height: 300px;
+    margin: 0 0 9px;
+    object-fit: contain;
+    border: 1px solid rgba(0, 229, 255, 0.14);
+    border-radius: 10px;
+    background: #07101a;
+}
+
+@media (max-width: 700px) {
+    .ai-message {
+        max-width: 94%;
+    }
+
+    .ai-message-image {
+        max-height: 240px;
+    }
+
+    .ai-attachment-menu {
+        left: -2px;
+        width: min(280px, calc(100vw - 34px));
+    }
+}
+
