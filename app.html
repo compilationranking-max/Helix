@@ -326,11 +326,26 @@
                                     <span class="ai-typing-dot"></span>
                                 </div>
 
-                                <form class="ai-composer" id="ai-form">
-                                    <button class="ai-attach-button" type="button" aria-label="Add to prompt">＋</button>
-                                    <textarea id="ai-input" placeholder="Ask Helix" aria-label="Ask Helix" rows="1"></textarea>
-                                    <button class="ai-send-button" id="ai-send-button" type="submit" aria-label="Send message">→</button>
-                                </form>
+                                <div class="ai-composer-wrap-inner">
+                                    <form class="ai-composer" id="ai-form">
+                                        <button class="ai-attach-button" id="ai-attach-button" type="button" aria-label="Add to prompt" aria-expanded="false">＋</button>
+                                        <textarea id="ai-input" placeholder="Ask Helix" aria-label="Ask Helix" rows="1"></textarea>
+                                        <button class="ai-send-button" id="ai-send-button" type="submit" aria-label="Send message">→</button>
+                                    </form>
+                                    <div class="ai-attachment-menu" id="ai-attachment-menu" hidden>
+                                        <button type="button" class="ai-attachment-option" id="ai-upload-photo-button">
+                                            <span class="ai-attachment-option-icon">▧</span>
+                                            <span><strong>Upload a photo</strong><small>Ask Helix to analyze an image</small></span>
+                                        </button>
+                                        <input id="ai-photo-input" type="file" accept="image/png,image/jpeg,image/webp" hidden>
+                                        <div class="ai-photo-limit" id="ai-photo-limit">5 photo uploads left today</div>
+                                    </div>
+                                    <div class="ai-photo-chip" id="ai-photo-chip" hidden>
+                                        <img id="ai-photo-preview" alt="Selected photo preview">
+                                        <span><strong id="ai-photo-name">Photo ready</strong><small id="ai-photo-chip-status">Ready for Helix to analyze</small></span>
+                                        <button type="button" id="ai-remove-photo-button" aria-label="Remove selected photo">×</button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1213,6 +1228,16 @@
          JAVASCRIPT
          ========================================== -->
 
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [["\\(","\\)"], ["$","$"]],
+                displayMath: [["\\[","\\]"], ["$","$"]]
+            },
+            svg: { fontCache: "global" }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
     <script src="app.js"></script>
 
 </body>
