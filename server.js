@@ -226,6 +226,19 @@ async function initializeDatabase() {
             ADD CONSTRAINT helix_messages_media_size_check
             CHECK (media_size IS NULL OR (media_size > 0 AND media_size <= 10485760));
 
+        CREATE TABLE IF NOT EXISTS helix_dm_nicknames (
+            owner_username TEXT NOT NULL REFERENCES helix_users(username) ON DELETE CASCADE,
+            friend_username TEXT NOT NULL REFERENCES helix_users(username) ON DELETE CASCADE,
+            nickname TEXT NOT NULL CHECK (char_length(nickname) BETWEEN 1 AND 50),
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            PRIMARY KEY (owner_username, friend_username),
+            CHECK (owner_username <> friend_username)
+        );
+
+        CREATE INDEX IF NOT EXISTS helix_dm_nicknames_owner_idx
+            ON helix_dm_nicknames (owner_username, friend_username);
+
         CREATE INDEX IF NOT EXISTS helix_messages_conversation_idx
             ON helix_messages (sender_username, recipient_username, created_at);
 
@@ -963,6 +976,7 @@ async function getCloudNetworkState(username) {
         SELECT
             u.username,
             u.display_name AS "displayName",
+            n.nickname AS "customNickname",
             COALESCE((
                 SELECT COUNT(*)::int
                 FROM helix_messages m
@@ -972,6 +986,9 @@ async function getCloudNetworkState(username) {
             ), 0) AS "unreadCount"
         FROM helix_friendships f
         JOIN helix_users u ON u.username = CASE WHEN f.user_a = $1 THEN f.user_b ELSE f.user_a END
+        LEFT JOIN helix_dm_nicknames n
+            ON n.owner_username = $1
+           AND n.friend_username = u.username
         WHERE f.user_a = $1 OR f.user_b = $1
         ORDER BY LOWER(u.display_name), LOWER(u.username)
     `, [username]);
@@ -1355,6 +1372,97 @@ app.delete("/api/network/friend", async (req, res) => {
         return res.status(400).json({ error: "Not available in local mode." });
     } catch (error) { return res.status(500).json({ error: "Could not remove your friend." }); }
 });
+app.get("/api/dm/nicknames", async (req, res) => {
+    const user = await requireCurrentUser(req, res);
+    if (!user) return;
+
+    try {
+        await requireDatabase();
+        const result = await dbPool.query(`
+            SELECT friend_username AS "friendUsername", nickname
+            FROM helix_dm_nicknames
+            WHERE owner_username = $1
+            ORDER BY friend_username
+        `, [user.username]);
+
+        return res.json({ ok: true, nicknames: result.rows });
+    } catch (error) {
+        console.error("DM nickname load failed:", error);
+        return res.status(500).json({ error: "Could not load your custom friend nicknames." });
+    }
+});
+
+app.put("/api/dm/nicknames/:friendUsername", async (req, res) => {
+    const user = await requireCurrentUser(req, res);
+    if (!user) return;
+
+    const friendUsername = normalizeUsername(req.params.friendUsername);
+    const nickname = typeof req.body?.nickname === "string"
+        ? req.body.nickname.trim().replace(/\\s+/g, " ")
+        : "";
+
+    if (!validUsername(friendUsername) || friendUsername === user.username) {
+        return res.status(400).json({ error: "Invalid friend." });
+    }
+
+    if (!nickname || nickname.length > 50) {
+        return res.status(400).json({ error: "Nickname must be between 1 and 50 characters." });
+    }
+
+    if (/[ -]/.test(nickname)) {
+        return res.status(400).json({ error: "Nickname contains invalid characters." });
+    }
+
+    try {
+        await requireDatabase();
+
+        if (!(await areCloudFriends(user.username, friendUsername))) {
+            return res.status(403).json({ error: "You can only nickname your Helix friends." });
+        }
+
+        const result = await dbPool.query(`
+            INSERT INTO helix_dm_nicknames (owner_username, friend_username, nickname)
+            VALUES ($1, $2, $3)
+            ON CONFLICT (owner_username, friend_username)
+            DO UPDATE SET nickname = EXCLUDED.nickname, updated_at = NOW()
+            RETURNING friend_username AS "friendUsername", nickname
+        `, [user.username, friendUsername, nickname]);
+
+        await logActivity(user.username, "dm.nickname_updated", {
+            friend: friendUsername
+        });
+
+        return res.json({ ok: true, nickname: result.rows[0] });
+    } catch (error) {
+        console.error("DM nickname save failed:", error);
+        return res.status(500).json({ error: "Could not save that nickname." });
+    }
+});
+
+app.delete("/api/dm/nicknames/:friendUsername", async (req, res) => {
+    const user = await requireCurrentUser(req, res);
+    if (!user) return;
+
+    const friendUsername = normalizeUsername(req.params.friendUsername);
+
+    try {
+        await requireDatabase();
+        await dbPool.query(
+            "DELETE FROM helix_dm_nicknames WHERE owner_username = $1 AND friend_username = $2",
+            [user.username, friendUsername]
+        );
+
+        await logActivity(user.username, "dm.nickname_removed", {
+            friend: friendUsername
+        });
+
+        return res.json({ ok: true });
+    } catch (error) {
+        console.error("DM nickname delete failed:", error);
+        return res.status(500).json({ error: "Could not remove that nickname." });
+    }
+});
+
 app.get("/api/dm/messages", async (req, res) => {
     const user = await requireCurrentUser(req, res);
     if (!user) return;
@@ -1421,9 +1529,10 @@ app.get("/api/dm/notification-feed", async (req, res) => {
                 m.media_kind AS "mediaKind",
                 m.created_at AS "createdAt",
                 m.sender_username AS "sender",
-                COALESCE(u.display_name, m.sender_username) AS "senderDisplayName"
+                COALESCE(n.nickname, u.display_name, m.sender_username) AS "senderDisplayName"
             FROM helix_messages m
             JOIN helix_users u ON u.username = m.sender_username
+            LEFT JOIN helix_dm_nicknames n ON n.owner_username = $1 AND n.friend_username = m.sender_username
             WHERE m.recipient_username = $1
               AND m.read_at IS NULL
             ORDER BY m.created_at ASC
