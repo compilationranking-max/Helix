@@ -1082,6 +1082,18 @@ app.get("/api/network/search", async (req, res) => {
     }
 });
 
+async function isBlockedEitherWay(usernameA, usernameB) {
+    if (!dbPool) return false;
+    await requireDatabase();
+    const result = await dbPool.query("SELECT 1 FROM helix_blocked_accounts WHERE (blocker_username = $1 AND blocked_username = $2) OR (blocker_username = $2 AND blocked_username = $1) LIMIT 1", [usernameA, usernameB]);
+    return result.rowCount > 0;
+}
+
+async function getPrivacySetting(username, key) {
+    const settings = await getUserSettings(username);
+    return settings.privacy?.[key];
+}
+
 app.post("/api/network/request", async (req, res) => {
     const user = await requireCurrentUser(req, res);
     if (!user) return;
@@ -1093,6 +1105,9 @@ app.post("/api/network/request", async (req, res) => {
             await requireDatabase();
             const target = await dbPool.query("SELECT username FROM helix_users WHERE username = $1", [to]);
             if (!target.rowCount) return res.status(404).json({ error: "User not found on the Helix network." });
+            if (await isBlockedEitherWay(user.username, to)) return res.status(403).json({ error: "You cannot interact with this account." });
+            const requestSetting = await getPrivacySetting(to, "friend-requests");
+            if (requestSetting === "NOBODY") return res.status(403).json({ error: "This user is not accepting friend requests." });
             const pair = await dbPool.query(`SELECT 1 FROM helix_friendships WHERE user_a = LEAST($1,$2) AND user_b = GREATEST($1,$2)`, [user.username, to]);
             if (pair.rowCount) return res.status(409).json({ error: "You are already friends." });
             const pending = await dbPool.query(`SELECT 1 FROM helix_friend_requests WHERE status = 'pending' AND ((from_username=$1 AND to_username=$2) OR (from_username=$2 AND to_username=$1))`, [user.username, to]);
@@ -1105,6 +1120,10 @@ app.post("/api/network/request", async (req, res) => {
         // Local fallback retained for development.
         const data = loadNetworkData();
         if (!data.users[to]) return res.status(404).json({ error: "User not found on the Helix network yet." });
+        const localSettings = data.settings?.[to]?.privacy || {};
+        if (localSettings["friend-requests"] === "NOBODY") return res.status(403).json({ error: "This user is not accepting friend requests." });
+        const blockedByTarget = data.blocked?.[to]?.includes(user.username) || data.blocked?.[user.username]?.includes(to);
+        if (blockedByTarget) return res.status(403).json({ error: "You cannot interact with this account." });
         if (data.friends.some((friend) => samePair(friend.a, friend.b, user.username, to))) return res.status(409).json({ error: "You are already friends." });
         const existing = data.requests.find((request) => request.status === "pending" && samePair(request.from, request.to, user.username, to));
         if (existing) return res.status(409).json({ error: "A friend request is already pending." });
@@ -1403,6 +1422,15 @@ app.post("/api/dm/messages", async (req, res) => {
 
     if (!validUsername(recipient) || recipient === user.username) {
         return res.status(400).json({ error: "Invalid recipient." });
+    }
+
+    if (await isBlockedEitherWay(user.username, recipient)) {
+        return res.status(403).json({ error: "You cannot message this account." });
+    }
+
+    const recipientDMSetting = await getPrivacySetting(recipient, "direct-messages");
+    if (recipientDMSetting === "NOBODY") {
+        return res.status(403).json({ error: "This user is not accepting direct messages." });
     }
 
     if (!body || body.length > 4000) {
