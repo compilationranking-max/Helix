@@ -1,0 +1,47 @@
+name: Helix DM checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  dm-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Node syntax checks
+        run: |
+          node --check app.js
+          node --check server.js
+          node --check routes/dm.js
+          node --check dm/dm.js
+          node --check dm/dm-state.js
+          node --check dm/dm-api.js
+          node --check dm/dm-render.js
+          node --check dm/dm-actions.js
+      - name: Git whitespace check
+        run: git diff --check HEAD^ HEAD
+      - name: DM architecture assertions
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const active = ['dm/dm.js','dm/dm-state.js','dm/dm-api.js','dm/dm-render.js','dm/dm-actions.js','routes/dm.js'];
+          const forbidden = /helix_messages|activeReplyToId|activeReplyTarget|replyPreviewStore|\/api\/dm\/media-message/;
+          for (const file of active) {
+            if (forbidden.test(fs.readFileSync(file, 'utf8'))) throw new Error(`Forbidden legacy DM reference in ${file}`);
+          }
+          const contracts = {
+            'routes/dm.js': ['reply_to_id','validateReplyTarget','replyPreview','media_data','media_kind','MAX_MEDIA_BYTES'],
+            'dm/dm-render.js': ['renderReplyReference','dm-reply-reference','dm-message-media','renderContextMenu','renderInfoPanel'],
+            'dm/dm-state.js': ['state.reply','pendingAttachment','contextMenu','infoPanelOpen'],
+            'dm/dm-api.js': ['sendMediaMessage','getMessage','getConversationInfo','getNotifications']
+          };
+          for (const [file, tokens] of Object.entries(contracts)) {
+            const text = fs.readFileSync(file, 'utf8');
+            for (const token of tokens) if (!text.includes(token)) throw new Error(`Missing contract ${token} in ${file}`);
+          }
+          console.log('Helix DM architecture assertions passed.');
+          NODE
