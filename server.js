@@ -235,18 +235,18 @@ async function initializeDatabase() {
         CREATE INDEX IF NOT EXISTS helix_dm_message_reactions_message_idx
             ON helix_dm_message_reactions (message_id);
 
-        CREATE TABLE IF NOT EXISTS helix_dm_pins (
+        CREATE TABLE IF NOT EXISTS helix_dm_message_pins (
             message_id UUID NOT NULL REFERENCES helix_dm_messages(id) ON DELETE CASCADE,
             owner_username TEXT NOT NULL REFERENCES helix_users(username) ON DELETE CASCADE,
             pinned_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
             PRIMARY KEY (message_id, owner_username)
         );
 
-        CREATE INDEX IF NOT EXISTS helix_dm_pins_owner_idx
-            ON helix_dm_pins (owner_username, pinned_at DESC);
+        CREATE INDEX IF NOT EXISTS helix_dm_message_pins_owner_idx
+            ON helix_dm_message_pins (owner_username, pinned_at DESC);
 
-        CREATE INDEX IF NOT EXISTS helix_dm_pins_message_idx
-            ON helix_dm_pins (message_id);
+        CREATE INDEX IF NOT EXISTS helix_dm_message_pins_message_idx
+            ON helix_dm_message_pins (message_id);
 
         CREATE TABLE IF NOT EXISTS helix_ai_image_usage (
             username TEXT NOT NULL REFERENCES helix_users(username) ON DELETE CASCADE,
