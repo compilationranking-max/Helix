@@ -1540,6 +1540,21 @@ app.get("/api/dm/messages", async (req, res) => {
                 CASE WHEN r.media_data IS NOT NULL THEN '/api/dm/media/' || r.id::text ELSE NULL END AS "replyMediaUrl",
                 r.media_mime AS "replyMediaMime",
                 r.media_kind AS "replyMediaKind",
+                CASE
+                    WHEN r.id IS NOT NULL THEN jsonb_build_object(
+                        'id', r.id,
+                        'sender', r.sender_username,
+                        'text', r.body,
+                        'mediaUrl', CASE
+                            WHEN r.media_data IS NOT NULL
+                            THEN '/api/dm/media/' || r.id::text
+                            ELSE NULL
+                        END,
+                        'mediaName', r.media_name,
+                        'mediaKind', r.media_kind
+                    )
+                    ELSE NULL
+                END AS "replyPreview",
                 CASE WHEN m.media_data IS NOT NULL THEN '/api/dm/media/' || m.id::text ELSE NULL END AS "mediaUrl",
                 m.media_mime AS "mediaMime",
                 m.media_name AS "mediaName",
