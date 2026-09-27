@@ -126,6 +126,7 @@
     function renderConversationList() {
         const list = get("dm-conversation-list");
         const status = get("dm-conversation-status");
+
         if (!list) return;
 
         list.replaceChildren();
@@ -137,46 +138,60 @@
                 status.textContent = "ERROR";
             } else {
                 status.textContent =
-                    state.conversations.length + " " +
-                    (state.conversations.length === 1 ? "connection" : "connections");
+                    state.conversations.length +
+                    " " +
+                    (state.conversations.length === 1
+                        ? "connection"
+                        : "connections");
             }
         }
 
         if (state.loadingConversations) {
-            {
-                const loadingWrap = make("div", "dm-list-skeletons");
-                for (let i = 0; i < 4; i += 1) {
-                    const skeleton = make("div", "dm-conversation-skeleton");
-                    skeleton.append(
-                        make("span", "dm-skeleton-avatar"),
-                        make("span", "dm-skeleton-copy")
-                    );
-                    loadingWrap.appendChild(skeleton);
-                }
-                list.appendChild(loadingWrap);
+            const loadingWrap = make("div", "dm-list-skeletons");
+            loadingWrap.setAttribute("aria-label", "Loading conversations");
+
+            for (let i = 0; i < 4; i += 1) {
+                const skeleton = make("div", "dm-conversation-skeleton");
+                skeleton.append(
+                    make("span", "dm-skeleton-avatar"),
+                    make("span", "dm-skeleton-copy")
+                );
+                loadingWrap.appendChild(skeleton);
             }
+
+            list.appendChild(loadingWrap);
             return;
         }
 
         if (state.conversationError) {
             const box = make("div", "dm-list-state dm-list-state-error");
-            box.appendChild(make("strong", "", "Could not load messages"));
+            const mark = make("span", "dm-list-state-mark dm-state-error-icon");
+            mark.appendChild(makeIcon("warning"));
+            box.appendChild(mark);
+            box.appendChild(make("strong", "", "Messages are unavailable"));
             box.appendChild(make("small", "", state.conversationError));
-            const retry = iconButton("dm-inline-button dm-icon-button-with-label", "retry", "Retry conversation loading"); retry.appendChild(make("span", "", "Retry"));
+
+            const retry = iconButton(
+                "dm-inline-button dm-icon-button-with-label",
+                "retry",
+                "Retry conversation loading"
+            );
             retry.dataset.dmAction = "refresh-conversations";
+            retry.appendChild(make("span", "", "Retry"));
             box.appendChild(retry);
+
             list.appendChild(box);
             return;
         }
 
         if (!state.conversations.length) {
             const box = make("div", "dm-list-state");
-            {
-                const mark = make("span", "dm-list-state-mark");
-                mark.appendChild(makeIcon("messages"));
-                box.appendChild(mark);
-            }
-            box.appendChild(make("strong", "", "No friends available"));
+            const mark = make("span", "dm-list-state-mark");
+            mark.appendChild(makeIcon("messages"));
+            box.append(
+                mark,
+                make("strong", "", "No friends available")
+            );
             box.appendChild(
                 make(
                     "small",
@@ -203,19 +218,35 @@
         });
 
         if (!visible.length) {
-            list.appendChild(
-                make("div", "dm-list-state", "No conversations match that search.")
+            const box = make("div", "dm-list-state");
+            const mark = make("span", "dm-list-state-mark");
+            mark.appendChild(makeIcon("search"));
+            box.append(
+                mark,
+                make("strong", "", "No matching conversations")
             );
+            box.appendChild(
+                make(
+                    "small",
+                    "",
+                    "Try another display name or username."
+                )
+            );
+            list.appendChild(box);
             return;
         }
 
         visible.forEach((conversation) => {
             const row = button(
                 "dm-conversation" +
-                (state.activeConversation === conversation.username ? " is-active" : ""),
+                (state.activeConversation === conversation.username
+                    ? " is-active"
+                    : ""),
                 "",
-                "Open " + (conversation.displayName || conversation.username)
+                "Open " +
+                (conversation.displayName || conversation.username)
             );
+
             row.dataset.username = conversation.username;
 
             const avatar = make("span", "dm-conversation-avatar");
@@ -231,11 +262,16 @@
                     conversation.username
                 )
             );
-            copy.appendChild(make("small", "", "-" + conversation.username));
+            copy.appendChild(
+                make("small", "", "-" + conversation.username)
+            );
 
             const latestText =
-                conversation.latestMessage && conversation.latestMessage.text
-                    ? conversation.latestMessage.text.replace(/\s+/g, " ").trim()
+                conversation.latestMessage &&
+                conversation.latestMessage.text
+                    ? conversation.latestMessage.text
+                        .replace(/\s+/g, " ")
+                        .trim()
                     : "No messages yet";
 
             copy.appendChild(
@@ -244,9 +280,16 @@
 
             const meta = make("span", "dm-conversation-meta");
 
-            if (conversation.latestMessage && conversation.latestMessage.createdAt) {
+            if (
+                conversation.latestMessage &&
+                conversation.latestMessage.createdAt
+            ) {
                 meta.appendChild(
-                    make("time", "", time(conversation.latestMessage.createdAt))
+                    make(
+                        "time",
+                        "",
+                        time(conversation.latestMessage.createdAt)
+                    )
                 );
             }
 
@@ -391,32 +434,49 @@
             tools.appendChild(item);
         });
 
-        const emoji = iconButton("dm-message-tool", "emoji", "Open full emoji picker");
-        emoji.dataset.dmEmojiPicker = "open";
-        emoji.dataset.messageId = message.id;
-        tools.appendChild(emoji);
+        const emojiPicker = iconButton(
+            "dm-message-tool",
+            "emoji",
+            "Open full emoji picker"
+        );
+        emojiPicker.dataset.dmEmojiPicker = "open";
+        emojiPicker.dataset.messageId = message.id;
+        tools.appendChild(emojiPicker);
 
-        const copy = iconButton("dm-message-tool", "copy", "Copy message");
+        const copy = iconButton(
+            "dm-message-tool",
+            "copy",
+            "Copy message"
+        );
         copy.dataset.dmAction = "copy-message";
         copy.dataset.messageId = message.id;
         tools.appendChild(copy);
 
-        const pin = button(
-            "dm-message-tool" + (message.isPinned ? " is-active" : ""),
-            message.isPinned ? "📍" : "⌖",
+        const pin = iconButton(
+            "dm-message-tool" +
+            (message.isPinned ? " is-active" : ""),
+            "pin",
             message.isPinned ? "Unpin message" : "Pin message"
         );
         pin.dataset.dmAction = "toggle-pin";
         pin.dataset.messageId = message.id;
         tools.appendChild(pin);
 
-        const forward = iconButton("dm-message-tool", "forward", "Forward message");
+        const forward = iconButton(
+            "dm-message-tool",
+            "forward",
+            "Forward message"
+        );
         forward.dataset.dmAction = "forward-message";
         forward.dataset.messageId = message.id;
         tools.appendChild(forward);
 
         if (message.sender === loggedInUser()) {
-            const edit = iconButton("dm-message-tool", "edit", "Edit message");
+            const edit = iconButton(
+                "dm-message-tool",
+                "edit",
+                "Edit message"
+            );
             edit.dataset.dmAction = "edit-message";
             edit.dataset.messageId = message.id;
             tools.appendChild(edit);
@@ -551,20 +611,41 @@
     function renderPinnedPanel() {
         const panel = get("dm-pins-panel");
         const list = get("dm-pins-list");
+
         if (!panel || !list) return;
 
         list.replaceChildren();
 
         if (state.loadingPins) {
-            list.appendChild(make("div", "dm-panel-state", "Loading pinned messages…"));
+            const loading = make("div", "dm-list-skeletons");
+            loading.setAttribute("aria-label", "Loading pinned messages");
+
+            for (let i = 0; i < 3; i += 1) {
+                const skeleton = make("div", "dm-pin-skeleton");
+                skeleton.append(
+                    make("span", "dm-skeleton-line dm-skeleton-line-wide"),
+                    make("span", "dm-skeleton-line")
+                );
+                loading.appendChild(skeleton);
+            }
+
+            list.appendChild(loading);
         } else if (!state.pinnedMessages.length) {
-            list.appendChild(
+            const empty = make("div", "dm-panel-state");
+            const mark = make("span", "dm-list-state-mark");
+            mark.appendChild(makeIcon("pin"));
+            empty.append(
+                mark,
+                make("strong", "", "No pinned messages")
+            );
+            empty.appendChild(
                 make(
-                    "div",
-                    "dm-panel-state",
-                    "No pinned messages in this conversation."
+                    "small",
+                    "",
+                    "Pinned messages from this conversation will appear here."
                 )
             );
+            list.appendChild(empty);
         } else {
             state.pinnedMessages.forEach((message) => {
                 const item = button(
@@ -574,19 +655,29 @@
                 );
                 item.dataset.dmAction = "jump-to-message";
                 item.dataset.messageId = message.id;
+
                 const pinIcon = make("span", "dm-pinned-icon");
                 pinIcon.appendChild(makeIcon("pin"));
-                item.append(
-                    pinIcon,
+
+                const copy = make("span", "dm-pinned-copy");
+                copy.append(
                     make("span", "dm-pinned-text", message.text),
-                    make("small", "dm-pinned-time", time(message.pinnedAt || message.createdAt))
+                    make(
+                        "small",
+                        "dm-pinned-time",
+                        time(message.pinnedAt || message.createdAt)
+                    )
                 );
+
+                item.append(pinIcon, copy);
                 list.appendChild(item);
             });
         }
 
         panel.hidden = !panel.classList.contains("is-open");
     }
+
+
 
     const EMOJI = [
         "😀","😃","😄","😁","😆","😅","😂","🤣","😊","😇","🙂","🙃","😉","😌","😍","🥰","😘","😗","😙","😚",
