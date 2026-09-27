@@ -6468,8 +6468,10 @@ MATH & PHOTO ATTACHMENTS
     z-index: 4;
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 2px;
-    max-width: min(440px, 42vw);
+    width: max-content;
+    max-width: calc(100vw - 32px);
     padding: 4px;
     border: 1px solid rgba(122, 144, 161, 0.2);
     border-radius: 999px;
