@@ -5516,17 +5516,41 @@ bootstrapHelixSession().then((authenticated) => {
     function setMessageReactionBarPlacement(bubble, bar) {
         if (!bubble || !bar || !messages) return;
 
+        // The quick-reaction bar is positioned against the viewport itself.
+        // This prevents the scrollable DM area from clipping or pushing it
+        // to a random/far edge of the chat panel.
         const messageRect = bubble.getBoundingClientRect();
         const chatRect = messages.getBoundingClientRect();
-        const barWidth = bar.getBoundingClientRect().width || 300;
+        const barRect = bar.getBoundingClientRect();
+        const barWidth = Math.max(bar.offsetWidth || barRect.width || 304, 1);
+        const barHeight = Math.max(bar.offsetHeight || barRect.height || 50, 1);
         const gap = 8;
-        const rightLimit = chatRect.right - gap;
 
-        // Keep the bar on the right side of the other person's bubble when
-        // there is enough room. When the bubble reaches the chat's right edge,
-        // move the bar below it so it never gets pushed off-screen.
-        const shouldPlaceBelow = messageRect.right + gap + barWidth > rightLimit;
-        bubble.classList.toggle("dm-reaction-bar-below", shouldPlaceBelow);
+        const leftLimit = Math.max(chatRect.left + 4, 4);
+        const rightLimit = Math.min(chatRect.right - 4, window.innerWidth - 4);
+        const rightSideLeft = messageRect.right + gap;
+        const fitsOnRight = rightSideLeft + barWidth <= rightLimit;
+
+        let left = fitsOnRight
+            ? rightSideLeft
+            : messageRect.left;
+
+        let top = fitsOnRight
+            ? messageRect.top + (messageRect.height - barHeight) / 2
+            : messageRect.bottom + gap;
+
+        // When the message is too close to the right edge, the bar goes
+        // directly underneath it. Keep the whole bar inside the chat/viewport.
+        left = Math.max(leftLimit, Math.min(left, rightLimit - barWidth));
+        top = Math.max(4, Math.min(top, window.innerHeight - barHeight - 4));
+
+        bar.style.setProperty("left", Math.round(left) + "px", "important");
+        bar.style.setProperty("top", Math.round(top) + "px", "important");
+        bar.style.setProperty("right", "auto", "important");
+        bar.style.setProperty("bottom", "auto", "important");
+
+        bar.dataset.placement = fitsOnRight ? "right" : "below";
+        bubble.classList.toggle("dm-reaction-bar-below", !fitsOnRight);
     }
 
     function createMessageHoverReactionBar(item) {
@@ -5544,7 +5568,8 @@ bootstrapHelixSession().then((authenticated) => {
             button.addEventListener("click", async (event) => {
                 event.preventDefault();
                 event.stopPropagation();
-                bar.closest(".message-bubble")?.classList.remove("dm-reaction-bar-open");
+                bar.classList.remove("is-open");
+                bar.__helixBubble?.classList.remove("dm-reaction-bar-open");
                 await reactToMessage(item, emoji);
             });
             bar.appendChild(button);
@@ -5558,7 +5583,8 @@ bootstrapHelixSession().then((authenticated) => {
         more.addEventListener("click", async (event) => {
             event.preventDefault();
             event.stopPropagation();
-            bar.closest(".message-bubble")?.classList.remove("dm-reaction-bar-open");
+            bar.classList.remove("is-open");
+            bar.__helixBubble?.classList.remove("dm-reaction-bar-open");
             await openEmojiPicker(item);
         });
         bar.appendChild(more);
@@ -5578,6 +5604,10 @@ bootstrapHelixSession().then((authenticated) => {
         updateSearchResultCount(visible.length, currentMessages.length, query);
         const wasNearBottom = messages.scrollHeight - messages.scrollTop - messages.clientHeight < 80;
         const previousScrollTop = messages.scrollTop;
+
+        // Remove any floating quick-reaction bars from the previous render.
+        document.querySelectorAll("body > .dm-message-hover-reaction-bar").forEach((bar) => bar.remove());
+
         messages.replaceChildren();
 
         if (!visible.length) {
@@ -5686,22 +5716,35 @@ bootstrapHelixSession().then((authenticated) => {
 
             if (item.sender !== loggedInUser) {
                 const reactionBar = createMessageHoverReactionBar(item);
-                bubble.appendChild(reactionBar);
+
+                // Portal the toolbar to <body> so the DM scroll container
+                // cannot clip it. The toolbar still belongs visually to this
+                // exact message through its measured coordinates.
+                reactionBar.dataset.messageId = String(item.id);
+                reactionBar.__helixBubble = bubble;
+                document.body.appendChild(reactionBar);
+                setMessageReactionBarPlacement(bubble, reactionBar);
 
                 bubble.addEventListener("pointerenter", () => {
-                    document.querySelectorAll("#dm-view .message-bubble.dm-reaction-bar-open").forEach((openBubble) => {
-                        if (openBubble !== bubble) openBubble.classList.remove("dm-reaction-bar-open");
+                    document.querySelectorAll("body > .dm-message-hover-reaction-bar.is-open").forEach((openBar) => {
+                        openBar.classList.remove("is-open");
+                        openBar.__helixBubble?.classList.remove("dm-reaction-bar-open");
                     });
+
                     setMessageReactionBarPlacement(bubble, reactionBar);
                     bubble.classList.add("dm-reaction-bar-open");
+                    reactionBar.classList.add("is-open");
                 });
 
                 bubble.addEventListener("focusin", () => {
-                    document.querySelectorAll("#dm-view .message-bubble.dm-reaction-bar-open").forEach((openBubble) => {
-                        if (openBubble !== bubble) openBubble.classList.remove("dm-reaction-bar-open");
+                    document.querySelectorAll("body > .dm-message-hover-reaction-bar.is-open").forEach((openBar) => {
+                        openBar.classList.remove("is-open");
+                        openBar.__helixBubble?.classList.remove("dm-reaction-bar-open");
                     });
+
                     setMessageReactionBarPlacement(bubble, reactionBar);
                     bubble.classList.add("dm-reaction-bar-open");
+                    reactionBar.classList.add("is-open");
                 });
             }
 
@@ -5726,17 +5769,17 @@ bootstrapHelixSession().then((authenticated) => {
         else messages.scrollTop = previousScrollTop;
     }
 
-    messages?.addEventListener("scroll", () => {
-        const openBubble = document.querySelector("#dm-view .message.received .message-bubble.dm-reaction-bar-open");
-        const bar = openBubble?.querySelector(".dm-message-hover-reaction-bar");
-        if (openBubble && bar) setMessageReactionBarPlacement(openBubble, bar);
-    }, { passive: true });
+    function repositionOpenDMReactionBar() {
+        const bar = document.querySelector("body > .dm-message-hover-reaction-bar.is-open");
+        const bubble = bar?.__helixBubble;
 
-    window.addEventListener("resize", () => {
-        const openBubble = document.querySelector("#dm-view .message.received .message-bubble.dm-reaction-bar-open");
-        const bar = openBubble?.querySelector(".dm-message-hover-reaction-bar");
-        if (openBubble && bar) setMessageReactionBarPlacement(openBubble, bar);
-    });
+        if (bar && bubble) {
+            setMessageReactionBarPlacement(bubble, bar);
+        }
+    }
+
+    messages?.addEventListener("scroll", repositionOpenDMReactionBar, { passive: true });
+    window.addEventListener("resize", repositionOpenDMReactionBar);
 
     async function loadMessages(username, { force = false, scrollToBottom = false } = {}) {
         const requestSerial = ++messageLoadSerial;
