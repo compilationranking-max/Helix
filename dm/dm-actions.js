@@ -1606,6 +1606,10 @@
                     action.dataset.dmAction === "private-nickname"
                 ) {
                     openNicknameModal();
+                } else if (action.dataset.dmAction === "close-info") {
+                    closeInfoPanel();
+                } else if (action.dataset.dmAction === "retry-info") {
+                    await openInfoPanel();
                 }
             }
         );
