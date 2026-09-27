@@ -967,7 +967,7 @@ body::before {
             minmax(0, 1fr);
     }
 
-    
+
 }
 
 
@@ -1093,7 +1093,7 @@ body::before {
         display: none;
     }
 
-    
+
 
     .ai-view {
         min-height: calc(100vh - 58px);
@@ -1139,9 +1139,9 @@ body::before {
         padding-bottom: 20px;
     }
 
-    
 
-    
+
+
 
     .topbar {
         padding: 16px;
@@ -1151,7 +1151,7 @@ body::before {
         display: none;
     }
 
-    
+
 }
 
 
@@ -2904,7 +2904,7 @@ body::before {
 
 @media (max-width: 900px) {
 
-    
+
 
     #profile-view .profile-layout {
         grid-template-columns: 190px minmax(0, 1fr) !important;
@@ -2919,7 +2919,7 @@ body::before {
 @media (max-width: 700px) {
 
 
-    
+
 
     #profile-view .profile-layout {
         grid-template-columns: 1fr !important;
