@@ -215,8 +215,10 @@ function createDMRouter(options) {
         ) {
             actualMime = "image/webp";
         } else if (
-            buffer.length >= 8 &&
-            buffer.subarray(0, 4).toString("ascii") === "\x1a\x45\xdf\xa3"
+            buffer.length >= 4 &&
+            buffer.subarray(0, 4).equals(
+                Buffer.from([0x1a, 0x45, 0xdf, 0xa3])
+            )
         ) {
             actualMime = "video/webm";
         } else if (
