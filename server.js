@@ -1592,6 +1592,105 @@ function parseDMMediaData(value) {
     return { mime, buffer };
 }
 
+app.post("/api/dm/media-message", express.raw({
+    limit: "10mb",
+    type: () => true
+}), async (req, res) => {
+    const user = await requireCurrentUser(req, res);
+    if (!user) return;
+
+    const recipient = normalizeUsername(req.get("X-DM-To"));
+    const body = String(req.get("X-DM-Text") || "").trim();
+    const originalName = (() => {
+        try {
+            return decodeURIComponent(String(req.get("X-DM-Name") || "attachment"));
+        } catch {
+            return "attachment";
+        }
+    })().slice(0, 180);
+
+    const mime = String(req.get("Content-Type") || "").toLowerCase().split(";")[0].trim();
+
+    if (!validUsername(recipient) || recipient === user.username) {
+        return res.status(400).json({ error: "Invalid recipient." });
+    }
+
+    if (!(mime.startsWith("image/") || mime.startsWith("video/"))) {
+        return res.status(400).json({ error: "Only photos and videos can be sent in DMs." });
+    }
+
+    const mediaBuffer = Buffer.isBuffer(req.body) ? req.body : Buffer.alloc(0);
+
+    if (!mediaBuffer.length) {
+        return res.status(400).json({ error: "The attachment was empty." });
+    }
+
+    if (mediaBuffer.length > 10 * 1024 * 1024) {
+        return res.status(413).json({ error: "That photo or video is over the 10 MB limit." });
+    }
+
+    if (body.length > 4000) {
+        return res.status(400).json({ error: "Message is too long. Maximum is 4000 characters." });
+    }
+
+    try {
+        await requireDatabase();
+
+        if (await isBlockedEitherWay(user.username, recipient)) {
+            return res.status(403).json({ error: "You cannot message this account." });
+        }
+
+        const recipientDMSetting = await getPrivacySetting(recipient, "direct-messages");
+        if (recipientDMSetting === "NOBODY") {
+            return res.status(403).json({ error: "This user is not accepting direct messages." });
+        }
+
+        if (!(await areCloudFriends(user.username, recipient))) {
+            return res.status(403).json({ error: "You can only message friends on Helix." });
+        }
+
+        const result = await dbPool.query(`
+            INSERT INTO helix_messages (
+                id, sender_username, recipient_username, body,
+                media_data, media_mime, media_name, media_size, media_kind
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            RETURNING
+                id,
+                sender_username AS "sender",
+                recipient_username AS "recipient",
+                body AS "text",
+                created_at AS "createdAt",
+                read_at AS "readAt",
+                '/api/dm/media/' || id::text AS "mediaUrl",
+                media_mime AS "mediaMime",
+                media_name AS "mediaName",
+                media_size AS "mediaSize",
+                media_kind AS "mediaKind"
+        `, [
+            crypto.randomUUID(),
+            user.username,
+            recipient,
+            body,
+            mediaBuffer,
+            mime,
+            originalName || "attachment",
+            mediaBuffer.length,
+            mime.startsWith("video/") ? "video" : "image"
+        ]);
+
+        await logActivity(user.username, "dm.message_sent", {
+            to: recipient,
+            mediaKind: mime.startsWith("video/") ? "video" : "image"
+        });
+
+        return res.status(201).json({ ok: true, message: result.rows[0] });
+    } catch (error) {
+        console.error("DM media message failed:", error);
+        return res.status(500).json({ error: "Could not send the photo or video." });
+    }
+});
+
 app.post("/api/dm/messages", async (req, res) => {
     const user = await requireCurrentUser(req, res);
     if (!user) return;
