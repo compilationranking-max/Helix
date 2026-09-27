@@ -375,6 +375,11 @@
         );
         row.dataset.messageId = message.id;
 
+        const query = state.messageSearch.trim().toLowerCase();
+        if (query && String(message.text || "").toLowerCase().includes(query)) {
+            row.classList.add("is-search-match");
+        }
+
         const bubble = make("div", "dm-message-bubble");
         bubble.appendChild(make("p", "dm-message-text", message.text));
         bubble.appendChild(renderMessageActions(message));
