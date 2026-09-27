@@ -397,7 +397,7 @@
                         </button>
 
                         <div class="ai-chat-search-panel" id="ai-chat-search-panel" hidden>
-                            <span aria-hidden="true">⌕</span>
+                            <span class="dm-search-icon" aria-hidden="true"><svg class="dm-icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="21" cy="21" r="11"/><path d="m30 30 8 8"/></svg></span>
                             <input id="ai-chat-search-input" type="search" placeholder="Search previous chats..." autocomplete="off">
                         </div>
                     </nav>
@@ -432,13 +432,15 @@
                     <p class="system-label">HELIX / MESSAGES</p>
                     <h1>Conversations</h1>
                 </div>
-                <button class="dm-refresh-button" id="dm-refresh-button" type="button" aria-label="Refresh conversations" title="Refresh conversations">↻</button>
+                <button class="dm-refresh-button" id="dm-refresh-button" type="button" aria-label="Refresh conversations" title="Refresh conversations">
+                        <svg class="dm-icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 20a14 14 0 0 1 24-7l3 3"/><path d="M37 9v8h-8"/><path d="M38 28a14 14 0 0 1-24 7l-3-3"/><path d="M11 39v-8h8"/></svg>
+                    </button>
             </div>
 
             <div class="dm-conversation-search">
-                <span aria-hidden="true">⌕</span>
+                <span class="dm-search-icon" aria-hidden="true"><svg class="dm-icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="21" cy="21" r="11"/><path d="m30 30 8 8"/></svg></span>
                 <input id="dm-conversation-search" type="search" autocomplete="off" placeholder="Search friends" aria-label="Search friends and conversations">
-                <button id="dm-conversation-search-clear" type="button" aria-label="Clear friend search" title="Clear search">×</button>
+                <button id="dm-conversation-search-clear" class="dm-clear-button" type="button" aria-label="Clear friend search" title="Clear search"><svg class="dm-icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m13 13 22 22M35 13 13 35"/></svg></button>
             </div>
 
             <div class="dm-inbox-meta">
@@ -449,7 +451,7 @@
             <div id="dm-conversation-list" class="dm-conversation-list" aria-live="polite"></div>
 
             <section class="dm-suggestions-section" aria-label="Message suggestions">
-                <div class="dm-suggestions-icon" aria-hidden="true">◇</div>
+                <div class="dm-suggestions-icon" aria-hidden="true"><svg class="dm-icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="11" width="30" height="26" rx="5"/><path d="M15 18h18M15 24h12M15 30h7"/></svg></div>
                 <div>
                     <strong>Suggestions</strong>
                     <small>Coming soon</small>
@@ -459,7 +461,7 @@
 
         <section class="dm-chat-shell" aria-label="Direct message conversation">
             <header class="dm-chat-header">
-                <button class="dm-mobile-back" id="dm-mobile-back" type="button" aria-label="Back to conversations">‹</button>
+                <button class="dm-mobile-back" id="dm-mobile-back" type="button" aria-label="Back to conversations" title="Back to conversations"><svg class="dm-icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m29 9-15 15 15 15"/><path d="M15 24h24"/></svg></button>
 
                 <div class="dm-chat-person">
                     <span class="dm-chat-avatar" id="dm-chat-avatar" aria-hidden="true">DM</span>
@@ -470,8 +472,8 @@
                 </div>
 
                 <div class="dm-chat-header-actions">
-                    <button class="dm-header-icon" id="dm-nickname-button" type="button" aria-label="Set conversation nickname" title="Set nickname">✎</button>
-                    <button class="dm-header-icon" id="dm-pins-button" type="button" aria-label="Open pinned messages" title="Pinned messages">⌖</button>
+                    <button class="dm-header-icon" id="dm-nickname-button" type="button" aria-label="Set conversation nickname" title="Set nickname"><svg class="dm-icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 35.5V39h3.5L34 20.5l-7-7z"/><path d="m31 10 7 7"/><path d="M9 39h30"/></svg></button>
+                    <button class="dm-header-icon" id="dm-pins-button" type="button" aria-label="Open pinned messages" title="Pinned messages"><svg class="dm-icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 8 12 12"/><path d="m28 10 7 7-5 5 3 8-4 4-8-3-5 5-7-7 5-5-3-8 4-4 8 3z"/><path d="m24 28-9 9"/></svg></button>
                 </div>
             </header>
 
@@ -479,7 +481,7 @@
                 <span aria-hidden="true">⌕</span>
                 <input id="dm-message-search-input" type="search" autocomplete="off" placeholder="Search messages in this conversation" aria-label="Search messages">
                 <span id="dm-message-search-count" class="dm-message-search-count"></span>
-                <button id="dm-message-search-clear" type="button" aria-label="Clear message search" title="Clear search">×</button>
+                <button id="dm-message-search-clear" class="dm-clear-button" type="button" aria-label="Clear message search" title="Clear search"><svg class="dm-icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m13 13 22 22M35 13 13 35"/></svg></button>
             </div>
 
             <div class="dm-chat-meta">
@@ -501,7 +503,7 @@
                 ></textarea>
                 <div class="dm-composer-footer">
                     <span>Enter to send · Shift+Enter for a new line</span>
-                    <button id="dm-send-button" type="submit" disabled aria-label="Send message" title="Send message">➤</button>
+                    <button id="dm-send-button" type="submit" disabled aria-label="Send message" title="Send message"><svg class="dm-icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 8 32 16-32 16 6-16z"/><path d="M12 24h18"/></svg></button>
                 </div>
             </form>
         </section>
@@ -512,7 +514,7 @@
                     <p class="system-label">HELIX / PINNED</p>
                     <h3>Pinned messages</h3>
                 </div>
-                <button class="dm-panel-close" id="dm-pins-close" type="button" aria-label="Close pinned messages">×</button>
+                <button class="dm-panel-close" id="dm-pins-close" type="button" aria-label="Close pinned messages" title="Close pinned messages"><svg class="dm-icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m13 13 22 22M35 13 13 35"/></svg></button>
             </div>
             <div id="dm-pins-list" class="dm-pins-list"></div>
         </aside>
@@ -523,7 +525,7 @@
     <div class="helix-modal" id="dm-forward-modal" hidden>
         <div class="helix-modal-backdrop" data-dm-forward-close></div>
         <section class="helix-modal-panel dm-forward-modal-panel" role="dialog" aria-modal="true" aria-labelledby="dm-forward-title">
-            <button class="helix-modal-close" type="button" data-dm-forward-close aria-label="Close forward dialog">×</button>
+            <button class="helix-modal-close" type="button" data-dm-forward-close aria-label="Close forward dialog" title="Close dialog"><svg class="dm-icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m13 13 22 22M35 13 13 35"/></svg></button>
             <p class="system-label">HELIX / FORWARD</p>
             <h2 id="dm-forward-title">Forward message</h2>
             <p class="helix-modal-description">Choose a friend. The server will create a new normal text message in that conversation.</p>
