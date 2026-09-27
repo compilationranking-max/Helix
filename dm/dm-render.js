@@ -1252,6 +1252,35 @@
                             "dm-pinned-copy"
                         );
 
+                    const previewRow = make(
+                        "span",
+                        "dm-pinned-text"
+                    );
+                    if (message.mediaKind) {
+                        const mediaIcon = make(
+                            "span",
+                            "dm-pinned-media-icon"
+                        );
+                        mediaIcon.appendChild(
+                            makeIcon(
+                                message.mediaKind === "video"
+                                    ? "video"
+                                    : "image"
+                            )
+                        );
+                        previewRow.append(
+                            mediaIcon,
+                            make(
+                                "span",
+                                "",
+                                previewText(message, 120) || "Media"
+                            )
+                        );
+                    } else {
+                        previewRow.textContent =
+                            previewText(message, 120) || "Message";
+                    }
+
                     copy.append(
                         make(
                             "strong",
@@ -1259,24 +1288,15 @@
                             message.sender ===
                                 currentUsername()
                                 ? "You"
-                                : "@" +
-                                    message.sender
+                                : "@" + message.sender
                         ),
-                        make(
-                            "span",
-                            "dm-pinned-text",
-                            previewText(
-                                message,
-                                120
-                            ) ||
-                                "Message"
-                        ),
+                        previewRow,
                         make(
                             "small",
                             "dm-pinned-time",
                             formatTime(
                                 message.pinnedAt ||
-                                    message.createdAt
+                                message.createdAt
                             )
                         )
                     );
@@ -1559,30 +1579,30 @@
 
         if (!state.infoPanelOpen || !conversation) {
             panel.hidden = true;
+            panel.replaceChildren();
             return;
         }
 
         panel.hidden = false;
+        panel.replaceChildren();
+
+        const header = make("div", "dm-info-header");
+        const heading = make("div");
+        heading.append(
+            make("p", "system-label", "HELIX / CONVERSATION"),
+            make("h3", "", "Conversation info")
+        );
+
+        const close = iconButton(
+            "dm-panel-close",
+            "close",
+            "Close conversation info"
+        );
+        close.dataset.dmAction = "close-info";
+        header.append(heading, close);
+        panel.appendChild(header);
 
         if (state.loadingInfo) {
-            panel.replaceChildren();
-
-            const header = make("div", "dm-info-header");
-            const title = make("div");
-            title.append(
-                make("p", "system-label", "HELIX / CONVERSATION"),
-                make("h3", "", "Conversation info")
-            );
-
-            const close = iconButton(
-                "dm-panel-close",
-                "close",
-                "Close conversation info"
-            );
-            close.id = "dm-info-close";
-            close.dataset.dmAction = "close-info";
-            header.append(title, close);
-
             const loading = make("div", "dm-info-loading");
             const icon = make("span", "dm-info-loading-icon");
             icon.appendChild(makeIcon("info"));
@@ -1591,29 +1611,11 @@
                 make("strong", "", "Loading conversation info"),
                 make("small", "", "Syncing profile and shared media…")
             );
-
-            panel.append(header, loading);
+            panel.appendChild(loading);
             return;
         }
 
         if (state.infoError) {
-            panel.replaceChildren();
-
-            const header = make("div", "dm-info-header");
-            const title = make("div");
-            title.append(
-                make("p", "system-label", "HELIX / CONVERSATION"),
-                make("h3", "", "Conversation info")
-            );
-
-            const close = iconButton(
-                "dm-panel-close",
-                "close",
-                "Close conversation info"
-            );
-            close.id = "dm-info-close";
-            header.append(title, close);
-
             const error = make("div", "dm-info-loading dm-info-error");
             const icon = make("span", "dm-info-loading-icon");
             icon.appendChild(makeIcon("warning"));
@@ -1632,145 +1634,162 @@
             retry.appendChild(make("span", "", "Retry"));
             error.appendChild(retry);
 
-            panel.append(header, error);
+            panel.appendChild(error);
             return;
         }
 
         const info = state.info || {};
-        const avatar = get("dm-info-avatar");
-        const displayName = get("dm-info-display-name");
-        const username = get("dm-info-username");
-        const status = get("dm-info-status");
 
-        if (avatar) {
-            setAvatar(avatar, {
-                username:
-                    info.conversation?.username ||
-                    conversation.username,
-                displayName:
-                    info.conversation?.displayName ||
-                    conversation.displayName,
-                nickname: conversation.nickname,
-                profilePhoto:
-                    info.conversation?.profilePhoto ||
-                    conversation.profilePhoto
+        const profile = make("div", "dm-info-profile");
+        const avatar = make("span", "dm-info-avatar");
+        setAvatar(avatar, {
+            username: info.conversation?.username || conversation.username,
+            displayName: info.conversation?.displayName || conversation.displayName,
+            nickname: conversation.nickname,
+            profilePhoto:
+                info.conversation?.profilePhoto ||
+                conversation.profilePhoto
+        });
+
+        const displayName = make(
+            "h2",
+            "",
+            conversation.nickname ||
+            info.conversation?.displayName ||
+            conversation.displayName ||
+            conversation.username
+        );
+
+        const username = make(
+            "p",
+            "",
+            "-" + (
+                info.conversation?.username ||
+                conversation.username
+            )
+        );
+
+        const friendship = make("span", "dm-info-status");
+        friendship.append(
+            makeIcon("check"),
+            make(
+                "span",
+                "",
+                info.conversation?.friendship ||
+                "Friends on Helix"
+            )
+        );
+
+        profile.append(
+            avatar,
+            displayName,
+            username,
+            friendship
+        );
+        panel.appendChild(profile);
+
+        const actions = make("div", "dm-info-actions");
+        const nicknameButton = iconButton(
+            "dm-info-action",
+            "edit",
+            "Edit private nickname"
+        );
+        nicknameButton.dataset.dmAction = "private-nickname";
+        nicknameButton.appendChild(
+            make("span", "", "Private nickname")
+        );
+        actions.appendChild(nicknameButton);
+        panel.appendChild(actions);
+
+        const mediaSection = make("section", "dm-info-section");
+        const mediaHeading = make("div", "dm-info-section-heading");
+        mediaHeading.appendChild(make("h4", "", "Shared media"));
+
+        const media = Array.isArray(info.sharedMedia)
+            ? info.sharedMedia
+            : [];
+
+        mediaHeading.appendChild(
+            make(
+                "span",
+                "",
+                media.length ? String(media.length) : ""
+            )
+        );
+
+        mediaSection.appendChild(mediaHeading);
+
+        const mediaList = make(
+            "div",
+            "dm-info-media-grid"
+        );
+
+        if (media.length) {
+            media.forEach((item) => {
+                const mediaButton = make(
+                    "button",
+                    "dm-info-media-item"
+                );
+                mediaButton.type = "button";
+                mediaButton.dataset.dmAction = "open-media";
+                mediaButton.dataset.messageId = String(item.id);
+                mediaButton.title = item.mediaName || "Shared media";
+
+                if (item.mediaKind === "video") {
+                    const wrapper = make(
+                        "span",
+                        "dm-info-media-video"
+                    );
+                    wrapper.appendChild(makeIcon("video"));
+                    mediaButton.appendChild(wrapper);
+                } else {
+                    const image = document.createElement("img");
+                    image.src = item.mediaUrl;
+                    image.alt = item.mediaName || "Shared photo";
+                    image.loading = "lazy";
+                    mediaButton.appendChild(image);
+                }
+
+                mediaList.appendChild(mediaButton);
             });
         }
 
-        if (displayName) {
-            displayName.textContent =
-                conversation.nickname ||
-                info.conversation?.displayName ||
-                conversation.displayName ||
-                conversation.username;
-        }
+        mediaSection.appendChild(mediaList);
 
-        if (username) {
-            username.textContent =
-                "-" +
-                (
-                    info.conversation?.username ||
-                    conversation.username
-                );
-        }
-
-        if (status) {
-            status.replaceChildren(
-                makeIcon("check"),
+        if (!media.length) {
+            mediaSection.appendChild(
                 make(
-                    "span",
-                    "",
-                    info.conversation?.friendship ||
-                    "Friends on Helix"
+                    "div",
+                    "dm-info-empty",
+                    "No shared media yet."
                 )
             );
         }
 
-        const mediaList = get("dm-info-media-list");
-        const mediaEmpty = get("dm-info-media-empty");
-        const mediaCount = get("dm-info-media-count");
+        panel.appendChild(mediaSection);
 
-        if (mediaList) {
-            mediaList.replaceChildren();
-
-            const media =
-                Array.isArray(info.sharedMedia)
-                    ? info.sharedMedia
-                    : [];
-
-            if (mediaCount) {
-                mediaCount.textContent = media.length
-                    ? String(media.length)
-                    : "";
-            }
-
-            if (!media.length) {
-                mediaList.hidden = true;
-
-                if (mediaEmpty) {
-                    mediaEmpty.hidden = false;
-                }
-            } else {
-                mediaList.hidden = false;
-
-                if (mediaEmpty) {
-                    mediaEmpty.hidden = true;
-                }
-
-                media.forEach((item) => {
-                    const mediaButton =
-                        make(
-                            "button",
-                            "dm-info-media-item"
-                        );
-
-                    mediaButton.type = "button";
-                    mediaButton.dataset.dmAction =
-                        "open-media";
-                    mediaButton.dataset.messageId =
-                        item.id;
-                    mediaButton.title =
-                        item.mediaName ||
-                        "Shared media";
-
-                    if (item.mediaKind === "video") {
-                        const wrapper =
-                            make(
-                                "span",
-                                "dm-info-media-video"
-                            );
-                        wrapper.appendChild(
-                            makeIcon("video")
-                        );
-                        mediaButton.appendChild(
-                            wrapper
-                        );
-                    } else {
-                        const image =
-                            document.createElement(
-                                "img"
-                            );
-
-                        image.src = item.mediaUrl;
-                        image.alt =
-                            item.mediaName ||
-                            "Shared photo";
-                        image.loading = "lazy";
-                        mediaButton.appendChild(image);
-                    }
-
-                    mediaList.appendChild(mediaButton);
-                });
-            }
-        }
-
-        const filesEmpty = get("dm-info-files-empty");
-
-        if (filesEmpty) {
-            filesEmpty.hidden =
-                Array.isArray(info.files) &&
-                info.files.length > 0;
-        }
+        const filesSection = make("section", "dm-info-section");
+        filesSection.appendChild(
+            make(
+                "div",
+                "dm-info-section-heading",
+                ""
+            )
+        );
+        filesSection.querySelector(".dm-info-section-heading").appendChild(
+            make("h4", "", "Files")
+        );
+        filesSection.appendChild(
+            make(
+                "div",
+                "dm-info-empty",
+                Array.isArray(info.files) && info.files.length
+                    ? String(info.files.length) + " shared file" +
+                        (info.files.length === 1 ? "" : "s")
+                    : "No shared files yet."
+            )
+        );
+        panel.appendChild(filesSection);
     }
 
     function renderMediaViewer() {
