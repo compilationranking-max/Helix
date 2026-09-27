@@ -588,6 +588,45 @@
         }
     }
 
+    async function renameConversation() {
+        const username = state.activeConversation;
+        if (!username) return;
+
+        const conversation = state.conversations.find(
+            (item) => item.username === username
+        );
+        if (!conversation) return;
+
+        const current = conversation.nickname || "";
+        const value = window.prompt(
+            "Nickname for " + (conversation.displayName || username),
+            current
+        );
+
+        if (value === null) return;
+
+        const nickname = value.trim().replace(/s+/g, " ");
+
+        if (nickname.length > 50) {
+            showToast("Nickname must be 50 characters or fewer.", "error");
+            return;
+        }
+
+        try {
+            const saved = await api.setNickname(username, nickname);
+
+            conversation.nickname = saved;
+            render.renderConversationList();
+            render.renderHeader();
+            showToast(saved ? "Nickname saved." : "Nickname removed.");
+        } catch (error) {
+            showToast(
+                error.message || "Could not update the nickname.",
+                "error"
+            );
+        }
+    }
+
     function handleMessageSearch(value) {
         state.messageSearch = String(value || "");
         render.renderMessages();
@@ -765,6 +804,11 @@
         get("dm-pins-button")?.addEventListener(
             "click",
             refreshAndOpenPins
+        );
+
+        get("dm-nickname-button")?.addEventListener(
+            "click",
+            renameConversation
         );
 
         get("dm-pins-close")?.addEventListener(
