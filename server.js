@@ -290,7 +290,7 @@ async function initializeDatabase() {
                 OR reply_to_id <> id
             );
 
-        DO $
+        DO $helixdm$
         BEGIN
             IF NOT EXISTS (
                 SELECT 1
@@ -304,7 +304,7 @@ async function initializeDatabase() {
                     ON DELETE SET NULL;
             END IF;
         END
-        $;
+        $helixdm$;
 
         CREATE INDEX IF NOT EXISTS helix_dm_messages_reply_to_idx
             ON helix_dm_messages (reply_to_id);
