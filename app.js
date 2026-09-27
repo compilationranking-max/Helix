@@ -5185,6 +5185,8 @@ bootstrapHelixSession().then((authenticated) => {
     }
 
     if (!root || !list || !form || !input || !messages) return;
+    if (contextMenu && contextMenu.parentElement !== document.body) document.body.appendChild(contextMenu);
+
 
     let friends = [];
     let activeUsername = null;
@@ -5437,6 +5439,41 @@ bootstrapHelixSession().then((authenticated) => {
         });
     }
 
+    function createMessageHoverReactionBar(item) {
+        const bar = document.createElement("div");
+        bar.className = "dm-message-hover-reaction-bar";
+        bar.setAttribute("role", "toolbar");
+        bar.setAttribute("aria-label", "Quick emoji");
+
+        ["❤️", "😂", "😮", "😢", "😡", "👍"].forEach((emoji) => {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "dm-hover-reaction";
+            button.textContent = emoji;
+            button.setAttribute("aria-label", "Insert " + emoji);
+            button.addEventListener("click", (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                insertEmojiIntoInput(emoji);
+            });
+            bar.appendChild(button);
+        });
+
+        const more = document.createElement("button");
+        more.type = "button";
+        more.className = "dm-hover-reaction dm-hover-reaction-more";
+        more.textContent = "+";
+        more.setAttribute("aria-label", "Open full emoji picker");
+        more.addEventListener("click", async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            await openEmojiPicker();
+        });
+        bar.appendChild(more);
+
+        return bar;
+    }
+
     function renderMessages({ scrollToBottom = false } = {}) {
         const query = (messageSearchInput?.value || "").trim().toLowerCase();
         const visible = query
@@ -5508,7 +5545,7 @@ bootstrapHelixSession().then((authenticated) => {
                 meta.appendChild(status);
             }
 
-            row.append(bubble, meta);
+            row.append(bubble, meta, createMessageHoverReactionBar(item));
 
             if (item.isPinned) {
                 const pinMark = document.createElement("span");
@@ -5520,7 +5557,6 @@ bootstrapHelixSession().then((authenticated) => {
             }
 
             if (query) row.classList.add("search-match");
-            row.addEventListener("contextmenu", (event) => openContextMenu(event, item));
             fragment.appendChild(row);
             rows.push(row);
         });
@@ -5607,21 +5643,6 @@ bootstrapHelixSession().then((authenticated) => {
         if (!contextMenu) return;
         activeContextMessage = item;
         contextMenu.replaceChildren();
-
-        const reactions = document.createElement("div");
-        reactions.className = "dm-context-reactions";
-        ["❤️", "😂", "😮", "😢", "😡", "👍"].forEach((emoji) => reactions.appendChild(reactionAction(emoji)));
-        const reactionMore = document.createElement("button");
-        reactionMore.type = "button";
-        reactionMore.className = "dm-context-reaction more";
-        reactionMore.textContent = "+";
-        reactionMore.setAttribute("aria-label", "Open full emoji picker");
-        reactionMore.addEventListener("click", async () => {
-            closeContextMenu();
-            await openEmojiPicker();
-        });
-        reactions.appendChild(reactionMore);
-        contextMenu.appendChild(reactions);
 
         const actions = document.createElement("div");
         actions.className = "dm-context-actions";
@@ -6274,8 +6295,22 @@ bootstrapHelixSession().then((authenticated) => {
         if (contextMenu && !contextMenu.hidden && !contextMenu.contains(event.target)) closeContextMenu();
         if (pinnedPanel && !pinnedPanel.hidden && !pinnedPanel.contains(event.target) && event.target !== pinButton) closePinnedPanel();
         if (forwardPanel && !forwardPanel.hidden && !forwardPanel.contains(event.target) && !forwardPanel.contains(event.target)) closeForwardPanel();
-    });
-    document.addEventListener("keydown", (event) => {
+    });    messages.addEventListener("contextmenu", (event) => {
+        const row = event.target.closest(".message[data-message-id]");
+        if (!row || !messages.contains(row)) return;
+        const item = currentMessages.find((entry) => String(entry.id) === String(row.dataset.messageId));
+        if (!item) return;
+        openContextMenu(event, item);
+    }, true);
+
+      messages.addEventListener("contextmenu", (event) => {
+        const media = event.target.closest(".message-media");
+        if (media) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+    }, true);
+  document.addEventListener("keydown", (event) => {
         if (event.key === "Escape") {
             closeContextMenu();
             closeEmojiPicker();
