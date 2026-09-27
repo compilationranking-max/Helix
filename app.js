@@ -5662,7 +5662,9 @@ bootstrapHelixSession().then((authenticated) => {
             }
 
             if (item.sender !== loggedInUser) {
-                row.appendChild(createMessageHoverReactionBar(item));
+                // Keep the quick-reaction bar attached to the actual message bubble,
+                // not the full message row, so hovering reaction pills does not open it.
+                bubble.appendChild(createMessageHoverReactionBar(item));
             }
 
             if (item.isPinned) {
