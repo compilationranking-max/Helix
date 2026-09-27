@@ -37,7 +37,7 @@ The active schema is created by the existing database initialization in \`server
 
 - \`helix_dm_messages\`
 - \`helix_dm_message_reactions\`
-- \`helix_dm_pins\`
+- \`helix_dm_message_pins\`
 
 The message table stores sender, recipient, body, timestamps and read state. Reactions and pins are separate relationships.
 
