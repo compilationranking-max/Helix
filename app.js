@@ -5228,7 +5228,8 @@ bootstrapHelixSession().then((authenticated) => {
                 (x.mediaUrl || null) === (y.mediaUrl || null) &&
                 (x.mediaName || null) === (y.mediaName || null) &&
                 (x.mediaSize || null) === (y.mediaSize || null) &&
-                (x.mediaKind || null) === (y.mediaKind || null);
+                (x.mediaKind || null) === (y.mediaKind || null) &&
+                JSON.stringify(x.reactions || []) === JSON.stringify(y.reactions || []);
         });
     }
 
@@ -5439,6 +5440,24 @@ bootstrapHelixSession().then((authenticated) => {
         });
     }
 
+    async function reactToMessage(item, emoji) {
+        if (!item?.id || !emoji) return;
+        try {
+            const response = await fetch("/api/dm/messages/" + encodeURIComponent(item.id) + "/reaction", {
+                method: "POST",
+                credentials: "include",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ emoji })
+            });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(data.error || "Could not update the reaction.");
+            if (headerStatus) headerStatus.textContent = "Reaction added.";
+            await loadMessages(activeUsername, { force: true });
+        } catch (error) {
+            if (headerStatus) headerStatus.textContent = error.message || "Could not update the reaction.";
+        }
+    }
+
     function createMessageHoverReactionBar(item) {
         const bar = document.createElement("div");
         bar.className = "dm-message-hover-reaction-bar";
@@ -5451,10 +5470,10 @@ bootstrapHelixSession().then((authenticated) => {
             button.className = "dm-hover-reaction";
             button.textContent = emoji;
             button.setAttribute("aria-label", "Insert " + emoji);
-            button.addEventListener("click", (event) => {
+            button.addEventListener("click", async (event) => {
                 event.preventDefault();
                 event.stopPropagation();
-                insertEmojiIntoInput(emoji);
+                await reactToMessage(item, emoji);
             });
             bar.appendChild(button);
         });
@@ -5543,6 +5562,27 @@ bootstrapHelixSession().then((authenticated) => {
                 status.className = "message-status";
                 status.textContent = "✓✓";
                 meta.appendChild(status);
+            }
+
+            if (Array.isArray(item.reactions) && item.reactions.length) {
+                const reactionStrip = document.createElement("div");
+                reactionStrip.className = "dm-message-reactions";
+                item.reactions.forEach((reaction) => {
+                    if (!reaction?.emoji) return;
+                    const reactionButton = document.createElement("button");
+                    reactionButton.type = "button";
+                    reactionButton.className = "dm-message-reaction" + (reaction.reacted ? " reacted" : "");
+                    reactionButton.textContent = String(reaction.emoji) + (Number(reaction.count || 0) > 1 ? " " + Number(reaction.count) : "");
+                    reactionButton.setAttribute("aria-label", String(reaction.count || 1) + " " + String(reaction.emoji) + " reaction" + (Number(reaction.count || 1) === 1 ? "" : "s"));
+                    reactionButton.title = reaction.reacted ? "Remove reaction" : "React with " + reaction.emoji;
+                    reactionButton.addEventListener("click", async (event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        await reactToMessage(item, String(reaction.emoji));
+                    });
+                    reactionStrip.appendChild(reactionButton);
+                });
+                bubble.appendChild(reactionStrip);
             }
 
             row.append(bubble, meta, createMessageHoverReactionBar(item));
