@@ -9253,3 +9253,47 @@ MATH & PHOTO ATTACHMENTS
         flex: 0 0 auto;
     }
 }
+
+/* =========================================================
+   HELIX DM — SEND ARROW POLISH
+   ========================================================= */
+#dm-view .dm-send-button {
+    width: 42px;
+    height: 42px;
+    padding: 0;
+    border: 0 !important;
+    outline: 0;
+    border-radius: 10px;
+    color: #00e5ff;
+    background: transparent !important;
+    box-shadow: none !important;
+    appearance: none;
+    -webkit-appearance: none;
+    transition: color .18s ease, transform .18s ease, filter .18s ease;
+}
+
+#dm-view .dm-send-button .dm-icon {
+    width: 23px;
+    height: 23px;
+}
+
+#dm-view .dm-send-button:hover:not(:disabled) {
+    color: #63efff;
+    border: 0 !important;
+    background: transparent !important;
+    transform: translateX(2px) scale(1.05);
+    box-shadow: none !important;
+    filter: drop-shadow(0 0 9px rgba(0,229,255,.45));
+}
+
+#dm-view .dm-send-button:active:not(:disabled) {
+    transform: translateX(4px) scale(.98);
+}
+
+#dm-view .dm-send-button:disabled {
+    color: rgba(0,229,255,.28);
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    opacity: 1;
+}
