@@ -366,15 +366,12 @@ function createDMRouter(options) {
 
     async function loadConversation(username, partner, limit = MAX_MESSAGES_PER_LOAD) {
         const result = await dbPool.query(
-            MESSAGE_SELECT.replace(
-                "AND m.sender_username = $3 OR m.recipient_username = $3",
-                ""
-            ) +
-            "WHERE ((m.sender_username = $4 AND m.recipient_username = $5) " +
-            "OR (m.sender_username = $5 AND m.recipient_username = $4)) " +
+            MESSAGE_SELECT +
+            "WHERE ((m.sender_username = $2 AND m.recipient_username = $3) " +
+            "OR (m.sender_username = $3 AND m.recipient_username = $2)) " +
             "ORDER BY m.created_at DESC " +
-            "LIMIT $6",
-            [username, username, username, username, partner, limit]
+            "LIMIT $4",
+            [username, username, partner, limit]
         );
 
         const rows = result.rows.reverse();
