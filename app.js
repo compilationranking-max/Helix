@@ -5156,7 +5156,11 @@ bootstrapHelixSession().then((authenticated) => {
     const forwardCopy = document.getElementById("dm-forward-copy");
     const forwardClose = document.getElementById("dm-forward-close");
     const replyBar = document.getElementById("dm-reply-bar");
+    const replyBarAvatar = document.getElementById("dm-reply-bar-avatar");
+    const replyBarLabel = document.getElementById("dm-reply-bar-label");
+    const replyBarSender = document.getElementById("dm-reply-bar-sender");
     const replyBarText = document.getElementById("dm-reply-bar-text");
+    const replyBarThumb = document.getElementById("dm-reply-bar-thumb");
     const replyCancel = document.getElementById("dm-reply-cancel");
 
     async function refreshDMUnreadBadge() {
@@ -5617,6 +5621,7 @@ bootstrapHelixSession().then((authenticated) => {
 
             row.appendChild(bubble);
             row.appendChild(meta);
+            row.appendChild(createMessageReplyButton(item));
 
             if (Array.isArray(item.reactions) && item.reactions.length) {
                 const reactionStrip = document.createElement("div");
@@ -5808,27 +5813,108 @@ bootstrapHelixSession().then((authenticated) => {
 
     function setReplyBar(item) {
         activeReplyToId = item?.id ? String(item.id) : null;
-        if (!replyBar || !replyBarText) return;
+        if (!replyBar) return;
 
         if (!item) {
             replyBar.hidden = true;
-            replyBarText.textContent = "";
+            if (replyBarAvatar) {
+                replyBarAvatar.textContent = "HX";
+                replyBarAvatar.style.backgroundImage = "";
+                replyBarAvatar.style.backgroundSize = "";
+                replyBarAvatar.style.backgroundPosition = "";
+                replyBarAvatar.style.color = "";
+            }
+            if (replyBarLabel) replyBarLabel.textContent = "REPLYING TO";
+            if (replyBarSender) replyBarSender.textContent = "";
+            if (replyBarText) replyBarText.textContent = "";
+            if (replyBarThumb) {
+                replyBarThumb.hidden = true;
+                replyBarThumb.replaceChildren();
+            }
             replyBar.removeAttribute("data-reply-sender");
+            replyBar.removeAttribute("data-reply-message-id");
             return;
         }
 
+        const friend = friends.find((entry) => entry.username === item.sender);
+        const senderName = item.sender === loggedInUser
+            ? "You"
+            : (friend?.customNickname || friend?.displayName || item.sender || "Friend");
+
+        if (replyBarAvatar) {
+            const avatarText = senderName.slice(0, 2).toUpperCase();
+            replyBarAvatar.textContent = avatarText;
+            const photo = item.sender === loggedInUser
+                ? localStorage.getItem("helixProfilePhoto:" + loggedInUser)
+                : friend?.profilePhoto;
+            if (photo) {
+                replyBarAvatar.style.backgroundImage = 'url("' + photo + '")';
+                replyBarAvatar.style.backgroundSize = "cover";
+                replyBarAvatar.style.backgroundPosition = "center";
+                replyBarAvatar.style.color = "transparent";
+            } else {
+                replyBarAvatar.style.backgroundImage = "";
+                replyBarAvatar.style.backgroundSize = "";
+                replyBarAvatar.style.backgroundPosition = "";
+                replyBarAvatar.style.color = "";
+            }
+        }
+
+        if (replyBarLabel) replyBarLabel.textContent = "REPLYING TO";
+        if (replyBarSender) replyBarSender.textContent = senderName;
+        if (replyBarText) replyBarText.textContent = shortMessagePreview(item, 100) || "Attachment";
+
+        if (replyBarThumb) {
+            replyBarThumb.replaceChildren();
+            if (item.mediaUrl) {
+                replyBarThumb.hidden = false;
+                if (item.mediaKind === "video") {
+                    const video = document.createElement("video");
+                    video.src = item.mediaUrl;
+                    video.muted = true;
+                    video.playsInline = true;
+                    video.preload = "metadata";
+                    video.setAttribute("aria-hidden", "true");
+                    replyBarThumb.appendChild(video);
+                } else {
+                    const image = document.createElement("img");
+                    image.src = item.mediaUrl;
+                    image.alt = "";
+                    image.loading = "lazy";
+                    replyBarThumb.appendChild(image);
+                }
+            } else {
+                replyBarThumb.hidden = true;
+            }
+        }
+
         replyBar.hidden = false;
-        replyBarText.textContent = shortMessagePreview(item, 100) || "Attachment";
-        replyBar.setAttribute(
-            "data-reply-sender",
-            item.sender === loggedInUser ? "You" : "Friend"
-        );
+        replyBar.setAttribute("data-reply-sender", senderName);
+        replyBar.setAttribute("data-reply-message-id", String(item.id));
         input.focus();
     }
 
     function startReply(item) {
+        if (!item?.id) return;
         setReplyBar(item);
-        if (headerStatus) headerStatus.textContent = "Replying to this message.";
+        if (headerStatus) headerStatus.textContent = "Replying to " + (
+            item.sender === loggedInUser ? "your message." : "this message."
+        );
+    }
+
+    function createMessageReplyButton(item) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "dm-message-reply-button";
+        button.setAttribute("aria-label", "Reply to message");
+        button.title = "Reply";
+        button.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 8 4 13l5 5"></path><path d="M5 13h8a6 6 0 0 1 6 6"></path></svg>';
+        button.addEventListener("click", (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            startReply(item);
+        });
+        return button;
     }
 
     function clearReply() {
@@ -6419,6 +6505,19 @@ bootstrapHelixSession().then((authenticated) => {
     pinnedClose?.addEventListener("click", closePinnedPanel);
     forwardClose?.addEventListener("click", closeForwardPanel);
     replyCancel?.addEventListener("click", clearReply);
+    replyBar?.addEventListener("click", (event) => {
+        if (event.target.closest("#dm-reply-cancel")) return;
+        const targetId = replyBar.getAttribute("data-reply-message-id");
+        if (targetId) scrollToMessage(targetId);
+    });
+
+    input.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && activeReplyToId) {
+            event.preventDefault();
+            clearReply();
+            if (headerStatus) headerStatus.textContent = "Reply cancelled.";
+        }
+    });
 
     mainSearch?.addEventListener("input", filterFriends);
 
@@ -6474,8 +6573,57 @@ bootstrapHelixSession().then((authenticated) => {
             closePinnedPanel();
             closeForwardPanel();
             if (editingMessageId) { editingMessageId = null; renderMessages(); }
+            if (activeReplyToId && !editingMessageId) clearReply();
         }
     });
+
+    // Instagram-style swipe-right reply for touch devices.
+    let swipeState = null;
+    messages.addEventListener("pointerdown", (event) => {
+        if (event.pointerType !== "touch") return;
+        const target = event.target.closest(".message[data-message-id]");
+        if (!target || event.target.closest("button, input, textarea, video")) return;
+        const item = currentMessages.find((entry) => String(entry.id) === String(target.dataset.messageId));
+        if (!item) return;
+        swipeState = {
+            id: String(item.id),
+            startX: event.clientX,
+            startY: event.clientY,
+            row: target,
+            replied: false
+        };
+    }, { passive: true });
+
+    messages.addEventListener("pointermove", (event) => {
+        if (!swipeState || event.pointerType !== "touch") return;
+        const dx = event.clientX - swipeState.startX;
+        const dy = event.clientY - swipeState.startY;
+        if (Math.abs(dy) > Math.abs(dx) * 1.25) {
+            swipeState.row.classList.remove("reply-swipe-ready");
+            return;
+        }
+        if (dx > 38) swipeState.row.classList.add("reply-swipe-ready");
+        else swipeState.row.classList.remove("reply-swipe-ready");
+    }, { passive: true });
+
+    messages.addEventListener("pointerup", (event) => {
+        if (!swipeState || event.pointerType !== "touch") return;
+        const state = swipeState;
+        swipeState = null;
+        state.row.classList.remove("reply-swipe-ready");
+
+        const dx = event.clientX - state.startX;
+        const dy = event.clientY - state.startY;
+        if (dx < 70 || Math.abs(dy) > Math.abs(dx) * 1.25) return;
+
+        const item = currentMessages.find((entry) => String(entry.id) === state.id);
+        if (item) startReply(item);
+    }, { passive: true });
+
+    messages.addEventListener("pointercancel", () => {
+        swipeState?.row?.classList.remove("reply-swipe-ready");
+        swipeState = null;
+    }, { passive: true });
 
     window.addEventListener("helix-profile-photo-updated", async (event) => {
         const updatedUsername = event.detail?.username;
