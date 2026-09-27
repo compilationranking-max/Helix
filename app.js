@@ -5413,13 +5413,26 @@ bootstrapHelixSession().then((authenticated) => {
         reference.className = "dm-reply-reference";
         reference.title = "Jump to replied message";
 
-        const sender = item.replySender === loggedInUser
-            ? "You"
-            : (item.replySender || "Friend");
+        const senderUsername = item.replySender || "Friend";
+        const sender = senderUsername === loggedInUser
+            ? "@" + senderUsername
+            : "@" + senderUsername;
 
-        const icon = document.createElement("span");
-        icon.className = "dm-reply-reference-icon";
-        icon.textContent = "↩";
+        const avatar = document.createElement("span");
+        avatar.className = "dm-reply-reference-avatar";
+        avatar.textContent = senderUsername.slice(0, 2).toUpperCase();
+
+        const friend = friends.find((entry) => entry.username === senderUsername);
+        const senderPhoto = senderUsername === loggedInUser
+            ? localStorage.getItem("helixProfilePhoto:" + loggedInUser)
+            : friend?.profilePhoto;
+
+        if (senderPhoto) {
+            avatar.style.backgroundImage = 'url("' + senderPhoto + '")';
+            avatar.style.backgroundSize = "cover";
+            avatar.style.backgroundPosition = "center";
+            avatar.style.color = "transparent";
+        }
 
         const copy = document.createElement("span");
         copy.className = "dm-reply-reference-copy";
@@ -5438,29 +5451,7 @@ bootstrapHelixSession().then((authenticated) => {
 
         copy.append(senderLabel, previewText);
 
-        if (item.replyMediaUrl) {
-            const thumb = document.createElement("span");
-            thumb.className = "dm-reply-reference-thumb";
-
-            if (item.replyMediaKind === "video") {
-                const video = document.createElement("video");
-                video.src = item.replyMediaUrl;
-                video.muted = true;
-                video.playsInline = true;
-                video.preload = "metadata";
-                thumb.appendChild(video);
-            } else {
-                const image = document.createElement("img");
-                image.src = item.replyMediaUrl;
-                image.alt = item.replyMediaName || "Replied photo";
-                image.loading = "lazy";
-                thumb.appendChild(image);
-            }
-
-            reference.append(icon, thumb, copy);
-        } else {
-            reference.append(icon, copy);
-        }
+        reference.append(avatar, copy);
 
         reference.addEventListener("click", (event) => {
             event.stopPropagation();
@@ -6201,15 +6192,19 @@ bootstrapHelixSession().then((authenticated) => {
             if (!response.ok) throw new Error(data.error || "Could not update pinned state.");
             if (headerStatus) headerStatus.textContent = item.isPinned ? "Message unpinned." : "Message pinned.";
             await loadMessages(activeUsername, { force: true });
-            await refreshPinnedPanel();
+            if (pinnedPanel && !pinnedPanel.hidden) {
+                await refreshPinnedPanel({ showLoading: false });
+            }
         } catch (error) {
             if (headerStatus) headerStatus.textContent = error.message || "Could not update pinned state.";
         }
     }
 
-    async function refreshPinnedPanel() {
+    async function refreshPinnedPanel({ showLoading = true } = {}) {
         if (!pinnedList || !activeUsername) return;
-        pinnedList.innerHTML = "<div class=\"dm-panel-loading\">Loading pinned messages…</div>";
+        if (showLoading) {
+            pinnedList.innerHTML = "<div class=\"dm-panel-loading\">Loading pinned messages…</div>";
+        }
         try {
             const response = await fetch("/api/dm/pins?with=" + encodeURIComponent(activeUsername), { credentials: "include" });
             const data = await response.json().catch(() => ({}));
@@ -6825,7 +6820,9 @@ bootstrapHelixSession().then((authenticated) => {
                 await loadFriends();
                 if (activeUsername && !isSending) await loadMessages(activeUsername);
                 await refreshDMUnreadBadge();
-                if (activeUsername && pinnedPanel && !pinnedPanel.hidden) await refreshPinnedPanel();
+                // Pinned messages are loaded when the panel is opened (or after
+                // an explicit pin/unpin action), not on the 1-second DM poll.
+                // This prevents the loading state from flashing repeatedly.
             } finally {
                 dmRefreshRunning = false;
             }
