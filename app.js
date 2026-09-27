@@ -5199,6 +5199,7 @@ bootstrapHelixSession().then((authenticated) => {
     let activeContextMessage = null;
     let emojiPickerPromise = null;
     let editingMessageId = null;
+    let emojiPickerReactionTarget = null;
 
     const safe = (value) => escapeHTML(value);
 
@@ -5486,7 +5487,7 @@ bootstrapHelixSession().then((authenticated) => {
         more.addEventListener("click", async (event) => {
             event.preventDefault();
             event.stopPropagation();
-            await openEmojiPicker();
+            await openEmojiPicker(item);
         });
         bar.appendChild(more);
 
@@ -5572,9 +5573,10 @@ bootstrapHelixSession().then((authenticated) => {
                     const reactionButton = document.createElement("button");
                     reactionButton.type = "button";
                     reactionButton.className = "dm-message-reaction" + (reaction.reacted ? " reacted" : "");
-                    reactionButton.textContent = String(reaction.emoji) + (Number(reaction.count || 0) > 1 ? " " + Number(reaction.count) : "");
-                    reactionButton.setAttribute("aria-label", String(reaction.count || 1) + " " + String(reaction.emoji) + " reaction" + (Number(reaction.count || 1) === 1 ? "" : "s"));
-                    reactionButton.title = reaction.reacted ? "Remove reaction" : "React with " + reaction.emoji;
+                    reactionButton.textContent = String(reaction.emoji);
+                    const count = Number(reaction.count || 1);
+                    reactionButton.setAttribute("aria-label", count + " " + String(reaction.emoji) + " reaction" + (count === 1 ? "" : "s"));
+                    reactionButton.title = reaction.reacted ? "Remove your reaction" : "React with " + reaction.emoji;
                     reactionButton.addEventListener("click", async (event) => {
                         event.preventDefault();
                         event.stopPropagation();
@@ -5582,10 +5584,14 @@ bootstrapHelixSession().then((authenticated) => {
                     });
                     reactionStrip.appendChild(reactionButton);
                 });
-                bubble.appendChild(reactionStrip);
+                row.appendChild(reactionStrip);
             }
 
-            row.append(bubble, meta, createMessageHoverReactionBar(item));
+            row.appendChild(bubble);
+            row.appendChild(meta);
+            if (item.sender !== loggedInUser) {
+                row.appendChild(createMessageHoverReactionBar(item));
+            }
 
             if (item.isPinned) {
                 const pinMark = document.createElement("span");
@@ -6032,6 +6038,7 @@ bootstrapHelixSession().then((authenticated) => {
     function closeEmojiPicker() {
         if (emojiContainer) emojiContainer.hidden = true;
         emojiButton?.setAttribute("aria-expanded", "false");
+        emojiPickerReactionTarget = null;
     }
 
     async function ensureEmojiPicker() {
@@ -6042,11 +6049,12 @@ bootstrapHelixSession().then((authenticated) => {
         await emojiPickerPromise;
     }
 
-    async function openEmojiPicker() {
+    async function openEmojiPicker(reactionTarget = null) {
         closeContextMenu();
         closePinnedPanel();
         closeForwardPanel();
         if (!emojiContainer || !emojiButton || !activeUsername) return;
+        emojiPickerReactionTarget = reactionTarget?.id ? reactionTarget : null;
         emojiContainer.hidden = false;
         emojiButton.setAttribute("aria-expanded", "true");
         try {
@@ -6068,9 +6076,16 @@ bootstrapHelixSession().then((authenticated) => {
                 picker.style.setProperty("--input-font-color", "#eafcff");
                 picker.style.setProperty("--input-placeholder-color", "#71879a");
                 picker.style.setProperty("--category-font-color", "#bdefff");
-                picker.addEventListener("emoji-click", (event) => {
+                picker.addEventListener("emoji-click", async (event) => {
                     const unicode = event.detail?.unicode || "";
-                    if (unicode) insertEmojiIntoInput(unicode);
+                    if (!unicode) return;
+                    if (emojiPickerReactionTarget?.id) {
+                        const target = emojiPickerReactionTarget;
+                        closeEmojiPicker();
+                        await reactToMessage(target, unicode);
+                    } else {
+                        insertEmojiIntoInput(unicode);
+                    }
                 });
                 emojiContainer.appendChild(picker);
             }
