@@ -11738,3 +11738,105 @@ body.helix-reduced-motion *::after {
         flex-basis: 40px !important;
     }
 }
+
+
+/* =========================================================
+   HELIX — DM QUICK REACTION BAR — HARD POSITIONING OVERRIDE
+   =========================================================
+   The toolbar is portaled to <body> by app.js. These rules are
+   intentionally self-contained so older DM positioning rules cannot
+   move it to the far edge or clip it inside #messages.
+   ========================================================= */
+
+body > .dm-message-hover-reaction-bar {
+    position: fixed !important;
+    z-index: 100000 !important;
+    display: flex !important;
+    width: max-content !important;
+    min-width: 0 !important;
+    height: 50px !important;
+    min-height: 50px !important;
+    box-sizing: border-box !important;
+    padding: 5px 8px !important;
+    gap: 3px !important;
+    border: 1px solid rgba(156, 165, 177, .28) !important;
+    border-radius: 999px !important;
+    background: linear-gradient(180deg, rgba(43, 46, 53, .98), rgba(31, 34, 40, .98)) !important;
+    box-shadow:
+        0 16px 36px rgba(0,0,0,.50),
+        0 0 0 1px rgba(0,229,255,.06),
+        0 0 22px rgba(0,229,255,.13) !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    transform: translateY(-50%) scale(.98) !important;
+    transform-origin: left center !important;
+    transition:
+        opacity .28s ease,
+        transform .28s ease,
+        box-shadow .22s ease,
+        border-color .22s ease !important;
+}
+
+body > .dm-message-hover-reaction-bar.is-open {
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+    transform: translateY(-50%) scale(1) !important;
+    border-color: rgba(0,229,255,.42) !important;
+    box-shadow:
+        0 16px 36px rgba(0,0,0,.50),
+        0 0 0 1px rgba(0,229,255,.08),
+        0 0 24px rgba(0,229,255,.18) !important;
+}
+
+body > .dm-message-hover-reaction-bar[data-placement="below"] {
+    transform: translateY(-2px) scale(.98) !important;
+    transform-origin: left top !important;
+}
+
+body > .dm-message-hover-reaction-bar[data-placement="below"].is-open {
+    transform: translateY(0) scale(1) !important;
+}
+
+body > .dm-message-hover-reaction-bar .dm-hover-reaction {
+    width: 40px !important;
+    height: 40px !important;
+    flex: 0 0 40px !important;
+    font-size: 25px !important;
+}
+
+body > .dm-message-hover-reaction-bar .dm-hover-reaction-more {
+    width: 42px !important;
+    height: 42px !important;
+    flex: 0 0 42px !important;
+    margin-left: 4px !important;
+    border-radius: 50% !important;
+    background: rgba(255,255,255,.075) !important;
+    color: #f4f6f8 !important;
+}
+
+body > .dm-message-hover-reaction-bar .dm-hover-reaction:hover,
+body > .dm-message-hover-reaction-bar .dm-hover-reaction:focus-visible {
+    background: rgba(255,255,255,.10) !important;
+}
+
+@media (max-width: 700px) {
+    body > .dm-message-hover-reaction-bar {
+        height: 48px !important;
+        min-height: 48px !important;
+    }
+
+    body > .dm-message-hover-reaction-bar .dm-hover-reaction {
+        width: 38px !important;
+        height: 38px !important;
+        flex-basis: 38px !important;
+        font-size: 23px !important;
+    }
+
+    body > .dm-message-hover-reaction-bar .dm-hover-reaction-more {
+        width: 40px !important;
+        height: 40px !important;
+        flex-basis: 40px !important;
+    }
+}
