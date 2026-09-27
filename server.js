@@ -232,8 +232,14 @@ async function initializeDatabase() {
             reactor_username TEXT NOT NULL REFERENCES helix_users(username) ON DELETE CASCADE,
             emoji TEXT NOT NULL CHECK (char_length(emoji) BETWEEN 1 AND 32),
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-            PRIMARY KEY (message_id, reactor_username)
+            PRIMARY KEY (message_id, reactor_username, emoji)
         );
+
+        ALTER TABLE helix_dm_reactions
+            DROP CONSTRAINT IF EXISTS helix_dm_reactions_pkey;
+        ALTER TABLE helix_dm_reactions
+            ADD CONSTRAINT helix_dm_reactions_pkey
+            PRIMARY KEY (message_id, reactor_username, emoji);
 
         CREATE INDEX IF NOT EXISTS helix_dm_reactions_message_idx
             ON helix_dm_reactions (message_id);
@@ -2105,23 +2111,24 @@ app.post("/api/dm/messages/:messageId/reaction", async (req, res) => {
         }
 
         const existing = await dbPool.query(
-            "SELECT emoji FROM helix_dm_reactions WHERE message_id = $1 AND reactor_username = $2",
-            [messageId, user.username]
+            "SELECT 1 FROM helix_dm_reactions WHERE message_id = $1 AND reactor_username = $2 AND emoji = $3",
+            [messageId, user.username, emoji]
         );
 
-        if (existing.rows[0]?.emoji === emoji) {
+        if (existing.rowCount) {
             await dbPool.query(
-                "DELETE FROM helix_dm_reactions WHERE message_id = $1 AND reactor_username = $2",
-                [messageId, user.username]
-            );
-        } else {
-            await dbPool.query(
-                "INSERT INTO helix_dm_reactions (message_id, reactor_username, emoji) VALUES ($1, $2, $3) ON CONFLICT (message_id, reactor_username) DO UPDATE SET emoji = EXCLUDED.emoji, created_at = NOW()",
+                "DELETE FROM helix_dm_reactions WHERE message_id = $1 AND reactor_username = $2 AND emoji = $3",
                 [messageId, user.username, emoji]
             );
+            return res.json({ ok: true, messageId, emoji, reacted: false });
         }
 
-        return res.json({ ok: true, messageId });
+        await dbPool.query(
+            "INSERT INTO helix_dm_reactions (message_id, reactor_username, emoji) VALUES ($1, $2, $3) ON CONFLICT (message_id, reactor_username, emoji) DO NOTHING",
+            [messageId, user.username, emoji]
+        );
+
+        return res.json({ ok: true, messageId, emoji, reacted: true });
     } catch (error) {
         console.error("DM reaction failed:", error);
         return res.status(500).json({ error: "Could not update the reaction." });
