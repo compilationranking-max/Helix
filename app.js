@@ -5609,34 +5609,36 @@ bootstrapHelixSession().then((authenticated) => {
         if (sendButton) sendButton.disabled = true;
 
         try {
-            let mediaPayload = null;
+            let response;
+            let data = {};
 
             if (media?.file) {
-                const dataUrl = await readFileAsDataUrl(media.file);
+                response = await fetch("/api/dm/media-message", {
+                    method: "POST",
+                    credentials: "include",
+                    headers: {
+                        "Content-Type": media.file.type,
+                        "X-DM-To": recipient,
+                        "X-DM-Text": trimmed,
+                        "X-DM-Name": encodeURIComponent(media.file.name || media.name || "attachment")
+                    },
+                    body: media.file
+                });
 
-                if (dataUrl.length > 15_500_000) {
-                    throw new Error("That file is too large to send after upload encoding. Choose a smaller file (10 MB or less).");
-                }
+                data = await response.json().catch(() => ({}));
+            } else {
+                response = await fetch("/api/dm/messages", {
+                    method: "POST",
+                    credentials: "include",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        to: recipient,
+                        text: trimmed
+                    })
+                });
 
-                mediaPayload = {
-                    dataUrl,
-                    name: media.name || media.file.name,
-                    size: media.size || media.file.size
-                };
+                data = await response.json().catch(() => ({}));
             }
-
-            const response = await fetch("/api/dm/messages", {
-                method: "POST",
-                credentials: "include",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    to: recipient,
-                    text: trimmed,
-                    media: mediaPayload
-                })
-            });
-
-            const data = await response.json().catch(() => ({}));
 
             if (!response.ok) {
                 throw new Error(data.error || "Could not send message.");
@@ -5651,15 +5653,6 @@ bootstrapHelixSession().then((authenticated) => {
             isSending = false;
             if (sendButton) sendButton.disabled = false;
         }
-    }
-
-    function readFileAsDataUrl(file) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.addEventListener("load", () => resolve(String(reader.result || "")));
-            reader.addEventListener("error", () => reject(new Error("Could not read that file.")));
-            reader.readAsDataURL(file);
-        });
     }
 
     function updateMediaPreview() {
