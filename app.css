@@ -11268,3 +11268,40 @@ body.helix-reduced-motion *::after {
         max-width: 190px;
     }
 }
+
+/* Keep the hover reaction toolbar beside the message, not above the next row. */
+#dm-view .dm-message-hover-reaction-bar {
+    top: 50% !important;
+    bottom: auto !important;
+    left: calc(100% + 8px) !important;
+    right: auto !important;
+    transform: translateY(-50%) scale(.97) !important;
+    transform-origin: left center !important;
+    margin: 0 !important;
+}
+
+#dm-view .message.sent .dm-message-hover-reaction-bar {
+    left: auto !important;
+    right: calc(100% + 8px) !important;
+    transform: translateY(-50%) scale(.97) !important;
+    transform-origin: right center !important;
+}
+
+#dm-view .message:hover .dm-message-hover-reaction-bar,
+#dm-view .dm-message-hover-reaction-bar:hover,
+#dm-view .dm-message-hover-reaction-bar:focus-within {
+    transform: translateY(-50%) scale(1) !important;
+}
+
+/* On compact screens, keep the toolbar close to the bubble without changing
+   the message flow. */
+@media (max-width: 850px) {
+    #dm-view .dm-message-hover-reaction-bar {
+        left: calc(100% + 5px) !important;
+    }
+
+    #dm-view .message.sent .dm-message-hover-reaction-bar {
+        right: calc(100% + 5px) !important;
+        left: auto !important;
+    }
+}
