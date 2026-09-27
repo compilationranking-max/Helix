@@ -91,7 +91,16 @@ if (!GEMINI_API_KEY) {
 
 app.use(cors());
 app.use(express.json({ limit: "16mb" }));
-app.use(express.static(__dirname));
+app.use(express.static(__dirname, {
+    setHeaders: (res, filePath) => {
+        // Frontend bundles must always refresh after a Helix deployment.
+        // HTML, JS and CSS are versioned/no-store so an older browser bundle
+        // cannot mask a backend/frontend fix after Render rebuilds.
+        if (/\.(?:html|js|css)$/i.test(filePath)) {
+            res.setHeader("Cache-Control", "no-store, max-age=0");
+        }
+    }
+}));
 
 const networkDataDir = path.join(__dirname, "data");
 const networkDataFile = path.join(networkDataDir, "helix-network.json");
