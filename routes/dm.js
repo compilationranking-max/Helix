@@ -213,11 +213,14 @@ function createDMRouter(options) {
                 "u.username, " +
                 "u.display_name AS \"displayName\", " +
                 "(u.profile_photo IS NOT NULL) AS \"hasProfilePhoto\", " +
+                "n.nickname AS \"nickname\", " +
                 "latest.body AS \"latestText\", " +
                 "latest.created_at AS \"latestCreatedAt\", " +
                 "COALESCE(unread.unread_count, 0)::int AS \"unreadCount\" " +
                 "FROM helix_friendships f " +
                 "JOIN helix_users u ON u.username = CASE WHEN f.user_a = $1 THEN f.user_b ELSE f.user_a END " +
+                "LEFT JOIN helix_dm_conversation_nicknames n " +
+                "ON n.owner_username = $1 AND n.friend_username = u.username " +
                 "LEFT JOIN LATERAL (" +
                 "SELECT m.body, m.created_at FROM helix_dm_messages m " +
                 "WHERE (m.sender_username = $1 AND m.recipient_username = u.username) " +
@@ -247,7 +250,7 @@ function createDMRouter(options) {
                     profilePhoto: row.hasProfilePhoto
                         ? publicProfilePhotoUrl(row.username)
                         : null,
-                    nickname: null,
+                    nickname: row.nickname || null,
                     latestMessage: row.latestText
                         ? {
                             text: row.latestText,
@@ -293,6 +296,48 @@ function createDMRouter(options) {
             });
         } catch (error) {
             console.error("DM message load failed:", error);
+            return errorResponse(res, error);
+        }
+    });
+
+    router.patch("/conversations/:username/nickname", async (req, res) => {
+        const user = await requireCurrentUser(req, res);
+        if (!user) return;
+        if (!(await requireDMDatabase(res))) return;
+
+        const nickname = typeof req.body?.nickname === "string"
+            ? req.body.nickname.trim().replace(/s+/g, " ")
+            : "";
+
+        if (nickname.length > 50) {
+            return res.status(400).json({ error: "Nickname must be 50 characters or fewer." });
+        }
+
+        try {
+            const partner = await ensureConversationAccess(
+                user.username,
+                req.params.username
+            );
+
+            if (!nickname) {
+                await dbPool.query(
+                    "DELETE FROM helix_dm_conversation_nicknames WHERE owner_username = $1 AND friend_username = $2",
+                    [user.username, partner]
+                );
+                return res.json({ ok: true, nickname: null });
+            }
+
+            await dbPool.query(
+                "INSERT INTO helix_dm_conversation_nicknames (owner_username, friend_username, nickname) " +
+                "VALUES ($1, $2, $3) " +
+                "ON CONFLICT (owner_username, friend_username) " +
+                "DO UPDATE SET nickname = EXCLUDED.nickname, updated_at = NOW()",
+                [user.username, partner, nickname]
+            );
+
+            return res.json({ ok: true, nickname });
+        } catch (error) {
+            console.error("DM nickname update failed:", error);
             return errorResponse(res, error);
         }
     });
