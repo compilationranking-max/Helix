@@ -1954,6 +1954,7 @@
                 action;
             item.dataset.messageId =
                 message.id;
+            item.setAttribute("role", "menuitem");
 
             const text =
                 make(
