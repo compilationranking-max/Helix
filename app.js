@@ -5123,6 +5123,7 @@ bootstrapHelixSession().then((authenticated) => {
     window.helixOpenDMNicknameModal = openDMNicknameModal;
 })();
 
+// =========================================================
 // HELIX — ISOLATED CLOUD DMS
 // =========================================================
 (function () {
@@ -5142,29 +5143,36 @@ bootstrapHelixSession().then((authenticated) => {
     const headerAvatar = document.getElementById("chat-avatar");
     const headerName = document.getElementById("chat-user-name");
     const headerStatus = document.getElementById("chat-status");
-
     const dmNavUnread = document.getElementById("dm-nav-unread");
+    const emojiButton = document.getElementById("dm-emoji-button");
+    const emojiContainer = document.getElementById("dm-emoji-picker-container");
+    const contextMenu = document.getElementById("dm-message-context-menu");
+    const pinButton = document.getElementById("chat-pin-button");
+    const pinnedPanel = document.getElementById("dm-pinned-panel");
+    const pinnedList = document.getElementById("dm-pinned-list");
+    const pinnedClose = document.getElementById("dm-pinned-close");
+    const forwardPanel = document.getElementById("dm-forward-panel");
+    const forwardList = document.getElementById("dm-forward-list");
+    const forwardCopy = document.getElementById("dm-forward-copy");
+    const forwardClose = document.getElementById("dm-forward-close");
+    const replyBar = document.getElementById("dm-reply-bar");
+    const replyBarText = document.getElementById("dm-reply-bar-text");
+    const replyCancel = document.getElementById("dm-reply-cancel");
 
     async function refreshDMUnreadBadge() {
         if (!dmNavUnread) return;
-
         try {
             const response = await fetch("/api/dm/notification-feed", { credentials: "include" });
             if (!response.ok) return;
-
             const data = await response.json().catch(() => ({}));
             const unread = Math.max(0, Number(data.unread || 0));
-            const feed = Array.isArray(data.messages) ? data.messages : [];
-
             if (window.helixHandleNotificationFeed) {
-                window.helixHandleNotificationFeed(feed, unread);
+                window.helixHandleNotificationFeed(Array.isArray(data.messages) ? data.messages : [], unread);
             } else if (window.helixHandleNotificationUnreadCount) {
                 window.helixHandleNotificationUnreadCount(unread);
             }
-
             if (unread > 0) {
-                const displayCount = unread >= 9 ? "+9" : "+" + unread;
-                dmNavUnread.textContent = displayCount;
+                dmNavUnread.textContent = unread >= 9 ? "+9" : "+" + unread;
                 dmNavUnread.hidden = false;
                 dmNavUnread.setAttribute("aria-label", unread + " unread Direct Message" + (unread === 1 ? "" : "s"));
             } else {
@@ -5172,7 +5180,7 @@ bootstrapHelixSession().then((authenticated) => {
                 dmNavUnread.removeAttribute("aria-label");
             }
         } catch {
-            // Unread indicators are best-effort and must never interrupt DMs.
+            // Notification state is best-effort.
         }
     }
 
@@ -5185,6 +5193,10 @@ bootstrapHelixSession().then((authenticated) => {
     let messageLoadSerial = 0;
     let isSending = false;
     let pendingMedia = null;
+    let activeReplyToId = null;
+    let activeContextMessage = null;
+    let emojiPickerPromise = null;
+    let editingMessageId = null;
 
     const safe = (value) => escapeHTML(value);
 
@@ -5208,11 +5220,27 @@ bootstrapHelixSession().then((authenticated) => {
                 x.recipient === y.recipient &&
                 x.text === y.text &&
                 x.createdAt === y.createdAt &&
+                (x.editedAt || null) === (y.editedAt || null) &&
+                String(x.replyToId || "") === String(y.replyToId || "") &&
+                Boolean(x.isPinned) === Boolean(y.isPinned) &&
                 (x.mediaUrl || null) === (y.mediaUrl || null) &&
                 (x.mediaName || null) === (y.mediaName || null) &&
                 (x.mediaSize || null) === (y.mediaSize || null) &&
                 (x.mediaKind || null) === (y.mediaKind || null);
         });
+    }
+
+    function messagePreview(item) {
+        if (!item) return "";
+        if (item.text) return String(item.text).replace(/\s+/g, " ").trim();
+        if (item.mediaKind === "video") return "🎥 Video";
+        if (item.mediaUrl) return "📷 Photo";
+        return "";
+    }
+
+    function shortMessagePreview(item, max = 80) {
+        const text = messagePreview(item);
+        return text.length > max ? text.slice(0, max - 1) + "…" : text;
     }
 
     function filterFriends() {
@@ -5244,11 +5272,7 @@ bootstrapHelixSession().then((authenticated) => {
         if (!normalized.length) {
             const empty = document.createElement("div");
             empty.className = "dm-empty-state";
-            empty.innerHTML = `
-                <span class="dm-empty-icon">◈</span>
-                <strong>No friends yet</strong>
-                <p>Add a friend to start a Direct Message.</p>
-            `;
+            empty.innerHTML = "<span class=\"dm-empty-icon\">◈</span><strong>No friends yet</strong><p>Add a friend to start a Direct Message.</p>";
             list.appendChild(empty);
             filterFriends();
             return;
@@ -5262,7 +5286,7 @@ bootstrapHelixSession().then((authenticated) => {
 
             const avatar = document.createElement("span");
             avatar.className = "conversation-avatar";
-            avatar.textContent = friend.displayName.slice(0, 2).toUpperCase();
+            avatar.textContent = (friend.customNickname || friend.displayName).slice(0, 2).toUpperCase();
             if (friend.profilePhoto) {
                 avatar.style.backgroundImage = `url("${friend.profilePhoto}")`;
                 avatar.style.backgroundSize = "cover";
@@ -5276,31 +5300,22 @@ bootstrapHelixSession().then((authenticated) => {
             const visibleName = friend.customNickname || friend.displayName;
             copy.innerHTML = "<strong>" + safe(visibleName) + "</strong><small>-" + safe(friend.username) + "</small><span class=\"conversation-preview\">" + (friend.username === activeUsername ? "Open conversation" : "Start a conversation") + "</span>";
 
-            const unread = document.createElement("span");
-            unread.className = "conversation-unread";
-            unread.textContent = `(${Math.max(0, friend.unreadCount)})`;
-            unread.hidden = friend.unreadCount <= 0;
+            const meta = document.createElement("span");
+            meta.className = "conversation-meta";
+            if (friend.unreadCount > 0 && friend.username !== activeUsername) {
+                const unread = document.createElement("span");
+                unread.className = "conversation-unread";
+                unread.textContent = friend.unreadCount >= 9 ? "(9+)" : "(" + friend.unreadCount + ")";
+                meta.appendChild(unread);
+            }
 
-            const arrow = document.createElement("span");
-            arrow.className = "conversation-arrow";
-            arrow.textContent = "↗";
-
-            button.append(avatar, copy, unread, arrow);
+            button.append(avatar, copy, meta);
             button.addEventListener("click", () => openFriend(friend));
             list.appendChild(button);
         });
 
         filterFriends();
     }
-
-    window.helixSetDMNickname = function (username, nickname) {
-        const friend = friends.find((item) => item.username === username);
-        if (!friend) return;
-        friend.customNickname = nickname || "";
-        window.helixDMFriendsSnapshot = friends.map((item) => ({ ...item }));
-        renderFriends(friends);
-        if (activeUsername === username) openFriend(friend);
-    };
 
     async function loadFriends() {
         try {
@@ -5329,58 +5344,84 @@ bootstrapHelixSession().then((authenticated) => {
             searchResultCount.textContent = "";
             return;
         }
-        searchResultCount.textContent =
-            `${matchCount} result${matchCount === 1 ? "" : "s"}`;
-        searchResultCount.title = `${matchCount} of ${totalCount} messages match`;
+        searchResultCount.textContent = matchCount + " result" + (matchCount === 1 ? "" : "s");
+        searchResultCount.title = matchCount + " of " + totalCount + " messages match";
     }
 
-    function messageDateKey(value) {
-        const date = new Date(value);
-        return Number.isNaN(date.getTime())
-            ? ""
-            : `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+    function scrollToMessage(messageId) {
+        if (!messageId) return;
+        const row = messages.querySelector(`[data-message-id="${CSS.escape(String(messageId))}"]`);
+        if (row) {
+            row.scrollIntoView({ behavior: "smooth", block: "center" });
+            row.classList.add("dm-message-focus");
+            window.setTimeout(() => row.classList.remove("dm-message-focus"), 1100);
+        }
     }
 
-    function formatMessageDate(value) {
-        const date = new Date(value);
-        if (Number.isNaN(date.getTime())) return "";
+    function appendMessageBody(item, bubble) {
+        if (item.mediaUrl) {
+            if (item.mediaKind === "video") {
+                const video = document.createElement("video");
+                video.className = "message-media message-video";
+                video.src = item.mediaUrl;
+                video.controls = true;
+                video.preload = "metadata";
+                video.playsInline = true;
+                video.setAttribute("aria-label", item.mediaName || "Shared video");
+                bubble.appendChild(video);
+            } else {
+                const image = document.createElement("img");
+                image.className = "message-media message-image";
+                image.src = item.mediaUrl;
+                image.alt = item.mediaName || "Shared photo";
+                image.loading = "lazy";
+                bubble.appendChild(image);
+            }
 
-        const today = new Date();
-        const yesterday = new Date(today);
-        yesterday.setDate(today.getDate() - 1);
+            if (item.mediaName) {
+                const mediaName = document.createElement("div");
+                mediaName.className = "message-media-name";
+                mediaName.textContent = item.mediaName;
+                bubble.appendChild(mediaName);
+            }
+        }
 
-        if (messageDateKey(date) === messageDateKey(today)) return "Today";
-        if (messageDateKey(date) === messageDateKey(yesterday)) return "Yesterday";
+        if (item.text) {
+            const p = document.createElement("p");
+            p.className = "dm-message-text";
+            p.textContent = item.text;
+            bubble.appendChild(p);
+        }
+    }
 
-        return date.toLocaleDateString([], {
-            month: "long",
-            day: "numeric",
-            year: "numeric"
+    function renderReplyReference(item, bubble) {
+        if (!item.replyToId) return;
+        const reference = document.createElement("button");
+        reference.type = "button";
+        reference.className = "dm-reply-reference";
+        reference.title = "Jump to replied message";
+        const sender = item.replySender === loggedInUser ? "You" : (item.replySender || "Friend");
+        const preview = item.replyText || (item.replyMediaName ? "📎 " + item.replyMediaName : "Attachment");
+        reference.innerHTML = "<span>↩</span><strong>" + safe(sender) + "</strong><small>" + safe(preview) + "</small>";
+        reference.addEventListener("click", (event) => {
+            event.stopPropagation();
+            scrollToMessage(item.replyToId);
         });
-    }
-
-    function formatFileSize(bytes) {
-        const size = Number(bytes || 0);
-        if (!size) return "0 B";
-        if (size < 1024 * 1024) return `${Math.max(1, Math.round(size / 1024))} KB`;
-        return `${(size / (1024 * 1024)).toFixed(size >= 10 * 1024 * 1024 ? 0 : 1)} MB`;
+        bubble.appendChild(reference);
     }
 
     function renderMessages({ scrollToBottom = false } = {}) {
         const query = (messageSearchInput?.value || "").trim().toLowerCase();
         const visible = query
             ? currentMessages.filter((item) =>
-                String(item.text || "").toLowerCase().includes(query)
-                || String(item.mediaName || "").toLowerCase().includes(query)
+                String(item.text || "").toLowerCase().includes(query) ||
+                String(item.mediaName || "").toLowerCase().includes(query)
             )
             : currentMessages;
 
         updateSearchResultCount(visible.length, currentMessages.length, query);
-
-        const wasNearBottom =
-            messages.scrollHeight - messages.scrollTop - messages.clientHeight < 80;
+        const wasNearBottom = messages.scrollHeight - messages.scrollTop - messages.clientHeight < 80;
         const previousScrollTop = messages.scrollTop;
-
         messages.replaceChildren();
 
         if (!visible.length) {
@@ -5394,75 +5435,44 @@ bootstrapHelixSession().then((authenticated) => {
 
         visible.forEach((item) => {
             const currentDateKey = messageDateKey(item.createdAt);
-
             if (currentDateKey && currentDateKey !== previousDateKey) {
                 const separator = document.createElement("div");
                 separator.className = "message-date-separator";
-
-                const separatorLine = document.createElement("span");
-                separatorLine.className = "message-date-line";
-
-                const separatorLabel = document.createElement("span");
-                separatorLabel.className = "message-date-label";
-                separatorLabel.textContent = formatMessageDate(item.createdAt);
-
-                const separatorLineRight = document.createElement("span");
-                separatorLineRight.className = "message-date-line";
-
-                separator.append(separatorLine, separatorLabel, separatorLineRight);
+                const left = document.createElement("span");
+                left.className = "message-date-line";
+                const label = document.createElement("span");
+                label.className = "message-date-label";
+                label.textContent = formatMessageDate(item.createdAt);
+                const right = document.createElement("span");
+                right.className = "message-date-line";
+                separator.append(left, label, right);
                 fragment.appendChild(separator);
                 previousDateKey = currentDateKey;
             }
 
             const row = document.createElement("div");
             row.className = "message " + (item.sender === loggedInUser ? "sent" : "received");
+            row.dataset.messageId = String(item.id);
+            if (item.isPinned) row.classList.add("is-pinned");
 
             const bubble = document.createElement("div");
             bubble.className = "message-bubble";
-
-            if (item.mediaUrl) {
-                if (item.mediaKind === "video") {
-                    const video = document.createElement("video");
-                    video.className = "message-media message-video";
-                    video.src = item.mediaUrl;
-                    video.controls = true;
-                    video.preload = "metadata";
-                    video.playsInline = true;
-                    video.setAttribute("aria-label", item.mediaName || "Shared video");
-                    bubble.appendChild(video);
-                } else {
-                    const image = document.createElement("img");
-                    image.className = "message-media message-image";
-                    image.src = item.mediaUrl;
-                    image.alt = item.mediaName || "Shared photo";
-                    image.loading = "lazy";
-                    bubble.appendChild(image);
-                }
-
-                if (item.mediaName) {
-                    const mediaName = document.createElement("div");
-                    mediaName.className = "message-media-name";
-                    mediaName.textContent = item.mediaName;
-                    bubble.appendChild(mediaName);
-                }
-            }
-
-            if (item.text) {
-                const p = document.createElement("p");
-                p.textContent = item.text;
-                bubble.appendChild(p);
-            }
+            renderReplyReference(item, bubble);
+            appendMessageBody(item, bubble);
 
             const meta = document.createElement("div");
             meta.className = "message-meta";
-
             const time = document.createElement("span");
             time.className = "message-time";
-            time.textContent = new Date(item.createdAt).toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit"
-            });
+            time.textContent = new Date(item.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
             meta.appendChild(time);
+
+            if (item.editedAt) {
+                const edited = document.createElement("span");
+                edited.className = "dm-edited-label";
+                edited.textContent = "Edited";
+                meta.appendChild(edited);
+            }
 
             if (item.sender === loggedInUser) {
                 const status = document.createElement("span");
@@ -5473,64 +5483,512 @@ bootstrapHelixSession().then((authenticated) => {
 
             row.append(bubble, meta);
 
-            if (query) row.classList.add("search-match");
+            if (item.isPinned) {
+                const pinMark = document.createElement("span");
+                pinMark.className = "dm-message-pin-mark";
+                pinMark.title = "Pinned message";
+                pinMark.setAttribute("aria-label", "Pinned message");
+                pinMark.innerHTML = "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M8 4h8M9 4l1 7-4 4v2h5v3h2v-3h5v-2l-4-4 1-7\"></path></svg>";
+                row.appendChild(pinMark);
+            }
 
+            if (query) row.classList.add("search-match");
+            row.addEventListener("contextmenu", (event) => openContextMenu(event, item));
             fragment.appendChild(row);
             rows.push(row);
         });
 
         messages.appendChild(fragment);
 
-        if (query) {
-            rows[0]?.scrollIntoView({ block: "center", behavior: "auto" });
-        } else if (scrollToBottom || wasNearBottom) {
-            messages.scrollTop = messages.scrollHeight;
-        } else {
-            messages.scrollTop = previousScrollTop;
-        }
+        if (query) rows[0]?.scrollIntoView({ block: "center", behavior: "auto" });
+        else if (scrollToBottom || wasNearBottom) messages.scrollTop = messages.scrollHeight;
+        else messages.scrollTop = previousScrollTop;
     }
 
     async function loadMessages(username, { force = false, scrollToBottom = false } = {}) {
         const requestSerial = ++messageLoadSerial;
-
         try {
-            const response = await fetch(
-                `/api/dm/messages?with=${encodeURIComponent(username)}`,
-                { credentials: "include" }
-            );
+            const response = await fetch("/api/dm/messages?with=" + encodeURIComponent(username), { credentials: "include" });
             const data = await response.json().catch(() => ({}));
-
-            if (!response.ok) {
-                throw new Error(data.error || "Could not load conversation.");
-            }
-
+            if (!response.ok) throw new Error(data.error || "Could not load conversation.");
             if (activeUsername !== username || requestSerial !== messageLoadSerial) return;
-
             const nextMessages = Array.isArray(data.messages) ? data.messages : [];
             const changed = force || !sameMessages(currentMessages, nextMessages);
-
             currentMessages = nextMessages;
-
-            // Do not rebuild the message DOM during normal polling when nothing changed.
-            // This removes the visible blink/jump every few seconds.
-            if (changed) {
-                renderMessages({ scrollToBottom });
-            }
+            if (changed && !editingMessageId) renderMessages({ scrollToBottom });
+            else if (force && editingMessageId) editingMessageId = null;
         } catch (error) {
             if (activeUsername !== username || requestSerial !== messageLoadSerial) return;
             currentMessages = [];
-            if (headerStatus) {
-                headerStatus.textContent = error.message || "Could not load conversation.";
+            if (headerStatus) headerStatus.textContent = error.message || "Could not load conversation.";
+        }
+    }
+
+    function closeContextMenu() {
+        if (!contextMenu) return;
+        contextMenu.hidden = true;
+        contextMenu.replaceChildren();
+        activeContextMessage = null;
+    }
+
+    function contextIcon(type) {
+        const paths = {
+            edit: "<path d=\"M4 16v4h4L20 8l-4-4L4 16Z\"></path><path d=\"m13 7 4 4\"></path>",
+            reply: "<path d=\"M9 8 4 13l5 5\"></path><path d=\"M5 13h8a6 6 0 0 1 6 6\"></path>",
+            forward: "<path d=\"M15 4l6 6-6 6\"></path><path d=\"M3 20v-3a7 7 0 0 1 7-7h11\"></path>",
+            copy: "<rect x=\"5\" y=\"5\" width=\"13\" height=\"13\" rx=\"2\"></rect><path d=\"M8 2h9a2 2 0 0 1 2 2v9\"></path>",
+            pin: "<path d=\"M8 4h8M9 4l1 7-4 4v2h5v3h2v-3h5v-2l-4-4 1-7\"></path>",
+            delete: "<path d=\"M5 7h14M10 4h4l1 3H9l1-3ZM8 10v8M12 10v8M16 10v8\"></path>"
+        };
+        return "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\">" + (paths[type] || "") + "</svg>";
+    }
+
+    function contextAction(label, type, handler, danger = false) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "dm-context-action" + (danger ? " danger" : "");
+        button.setAttribute("role", "menuitem");
+        button.innerHTML = contextIcon(type) + "<span>" + safe(label) + "</span>";
+        button.addEventListener("click", async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            closeContextMenu();
+            await handler();
+        });
+        return button;
+    }
+
+    function reactionAction(emoji) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "dm-context-reaction";
+        button.textContent = emoji;
+        button.setAttribute("aria-label", "Insert " + emoji);
+        button.addEventListener("click", () => {
+            insertEmojiIntoInput(emoji);
+            closeContextMenu();
+        });
+        return button;
+    }
+
+    function openContextMenu(event, item) {
+        event.preventDefault();
+        event.stopPropagation();
+        closeEmojiPicker();
+        closePinnedPanel();
+        closeForwardPanel();
+        if (!contextMenu) return;
+        activeContextMessage = item;
+        contextMenu.replaceChildren();
+
+        const reactions = document.createElement("div");
+        reactions.className = "dm-context-reactions";
+        ["❤️", "😂", "😮", "😢", "😡", "👍"].forEach((emoji) => reactions.appendChild(reactionAction(emoji)));
+        const reactionMore = reactionAction("+");
+        reactionMore.classList.add("more");
+        reactionMore.addEventListener("click", async () => {
+            closeContextMenu();
+            await openEmojiPicker();
+        }, { once: true });
+        reactions.appendChild(reactionMore);
+        contextMenu.appendChild(reactions);
+
+        const actions = document.createElement("div");
+        actions.className = "dm-context-actions";
+        if (item.sender === loggedInUser && item.text && !item.mediaUrl) {
+            actions.appendChild(contextAction("Edit Message", "edit", () => startInlineEdit(item)));
+        }
+        actions.appendChild(contextAction("Reply", "reply", () => startReply(item)));
+        actions.appendChild(contextAction("Forward", "forward", () => openForwardPanel(item)));
+        actions.appendChild(contextAction("Copy Text", "copy", () => copyMessageContent(item)));
+        actions.appendChild(contextAction(item.isPinned ? "Unpin Message" : "Pin Message", "pin", () => togglePin(item)));
+        actions.appendChild(contextAction("Delete Message", "delete", () => deleteMessage(item), true));
+        contextMenu.appendChild(actions);
+
+        contextMenu.hidden = false;
+        const menuRect = contextMenu.getBoundingClientRect();
+        const gap = 8;
+        const left = Math.min(event.clientX, window.innerWidth - menuRect.width - gap);
+        const top = Math.min(event.clientY, window.innerHeight - menuRect.height - gap);
+        contextMenu.style.left = Math.max(gap, left) + "px";
+        contextMenu.style.top = Math.max(gap, top) + "px";
+    }
+
+    function setReplyBar(item) {
+        activeReplyToId = item?.id ? String(item.id) : null;
+        if (!replyBar || !replyBarText) return;
+        if (!item) {
+            replyBar.hidden = true;
+            replyBarText.textContent = "";
+            return;
+        }
+        replyBar.hidden = false;
+        replyBarText.textContent = shortMessagePreview(item, 100) || "Attachment";
+        input.focus();
+    }
+
+    function startReply(item) {
+        setReplyBar(item);
+        if (headerStatus) headerStatus.textContent = "Replying to this message.";
+    }
+
+    function clearReply() {
+        activeReplyToId = null;
+        if (replyBar) replyBar.hidden = true;
+        if (replyBarText) replyBarText.textContent = "";
+    }
+
+    function enterEditMode(item, row) {
+        if (!item || item.sender !== loggedInUser || !item.text || item.mediaUrl) return;
+        editingMessageId = String(item.id);
+        const bubble = row.querySelector(".message-bubble");
+        if (!bubble) return;
+        bubble.querySelector(".dm-message-text")?.remove();
+        const editor = document.createElement("div");
+        editor.className = "dm-inline-editor";
+        const field = document.createElement("textarea");
+        field.value = item.text;
+        field.maxLength = 4000;
+        field.rows = Math.min(5, Math.max(2, Math.ceil(item.text.length / 55)));
+        const controls = document.createElement("div");
+        controls.className = "dm-inline-editor-actions";
+        const cancel = document.createElement("button");
+        cancel.type = "button";
+        cancel.textContent = "Cancel";
+        const save = document.createElement("button");
+        save.type = "button";
+        save.textContent = "Save";
+        save.className = "primary";
+        controls.append(cancel, save);
+        editor.append(field, controls);
+        bubble.appendChild(editor);
+        field.focus();
+        field.setSelectionRange(field.value.length, field.value.length);
+
+        const finishCancel = () => {
+            editingMessageId = null;
+            renderMessages();
+        };
+        cancel.addEventListener("click", finishCancel);
+        field.addEventListener("keydown", (event) => {
+            if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+                event.preventDefault();
+                save.click();
             }
+            if (event.key === "Escape") {
+                event.preventDefault();
+                finishCancel();
+            }
+        });
+        save.addEventListener("click", async () => {
+            const value = field.value.trim();
+            if (!value) return;
+            save.disabled = true;
+            try {
+                const response = await fetch("/api/dm/messages/" + encodeURIComponent(item.id), {
+                    method: "PATCH",
+                    credentials: "include",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ text: value })
+                });
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok) throw new Error(data.error || "Could not edit the message.");
+                editingMessageId = null;
+                if (headerStatus) headerStatus.textContent = "Message edited.";
+                await loadMessages(activeUsername, { force: true });
+            } catch (error) {
+                save.disabled = false;
+                if (headerStatus) headerStatus.textContent = error.message || "Could not edit the message.";
+            }
+        });
+    }
+
+    function startInlineEdit(item) {
+        const row = messages.querySelector(`[data-message-id="${CSS.escape(String(item.id))}"]`);
+        if (row) enterEditMode(item, row);
+    }
+
+    async function deleteMessage(item) {
+        if (!item) return;
+        if (item.sender !== loggedInUser) {
+            if (headerStatus) headerStatus.textContent = "You can only delete your own messages.";
+            return;
+        }
+        if (!window.confirm("Delete this message?")) return;
+        try {
+            const response = await fetch("/api/dm/messages/" + encodeURIComponent(item.id), {
+                method: "DELETE",
+                credentials: "include"
+            });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(data.error || "Could not delete the message.");
+            if (activeReplyToId === String(item.id)) clearReply();
+            if (headerStatus) headerStatus.textContent = "Message deleted.";
+            await loadMessages(activeUsername, { force: true });
+            await refreshPinnedPanel();
+        } catch (error) {
+            if (headerStatus) headerStatus.textContent = error.message || "Could not delete the message.";
+        }
+    }
+
+    async function copyMessageContent(item) {
+        try {
+            if (item.text && !item.mediaUrl) {
+                await navigator.clipboard.writeText(item.text);
+                showDMToast("Text copied");
+                return;
+            }
+
+            if (item.mediaUrl) {
+                const response = await fetch(item.mediaUrl, { credentials: "include" });
+                if (!response.ok) throw new Error("Attachment could not be loaded.");
+                const blob = await response.blob();
+                if (item.mediaKind === "image" && navigator.clipboard?.write && typeof ClipboardItem !== "undefined") {
+                    await navigator.clipboard.write([new ClipboardItem({ [blob.type || "image/png"]: blob })]);
+                    showDMToast("Image copied");
+                    return;
+                }
+                const absoluteUrl = new URL(item.mediaUrl, window.location.href).href;
+                await navigator.clipboard.writeText(absoluteUrl);
+                showDMToast(item.mediaKind === "video" ? "Video link copied" : "Attachment link copied");
+                return;
+            }
+
+            showDMToast("Nothing to copy");
+        } catch (error) {
+            try {
+                await navigator.clipboard.writeText(item.text || new URL(item.mediaUrl, window.location.href).href);
+                showDMToast("Copied");
+            } catch {
+                if (headerStatus) headerStatus.textContent = error.message || "Could not copy that message.";
+            }
+        }
+    }
+
+    async function togglePin(item) {
+        if (!item) return;
+        try {
+            const method = item.isPinned ? "DELETE" : "POST";
+            const response = await fetch("/api/dm/messages/" + encodeURIComponent(item.id) + "/pin", {
+                method,
+                credentials: "include"
+            });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(data.error || "Could not update pinned state.");
+            if (headerStatus) headerStatus.textContent = item.isPinned ? "Message unpinned." : "Message pinned.";
+            await loadMessages(activeUsername, { force: true });
+            await refreshPinnedPanel();
+        } catch (error) {
+            if (headerStatus) headerStatus.textContent = error.message || "Could not update pinned state.";
+        }
+    }
+
+    async function refreshPinnedPanel() {
+        if (!pinnedList || !activeUsername) return;
+        pinnedList.innerHTML = "<div class=\"dm-panel-loading\">Loading pinned messages…</div>";
+        try {
+            const response = await fetch("/api/dm/pins?with=" + encodeURIComponent(activeUsername), { credentials: "include" });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(data.error || "Could not load pinned messages.");
+            const pinned = Array.isArray(data.messages) ? data.messages : [];
+            pinnedList.replaceChildren();
+            if (!pinned.length) {
+                const empty = document.createElement("div");
+                empty.className = "dm-pinned-empty";
+                empty.textContent = "No pinned messages yet";
+                pinnedList.appendChild(empty);
+                return;
+            }
+            pinned.forEach((item) => {
+                const row = document.createElement("button");
+                row.type = "button";
+                row.className = "dm-pinned-item";
+                row.dataset.messageId = String(item.id);
+                const who = item.sender === loggedInUser ? "You" : item.sender;
+                const body = shortMessagePreview(item, 120) || "Attachment";
+                row.innerHTML = "<span class=\"dm-pinned-item-icon\">" + contextIcon("pin") + "</span><span class=\"dm-pinned-item-copy\"><strong>" + safe(who) + "</strong><small>" + safe(body) + "</small></span><span class=\"dm-pinned-item-time\">" + new Date(item.pinnedAt).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"}) + "</span>";
+                row.addEventListener("click", () => {
+                    closePinnedPanel();
+                    scrollToMessage(item.id);
+                });
+                const unpin = document.createElement("button");
+                unpin.type = "button";
+                unpin.className = "dm-pinned-item-unpin";
+                unpin.textContent = "×";
+                unpin.title = "Unpin message";
+                unpin.addEventListener("click", async (event) => {
+                    event.stopPropagation();
+                    await togglePin({ ...item, isPinned: true });
+                });
+                row.appendChild(unpin);
+                pinnedList.appendChild(row);
+            });
+        } catch (error) {
+            pinnedList.innerHTML = "<div class=\"dm-pinned-empty dm-pinned-error\">" + safe(error.message || "Could not load pinned messages.") + "</div>";
+        }
+    }
+
+    function closePinnedPanel() {
+        if (!pinnedPanel) return;
+        pinnedPanel.hidden = true;
+        pinButton?.setAttribute("aria-expanded", "false");
+    }
+
+    async function openPinnedPanel() {
+        closeContextMenu();
+        closeEmojiPicker();
+        closeForwardPanel();
+        if (!activeUsername || !pinnedPanel) return;
+        pinnedPanel.hidden = false;
+        pinButton?.setAttribute("aria-expanded", "true");
+        await refreshPinnedPanel();
+    }
+
+    function closeForwardPanel() {
+        if (!forwardPanel) return;
+        forwardPanel.hidden = true;
+    }
+
+    async function openForwardPanel(item) {
+        if (!item || !forwardPanel || !forwardList) return;
+        closeEmojiPicker();
+        closePinnedPanel();
+        forwardPanel.hidden = false;
+        forwardCopy.textContent = shortMessagePreview(item, 110) || "Attachment";
+        forwardList.replaceChildren();
+        const candidates = friends.filter((friend) => friend.username !== activeUsername);
+        if (!candidates.length) {
+            const empty = document.createElement("div");
+            empty.className = "dm-forward-empty";
+            empty.textContent = "No other conversations available";
+            forwardList.appendChild(empty);
+            return;
+        }
+        candidates.forEach((friend) => {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "dm-forward-friend";
+            const visibleName = friend.customNickname || friend.displayName;
+            const avatar = document.createElement("span");
+            avatar.className = "dm-forward-avatar";
+            avatar.textContent = visibleName.slice(0,2).toUpperCase();
+            if (friend.profilePhoto) {
+                avatar.style.backgroundImage = `url("${friend.profilePhoto}")`;
+                avatar.style.backgroundSize = "cover";
+                avatar.style.backgroundPosition = "center";
+                avatar.style.color = "transparent";
+            }
+            const label = document.createElement("span");
+            label.innerHTML = "<strong>" + safe(visibleName) + "</strong><small>-" + safe(friend.username) + "</small>";
+            button.append(avatar, label);
+            button.addEventListener("click", async () => {
+                button.disabled = true;
+                try {
+                    const response = await fetch("/api/dm/messages/" + encodeURIComponent(item.id) + "/forward", {
+                        method: "POST",
+                        credentials: "include",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ to: friend.username })
+                    });
+                    const data = await response.json().catch(() => ({}));
+                    if (!response.ok) throw new Error(data.error || "Could not forward the message.");
+                    closeForwardPanel();
+                    if (headerStatus) headerStatus.textContent = "Message forwarded to " + visibleName + ".";
+                    showDMToast("Message forwarded");
+                } catch (error) {
+                    button.disabled = false;
+                    if (headerStatus) headerStatus.textContent = error.message || "Could not forward the message.";
+                }
+            });
+            forwardList.appendChild(button);
+        });
+    }
+
+    function showDMToast(message) {
+        let toast = root.querySelector(".dm-action-toast");
+        if (!toast) {
+            toast = document.createElement("div");
+            toast.className = "dm-action-toast";
+            root.appendChild(toast);
+        }
+        toast.textContent = message;
+        toast.classList.add("show");
+        window.clearTimeout(toast._hideTimer);
+        toast._hideTimer = window.setTimeout(() => toast.classList.remove("show"), 1500);
+    }
+
+    function insertEmojiIntoInput(emoji) {
+        const value = input.value || "";
+        const startPos = typeof input.selectionStart === "number" ? input.selectionStart : value.length;
+        const endPos = typeof input.selectionEnd === "number" ? input.selectionEnd : value.length;
+        input.value = value.slice(0, startPos) + emoji + value.slice(endPos);
+        const nextPos = startPos + emoji.length;
+        input.focus();
+        input.setSelectionRange(nextPos, nextPos);
+    }
+
+    function closeEmojiPicker() {
+        if (emojiContainer) emojiContainer.hidden = true;
+        emojiButton?.setAttribute("aria-expanded", "false");
+    }
+
+    async function ensureEmojiPicker() {
+        if (customElements.get("emoji-picker")) return;
+        if (!emojiPickerPromise) {
+            emojiPickerPromise = import("https://cdn.jsdelivr.net/npm/emoji-picker-element@^1/index.js");
+        }
+        await emojiPickerPromise;
+    }
+
+    async function openEmojiPicker() {
+        closeContextMenu();
+        closePinnedPanel();
+        closeForwardPanel();
+        if (!emojiContainer || !emojiButton || !activeUsername) return;
+        emojiContainer.hidden = false;
+        emojiButton.setAttribute("aria-expanded", "true");
+        try {
+            await ensureEmojiPicker();
+            if (!emojiContainer.querySelector("emoji-picker")) {
+                const picker = document.createElement("emoji-picker");
+                picker.className = "dark";
+                picker.setAttribute("locale", "en");
+                picker.setAttribute("emoji-version", "17.0");
+                picker.style.width = "340px";
+                picker.style.height = "360px";
+                picker.style.setProperty("--background", "#090f18");
+                picker.style.setProperty("--border-color", "rgba(0,229,255,.28)");
+                picker.style.setProperty("--border-radius", "14px");
+                picker.style.setProperty("--button-hover-background", "rgba(0,229,255,.10)");
+                picker.style.setProperty("--button-active-background", "rgba(0,229,255,.16)");
+                picker.style.setProperty("--indicator-color", "#00e5ff");
+                picker.style.setProperty("--input-border-color", "rgba(0,229,255,.32)");
+                picker.style.setProperty("--input-font-color", "#eafcff");
+                picker.style.setProperty("--input-placeholder-color", "#71879a");
+                picker.style.setProperty("--category-font-color", "#bdefff");
+                picker.addEventListener("emoji-click", (event) => {
+                    const unicode = event.detail?.unicode || "";
+                    if (unicode) insertEmojiIntoInput(unicode);
+                });
+                emojiContainer.appendChild(picker);
+            }
+        } catch (error) {
+            closeEmojiPicker();
+            if (headerStatus) headerStatus.textContent = "Could not load the full emoji picker. Check your connection and try again.";
+            console.warn("Helix emoji picker failed:", error);
         }
     }
 
     async function openFriend(friend) {
         const visibleName = friend.customNickname || friend.displayName;
         activeUsername = friend.username;
-        list.querySelectorAll(".conversation").forEach((item) =>
-            item.classList.toggle("active", item.dataset.user === activeUsername)
-        );
+        editingMessageId = null;
+        closeContextMenu();
+        closeEmojiPicker();
+        closePinnedPanel();
+        closeForwardPanel();
+        clearReply();
+        list.querySelectorAll(".conversation").forEach((item) => item.classList.toggle("active", item.dataset.user === activeUsername));
 
         if (headerAvatar) {
             headerAvatar.textContent = visibleName.slice(0, 2).toUpperCase();
@@ -5564,14 +6022,9 @@ bootstrapHelixSession().then((authenticated) => {
                 infoAvatar.style.color = "";
             }
         }
-
         const infoName = document.getElementById("info-name");
         if (infoName) infoName.innerHTML = "<span>" + safe(visibleName) + "</span> <small>-" + safe(friend.username) + "</small>";
-
-        if (headerName) {
-            headerName.innerHTML = "<span>" + safe(visibleName) + "</span> <small>-" + safe(friend.username) + "</small>";
-        }
-
+        if (headerName) headerName.innerHTML = "<span>" + safe(visibleName) + "</span> <small>-" + safe(friend.username) + "</small>";
         if (headerStatus) headerStatus.textContent = "Friend on Helix";
 
         if (messageSearchInput) messageSearchInput.value = "";
@@ -5580,16 +6033,10 @@ bootstrapHelixSession().then((authenticated) => {
         clearPendingMedia();
 
         const selectedFriend = friends.find((item) => item.username === activeUsername);
-        if (selectedFriend) {
-            selectedFriend.unreadCount = 0;
-        }
-
-        const selectedRow = list.querySelector('[data-user="' + CSS.escape(activeUsername) + '"]');
+        if (selectedFriend) selectedFriend.unreadCount = 0;
+        const selectedRow = list.querySelector("[data-user=\"" + CSS.escape(activeUsername) + "\"]");
         const selectedBadge = selectedRow?.querySelector(".conversation-unread");
-        if (selectedBadge) {
-            selectedBadge.textContent = "(0)";
-            selectedBadge.hidden = true;
-        }
+        if (selectedBadge) selectedBadge.remove();
 
         input.disabled = false;
         currentMessages = [];
@@ -5602,16 +6049,13 @@ bootstrapHelixSession().then((authenticated) => {
     async function sendMessage(text, media = null) {
         const recipient = activeUsername;
         const trimmed = String(text || "").trim();
-
+        const replyToId = activeReplyToId;
         if (!recipient || (!trimmed && !media) || isSending) return false;
-
         isSending = true;
         if (sendButton) sendButton.disabled = true;
-
         try {
             let response;
             let data = {};
-
             if (media?.file) {
                 response = await fetch("/api/dm/media-message", {
                     method: "POST",
@@ -5620,34 +6064,24 @@ bootstrapHelixSession().then((authenticated) => {
                         "Content-Type": media.file.type,
                         "X-DM-To": recipient,
                         "X-DM-Text": trimmed,
-                        "X-DM-Name": encodeURIComponent(media.file.name || media.name || "attachment")
+                        "X-DM-Name": encodeURIComponent(media.file.name || media.name || "attachment"),
+                        "X-DM-Reply-To": replyToId || ""
                     },
                     body: media.file
                 });
-
                 data = await response.json().catch(() => ({}));
             } else {
                 response = await fetch("/api/dm/messages", {
                     method: "POST",
                     credentials: "include",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        to: recipient,
-                        text: trimmed
-                    })
+                    body: JSON.stringify({ to: recipient, text: trimmed, replyToId: replyToId || null })
                 });
-
                 data = await response.json().catch(() => ({}));
             }
-
-            if (!response.ok) {
-                throw new Error(data.error || "Could not send message.");
-            }
-
-            if (activeUsername === recipient) {
-                await loadMessages(recipient, { force: true, scrollToBottom: true });
-            }
-
+            if (!response.ok) throw new Error(data.error || "Could not send message.");
+            clearReply();
+            if (activeUsername === recipient) await loadMessages(recipient, { force: true, scrollToBottom: true });
             return true;
         } finally {
             isSending = false;
@@ -5660,20 +6094,12 @@ bootstrapHelixSession().then((authenticated) => {
         const thumb = document.getElementById("dm-media-preview-thumb");
         const name = document.getElementById("dm-media-preview-name");
         const size = document.getElementById("dm-media-preview-size");
-
         if (!preview || !thumb || !name || !size) return;
-
         thumb.replaceChildren();
-
-        if (!pendingMedia) {
-            preview.hidden = true;
-            return;
-        }
-
+        if (!pendingMedia) { preview.hidden = true; return; }
         preview.hidden = false;
         name.textContent = pendingMedia.name || "Attachment";
         size.textContent = formatFileSize(pendingMedia.size);
-
         const previewUrl = pendingMedia.previewUrl || pendingMedia.dataUrl;
         if (previewUrl && pendingMedia.kind === "video") {
             const video = document.createElement("video");
@@ -5691,9 +6117,7 @@ bootstrapHelixSession().then((authenticated) => {
     }
 
     function clearPendingMedia() {
-        if (pendingMedia?.previewUrl && pendingMedia.previewUrl.startsWith("blob:")) {
-            URL.revokeObjectURL(pendingMedia.previewUrl);
-        }
+        if (pendingMedia?.previewUrl && pendingMedia.previewUrl.startsWith("blob:")) URL.revokeObjectURL(pendingMedia.previewUrl);
         pendingMedia = null;
         const mediaInput = document.getElementById("dm-media-input");
         if (mediaInput) mediaInput.value = "";
@@ -5703,28 +6127,18 @@ bootstrapHelixSession().then((authenticated) => {
     form.addEventListener("submit", async (event) => {
         event.preventDefault();
         event.stopPropagation();
-
         if (isSending) return;
-
         const value = input.value.trim();
         const media = pendingMedia;
-
         if (!value && !media) return;
-
         input.value = "";
-
         try {
             await sendMessage(value, media);
             clearPendingMedia();
             input.focus();
         } catch (error) {
             if (!input.value.trim()) input.value = value;
-
-            if (media && !pendingMedia) {
-                pendingMedia = media;
-                updateMediaPreview();
-            }
-
+            if (media && !pendingMedia) { pendingMedia = media; updateMediaPreview(); }
             if (headerStatus) headerStatus.textContent = error.message || "Message failed.";
             input.focus();
         }
@@ -5742,26 +6156,20 @@ bootstrapHelixSession().then((authenticated) => {
     mediaInput?.addEventListener("change", async () => {
         const file = mediaInput.files?.[0];
         if (!file) return;
-
         const maxBytes = 10 * 1024 * 1024;
-
         if (!(file.type.startsWith("image/") || file.type.startsWith("video/"))) {
-            headerStatus && (headerStatus.textContent = "Only photos and videos can be attached.");
+            if (headerStatus) headerStatus.textContent = "Only photos and videos can be attached.";
             clearPendingMedia();
             return;
         }
-
         if (file.size > maxBytes) {
-            headerStatus && (headerStatus.textContent = "That file is over the 10 MB limit.");
+            if (headerStatus) headerStatus.textContent = "That file is over the 10 MB limit.";
             clearPendingMedia();
             return;
         }
-
         try {
-            headerStatus && (headerStatus.textContent = "Preparing attachment...");
-
+            if (headerStatus) headerStatus.textContent = "Preparing attachment...";
             clearPendingMedia();
-
             pendingMedia = {
                 file,
                 name: file.name,
@@ -5769,9 +6177,7 @@ bootstrapHelixSession().then((authenticated) => {
                 kind: file.type.startsWith("video/") ? "video" : "image",
                 previewUrl: URL.createObjectURL(file)
             };
-
             updateMediaPreview();
-
             if (headerStatus) headerStatus.textContent = "Attachment ready.";
             input.focus();
         } catch (error) {
@@ -5780,45 +6186,20 @@ bootstrapHelixSession().then((authenticated) => {
         }
     });
 
-    mediaRemoveButton?.addEventListener("click", () => {
-        clearPendingMedia();
-        input.focus();
+    mediaRemoveButton?.addEventListener("click", () => { clearPendingMedia(); input.focus(); });
+    emojiButton?.addEventListener("click", async (event) => {
+        event.stopPropagation();
+        if (emojiContainer?.hidden) await openEmojiPicker();
+        else closeEmojiPicker();
     });
-
-
-    window.addEventListener("helix-profile-photo-updated", async (event) => {
-        const updatedUsername = event.detail?.username;
-        const updatedPhoto = event.detail?.profilePhoto || null;
-
-        if (updatedUsername === loggedInUser) {
-            // Update the current user's cached public identity without waiting
-            // for another network poll.
-            const localUsers = readLocalJSON("helixUsers", {});
-            if (localUsers?.[loggedInUser]) {
-                localUsers[loggedInUser].profilePhoto = updatedPhoto;
-                localStorage.setItem("helixUsers", JSON.stringify(localUsers));
-            }
-        }
-
-        await loadFriends();
-
-        if (activeUsername) {
-            const activeFriend = friends.find((friend) => friend.username === activeUsername);
-            if (activeFriend) {
-                if (updatedUsername === activeUsername) {
-                    activeFriend.profilePhoto = updatedPhoto;
-                    if (headerAvatar) {
-                        headerAvatar.style.backgroundImage = updatedPhoto
-                            ? `url("${updatedPhoto}")`
-                            : "";
-                        headerAvatar.style.backgroundSize = updatedPhoto ? "cover" : "";
-                        headerAvatar.style.backgroundPosition = updatedPhoto ? "center" : "";
-                        headerAvatar.style.color = updatedPhoto ? "transparent" : "";
-                    }
-                }
-            }
-        }
+    pinButton?.addEventListener("click", async (event) => {
+        event.stopPropagation();
+        if (pinnedPanel?.hidden) await openPinnedPanel();
+        else closePinnedPanel();
     });
+    pinnedClose?.addEventListener("click", closePinnedPanel);
+    forwardClose?.addEventListener("click", closeForwardPanel);
+    replyCancel?.addEventListener("click", clearReply);
 
     mainSearch?.addEventListener("input", filterFriends);
 
@@ -5826,16 +6207,10 @@ bootstrapHelixSession().then((authenticated) => {
         if (!messageSearch) return;
         messageSearch.hidden = false;
         searchButton.setAttribute("aria-expanded", "true");
-
-        requestAnimationFrame(() => {
-            messageSearchInput?.focus();
-        });
+        requestAnimationFrame(() => messageSearchInput?.focus());
     });
 
-    messageSearchInput?.addEventListener("input", () => {
-        renderMessages();
-    });
-
+    messageSearchInput?.addEventListener("input", () => renderMessages());
     messageSearchInput?.addEventListener("keydown", (event) => {
         if (event.key === "Escape") {
             messageSearchInput.value = "";
@@ -5845,7 +6220,6 @@ bootstrapHelixSession().then((authenticated) => {
             searchButton?.focus();
         }
     });
-
     messageSearchClose?.addEventListener("click", () => {
         if (messageSearchInput) messageSearchInput.value = "";
         if (messageSearch) messageSearch.hidden = true;
@@ -5854,32 +6228,65 @@ bootstrapHelixSession().then((authenticated) => {
         searchButton?.focus();
     });
 
+    document.addEventListener("click", (event) => {
+        if (emojiContainer && !emojiContainer.hidden && !emojiContainer.contains(event.target) && event.target !== emojiButton) closeEmojiPicker();
+        if (contextMenu && !contextMenu.hidden && !contextMenu.contains(event.target)) closeContextMenu();
+        if (pinnedPanel && !pinnedPanel.hidden && !pinnedPanel.contains(event.target) && event.target !== pinButton) closePinnedPanel();
+        if (forwardPanel && !forwardPanel.hidden && !forwardPanel.contains(event.target) && !forwardPanel.contains(event.target)) closeForwardPanel();
+    });
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+            closeContextMenu();
+            closeEmojiPicker();
+            closePinnedPanel();
+            closeForwardPanel();
+            if (editingMessageId) { editingMessageId = null; renderMessages(); }
+        }
+    });
+
+    window.addEventListener("helix-profile-photo-updated", async (event) => {
+        const updatedUsername = event.detail?.username;
+        const updatedPhoto = event.detail?.profilePhoto || null;
+        if (updatedUsername === loggedInUser) {
+            const localUsers = readLocalJSON("helixUsers", {});
+            if (localUsers?.[loggedInUser]) {
+                localUsers[loggedInUser].profilePhoto = updatedPhoto;
+                localStorage.setItem("helixUsers", JSON.stringify(localUsers));
+            }
+        }
+        await loadFriends();
+        if (activeUsername) {
+            const activeFriend = friends.find((friend) => friend.username === activeUsername);
+            if (activeFriend && updatedUsername === activeUsername) {
+                activeFriend.profilePhoto = updatedPhoto;
+                if (headerAvatar) {
+                    headerAvatar.style.backgroundImage = updatedPhoto ? `url("${updatedPhoto}")` : "";
+                    headerAvatar.style.backgroundSize = updatedPhoto ? "cover" : "";
+                    headerAvatar.style.backgroundPosition = updatedPhoto ? "center" : "";
+                    headerAvatar.style.color = updatedPhoto ? "transparent" : "";
+                }
+            }
+        }
+    });
+
     input.disabled = true;
     showConversationHint("");
 
     let dmRefreshRunning = false;
-
     async function refreshDMLoop() {
         if (!dmRefreshRunning) {
             dmRefreshRunning = true;
-
             try {
                 await loadFriends();
-                if (activeUsername && !isSending) {
-                    await loadMessages(activeUsername);
-                }
+                if (activeUsername && !isSending) await loadMessages(activeUsername);
                 await refreshDMUnreadBadge();
+                if (activeUsername && pinnedPanel && !pinnedPanel.hidden) await refreshPinnedPanel();
             } finally {
                 dmRefreshRunning = false;
             }
         }
-
         refreshTimer = window.setTimeout(refreshDMLoop, 1000);
     }
-
     refreshDMLoop();
 
-    if (window.helixHandleNotificationUnreadCount && !document.getElementById("dm-nav-unread")) {
-        window.helixHandleNotificationUnreadCount(0);
-    }
 })();
