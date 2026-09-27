@@ -224,7 +224,8 @@ async function initializeDatabase() {
             ON helix_dm_messages (recipient_username, sender_username, read_at)
             WHERE read_at IS NULL;
 
-\n        ALTER TABLE helix_dm_messages
+
+        ALTER TABLE helix_dm_messages
             ADD COLUMN IF NOT EXISTS media_data BYTEA;
 
         ALTER TABLE helix_dm_messages
