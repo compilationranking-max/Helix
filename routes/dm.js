@@ -95,7 +95,7 @@ function createDMRouter(options) {
         const result = await dbPool.query(
             "SELECT m.id, m.sender_username AS sender, m.recipient_username AS recipient, m.body AS text, " +
             "m.created_at AS \"createdAt\", m.edited_at AS \"editedAt\", " +
-            "EXISTS (SELECT 1 FROM helix_dm_pins p WHERE p.message_id = m.id AND p.owner_username = $2) AS \"isPinned\" " +
+            "EXISTS (SELECT 1 FROM helix_dm_message_pins p WHERE p.message_id = m.id AND p.owner_username = $2) AS \"isPinned\" " +
             "FROM helix_dm_messages m " +
             "WHERE m.id = $1 AND (m.sender_username = $2 OR m.recipient_username = $2)",
             [messageId, username]
@@ -147,7 +147,7 @@ function createDMRouter(options) {
         const result = await dbPool.query(
             "SELECT m.id, m.sender_username AS sender, m.recipient_username AS recipient, m.body AS text, " +
             "m.created_at AS \"createdAt\", m.edited_at AS \"editedAt\", " +
-            "EXISTS (SELECT 1 FROM helix_dm_pins p WHERE p.message_id = m.id AND p.owner_username = $1) AS \"isPinned\" " +
+            "EXISTS (SELECT 1 FROM helix_dm_message_pins p WHERE p.message_id = m.id AND p.owner_username = $1) AS \"isPinned\" " +
             "FROM helix_dm_messages m " +
             "WHERE (m.sender_username = $1 AND m.recipient_username = $2) " +
             "OR (m.sender_username = $2 AND m.recipient_username = $1) " +
@@ -311,7 +311,7 @@ function createDMRouter(options) {
                 "SELECT p.message_id AS \"messageId\", p.pinned_at AS \"pinnedAt\", " +
                 "m.sender_username AS sender, m.recipient_username AS recipient, m.body AS text, " +
                 "m.created_at AS \"createdAt\", m.edited_at AS \"editedAt\" " +
-                "FROM helix_dm_pins p " +
+                "FROM helix_dm_message_pins p " +
                 "JOIN helix_dm_messages m ON m.id = p.message_id " +
                 "WHERE p.owner_username = $1 " +
                 "AND ((m.sender_username = $1 AND m.recipient_username = $2) " +
@@ -506,13 +506,13 @@ function createDMRouter(options) {
 
             if (pinned) {
                 await dbPool.query(
-                    "INSERT INTO helix_dm_pins (message_id, owner_username) " +
+                    "INSERT INTO helix_dm_message_pins (message_id, owner_username) " +
                     "VALUES ($1, $2) ON CONFLICT (message_id, owner_username) DO NOTHING",
                     [messageId, user.username]
                 );
             } else {
                 await dbPool.query(
-                    "DELETE FROM helix_dm_pins WHERE message_id = $1 AND owner_username = $2",
+                    "DELETE FROM helix_dm_message_pins WHERE message_id = $1 AND owner_username = $2",
                     [messageId, user.username]
                 );
             }
