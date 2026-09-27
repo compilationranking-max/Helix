@@ -5403,19 +5403,69 @@ bootstrapHelixSession().then((authenticated) => {
 
     function renderReplyReference(item, bubble) {
         if (!item.replyToId) return;
+
         const reference = document.createElement("button");
         reference.type = "button";
         reference.className = "dm-reply-reference";
         reference.title = "Jump to replied message";
-        const sender = item.replySender === loggedInUser ? "You" : (item.replySender || "Friend");
-        const preview = item.replyText || (item.replyMediaName ? "📎 " + item.replyMediaName : "Attachment");
-        reference.innerHTML = "<span>↩</span><strong>" + safe(sender) + "</strong><small>" + safe(preview) + "</small>";
+
+        const sender = item.replySender === loggedInUser
+            ? "You"
+            : (item.replySender || "Friend");
+
+        const icon = document.createElement("span");
+        icon.className = "dm-reply-reference-icon";
+        icon.textContent = "↩";
+
+        const copy = document.createElement("span");
+        copy.className = "dm-reply-reference-copy";
+
+        const senderLabel = document.createElement("strong");
+        senderLabel.textContent = sender;
+
+        const previewText = document.createElement("small");
+        previewText.textContent =
+            item.replyText ||
+            (item.replyMediaKind === "video"
+                ? "🎥 Video"
+                : item.replyMediaUrl || item.replyMediaName
+                    ? "📷 Photo"
+                    : "Attachment");
+
+        copy.append(senderLabel, previewText);
+
+        if (item.replyMediaUrl) {
+            const thumb = document.createElement("span");
+            thumb.className = "dm-reply-reference-thumb";
+
+            if (item.replyMediaKind === "video") {
+                const video = document.createElement("video");
+                video.src = item.replyMediaUrl;
+                video.muted = true;
+                video.playsInline = true;
+                video.preload = "metadata";
+                thumb.appendChild(video);
+            } else {
+                const image = document.createElement("img");
+                image.src = item.replyMediaUrl;
+                image.alt = item.replyMediaName || "Replied photo";
+                image.loading = "lazy";
+                thumb.appendChild(image);
+            }
+
+            reference.append(icon, thumb, copy);
+        } else {
+            reference.append(icon, copy);
+        }
+
         reference.addEventListener("click", (event) => {
             event.stopPropagation();
             scrollToMessage(item.replyToId);
         });
+
         bubble.appendChild(reference);
     }
+
 
     function messageDateKey(value) {
         const date = new Date(value);
