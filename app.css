@@ -10812,8 +10812,9 @@ body.helix-reduced-motion *::after {
     z-index: 1100;
     top: 68px;
     right: 18px;
-    width: min(420px, calc(100% - 36px));
-    max-height: min(500px, calc(100% - 92px));
+    width: min(390px, calc(100% - 36px));
+    height: min(420px, calc(100% - 92px));
+    max-height: none;
     display: flex;
     flex-direction: column;
     border: 1px solid rgba(0,229,255,.24);
