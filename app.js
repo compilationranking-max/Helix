@@ -5516,32 +5516,42 @@ bootstrapHelixSession().then((authenticated) => {
     function setMessageReactionBarPlacement(bubble, bar) {
         if (!bubble || !bar || !messages) return;
 
-        // The hover reaction rail is portaled to <body> and overlays the
-        // message row. It must never take up vertical space or get inserted
-        // above/below the message, because that makes the conversation jump.
+        // The reaction rail is portaled to <body>, so it can visually sit
+        // beside a message without changing the height/flow of the row.
         const row = bubble.closest(".message") || bubble;
+        const bubbleRect = bubble.getBoundingClientRect();
         const rowRect = row.getBoundingClientRect();
         const chatRect = messages.getBoundingClientRect();
         const barRect = bar.getBoundingClientRect();
         const barWidth = Math.max(bar.offsetWidth || barRect.width || 304, 1);
         const barHeight = Math.max(bar.offsetHeight || barRect.height || 50, 1);
-        const inset = 8;
+        const gap = 9;
 
         const leftLimit = Math.max(chatRect.left + 6, 4);
         const rightLimit = Math.min(chatRect.right - 6, window.innerWidth - 4);
 
-        // Match the reference UI: keep the reaction rail on the side of the
-        // message row, aligned toward its upper-right edge.
-        let left = rightLimit - barWidth;
-        let top = rowRect.top + inset;
+        // Prefer the same compact "floating beside the message" treatment
+        // shown in the reference image.
+        const rightSideLeft = bubbleRect.right + gap;
+        const leftSideLeft = bubbleRect.left - barWidth - gap;
+        const fitsRight = rightSideLeft + barWidth <= rightLimit;
+        const fitsLeft = leftSideLeft >= leftLimit;
 
-        // On very narrow screens, keep it visible without ever moving it
-        // underneath the message.
-        if (rightLimit - leftLimit < barWidth + 8) {
-            left = leftLimit;
-            top = rowRect.top + Math.max(4, (rowRect.height - barHeight) / 2);
+        let left;
+        if (fitsRight) {
+            left = rightSideLeft;
+        } else if (fitsLeft) {
+            left = leftSideLeft;
+        } else {
+            // Very narrow layouts: keep the rail aligned to the message's
+            // right edge without pushing it below the message.
+            left = Math.min(
+                Math.max(rightSideLeft, leftLimit),
+                rightLimit - barWidth
+            );
         }
 
+        let top = rowRect.top + Math.max(4, (rowRect.height - barHeight) / 2);
         left = Math.max(leftLimit, Math.min(left, rightLimit - barWidth));
         top = Math.max(4, Math.min(top, window.innerHeight - barHeight - 4));
 
@@ -5550,7 +5560,7 @@ bootstrapHelixSession().then((authenticated) => {
         bar.style.setProperty("right", "auto", "important");
         bar.style.setProperty("bottom", "auto", "important");
 
-        bar.dataset.placement = "row-side";
+        bar.dataset.placement = fitsRight ? "right" : (fitsLeft ? "left" : "edge");
         bubble.classList.remove("dm-reaction-bar-below");
     }
 
@@ -5559,6 +5569,34 @@ bootstrapHelixSession().then((authenticated) => {
         bar.className = "dm-message-hover-reaction-bar";
         bar.setAttribute("role", "toolbar");
         bar.setAttribute("aria-label", "Message reactions");
+        bar.__hovering = false;
+        bar.__hideTimer = null;
+
+        bar.__clearHideTimer = () => {
+            if (bar.__hideTimer) {
+                window.clearTimeout(bar.__hideTimer);
+                bar.__hideTimer = null;
+            }
+        };
+
+        bar.__scheduleHide = () => {
+            bar.__clearHideTimer();
+            bar.__hideTimer = window.setTimeout(() => {
+                if (bar.__hovering || !bar.isConnected) return;
+                bar.classList.remove("is-open");
+                bar.__helixBubble?.classList.remove("dm-reaction-bar-open");
+            }, 140);
+        };
+
+        bar.addEventListener("pointerenter", () => {
+            bar.__hovering = true;
+            bar.__clearHideTimer();
+        });
+
+        bar.addEventListener("pointerleave", () => {
+            bar.__hovering = false;
+            bar.__scheduleHide();
+        });
 
         ["❤️", "😂", "😮", "😢", "😡", "👍"].forEach((emoji) => {
             const button = document.createElement("button");
@@ -5726,8 +5764,12 @@ bootstrapHelixSession().then((authenticated) => {
                 document.body.appendChild(reactionBar);
                 setMessageReactionBarPlacement(bubble, reactionBar);
 
-                bubble.addEventListener("pointerenter", () => {
+                const openHoverReactionBar = () => {
+                    reactionBar.__clearHideTimer();
                     document.querySelectorAll("body > .dm-message-hover-reaction-bar.is-open").forEach((openBar) => {
+                        if (openBar === reactionBar) return;
+                        openBar.__hovering = false;
+                        openBar.__clearHideTimer();
                         openBar.classList.remove("is-open");
                         openBar.__helixBubble?.classList.remove("dm-reaction-bar-open");
                     });
@@ -5735,17 +5777,25 @@ bootstrapHelixSession().then((authenticated) => {
                     setMessageReactionBarPlacement(bubble, reactionBar);
                     bubble.classList.add("dm-reaction-bar-open");
                     reactionBar.classList.add("is-open");
+                };
+
+                bubble.addEventListener("pointerenter", () => {
+                    reactionBar.__hovering = true;
+                    openHoverReactionBar();
                 });
 
-                bubble.addEventListener("focusin", () => {
-                    document.querySelectorAll("body > .dm-message-hover-reaction-bar.is-open").forEach((openBar) => {
-                        openBar.classList.remove("is-open");
-                        openBar.__helixBubble?.classList.remove("dm-reaction-bar-open");
-                    });
+                bubble.addEventListener("pointerleave", () => {
+                    reactionBar.__hovering = false;
+                    reactionBar.__scheduleHide();
+                });
 
-                    setMessageReactionBarPlacement(bubble, reactionBar);
-                    bubble.classList.add("dm-reaction-bar-open");
-                    reactionBar.classList.add("is-open");
+                bubble.addEventListener("focusin", openHoverReactionBar);
+
+                bubble.addEventListener("focusout", (event) => {
+                    if (!bubble.contains(event.relatedTarget) && !reactionBar.contains(event.relatedTarget)) {
+                        reactionBar.__hovering = false;
+                        reactionBar.__scheduleHide();
+                    }
                 });
             }
 
