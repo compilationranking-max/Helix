@@ -224,7 +224,7 @@ async function initializeDatabase() {
             ON helix_dm_messages (recipient_username, sender_username, read_at)
             WHERE read_at IS NULL;
 
-        CREATE TABLE IF NOT EXISTS helix_dm_reactions (
+        CREATE TABLE IF NOT EXISTS helix_dm_message_reactions (
             message_id UUID NOT NULL REFERENCES helix_dm_messages(id) ON DELETE CASCADE,
             username TEXT NOT NULL REFERENCES helix_users(username) ON DELETE CASCADE,
             emoji TEXT NOT NULL,
@@ -232,8 +232,8 @@ async function initializeDatabase() {
             PRIMARY KEY (message_id, username, emoji)
         );
 
-        CREATE INDEX IF NOT EXISTS helix_dm_reactions_message_idx
-            ON helix_dm_reactions (message_id);
+        CREATE INDEX IF NOT EXISTS helix_dm_message_reactions_message_idx
+            ON helix_dm_message_reactions (message_id);
 
         CREATE TABLE IF NOT EXISTS helix_dm_pins (
             message_id UUID NOT NULL REFERENCES helix_dm_messages(id) ON DELETE CASCADE,
