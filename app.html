@@ -424,12 +424,110 @@
                 </section>
             </div>
 
-                        <section id="messages-rebuild-view" data-main-section="direct-messages" hidden>
-    <div class="messages-rebuild-inner">
-        <span class="system-label">HELIX / MESSAGES</span>
-        <h2>Messages — rebuilding soon</h2>
-        <p>The Direct Message system is temporarily offline while Helix moves to a clean, modular rebuild.</p>
-        <small>The existing implementation is archived and preserved for reference.</small>
+                        <section class="dm-view" id="dm-view" data-main-section="direct-messages" hidden>
+    <div class="dm-shell">
+        <aside class="dm-inbox" aria-label="Messages conversations">
+            <div class="dm-inbox-header">
+                <div>
+                    <p class="system-label">HELIX / MESSAGES</p>
+                    <h1>Conversations</h1>
+                </div>
+                <button class="dm-refresh-button" id="dm-refresh-button" type="button" aria-label="Refresh conversations" title="Refresh conversations">↻</button>
+            </div>
+
+            <div class="dm-conversation-search">
+                <span aria-hidden="true">⌕</span>
+                <input id="dm-conversation-search" type="search" autocomplete="off" placeholder="Search friends" aria-label="Search friends and conversations">
+                <button id="dm-conversation-search-clear" type="button" aria-label="Clear friend search" title="Clear search">×</button>
+            </div>
+
+            <div class="dm-inbox-meta">
+                <span id="dm-conversation-status">SYNCING</span>
+                <span>TEXT ONLY</span>
+            </div>
+
+            <div id="dm-conversation-list" class="dm-conversation-list" aria-live="polite"></div>
+
+            <section class="dm-suggestions-section" aria-label="Message suggestions">
+                <div class="dm-suggestions-icon" aria-hidden="true">◇</div>
+                <div>
+                    <strong>Suggestions</strong>
+                    <small>Coming soon</small>
+                </div>
+            </section>
+        </aside>
+
+        <section class="dm-chat-shell" aria-label="Direct message conversation">
+            <header class="dm-chat-header">
+                <button class="dm-mobile-back" id="dm-mobile-back" type="button" aria-label="Back to conversations">‹</button>
+
+                <div class="dm-chat-person">
+                    <span class="dm-chat-avatar" id="dm-chat-avatar" aria-hidden="true">DM</span>
+                    <div>
+                        <h2 id="dm-chat-title">Select a friend</h2>
+                        <p id="dm-chat-username">Choose a conversation to begin.</p>
+                    </div>
+                </div>
+
+                <div class="dm-chat-header-actions">
+                    <button class="dm-header-icon" id="dm-pins-button" type="button" aria-label="Open pinned messages" title="Pinned messages">⌖</button>
+                </div>
+            </header>
+
+            <div class="dm-message-search">
+                <span aria-hidden="true">⌕</span>
+                <input id="dm-message-search-input" type="search" autocomplete="off" placeholder="Search messages in this conversation" aria-label="Search messages">
+                <span id="dm-message-search-count" class="dm-message-search-count"></span>
+                <button id="dm-message-search-clear" type="button" aria-label="Clear message search" title="Clear search">×</button>
+            </div>
+
+            <div class="dm-chat-meta">
+                <span id="dm-message-status"></span>
+                <span>SERVER AUTHORITATIVE</span>
+            </div>
+
+            <div class="dm-message-list" id="dm-message-list" aria-live="polite"></div>
+
+            <form class="dm-message-form" id="dm-message-form">
+                <textarea
+                    id="dm-message-input"
+                    rows="1"
+                    maxlength="4000"
+                    autocomplete="off"
+                    placeholder="Write a message…"
+                    aria-label="Write a message"
+                    disabled
+                ></textarea>
+                <div class="dm-composer-footer">
+                    <span>Enter to send · Shift+Enter for a new line</span>
+                    <button id="dm-send-button" type="submit" disabled aria-label="Send message" title="Send message">➤</button>
+                </div>
+            </form>
+        </section>
+
+        <aside class="dm-pins-panel" id="dm-pins-panel" hidden aria-label="Pinned messages">
+            <div class="dm-panel-header">
+                <div>
+                    <p class="system-label">HELIX / PINNED</p>
+                    <h3>Pinned messages</h3>
+                </div>
+                <button class="dm-panel-close" id="dm-pins-close" type="button" aria-label="Close pinned messages">×</button>
+            </div>
+            <div id="dm-pins-list" class="dm-pins-list"></div>
+        </aside>
+    </div>
+
+    <div class="dm-overlay-panel" id="dm-emoji-picker" hidden aria-label="Emoji picker"></div>
+
+    <div class="helix-modal" id="dm-forward-modal" hidden>
+        <div class="helix-modal-backdrop" data-dm-forward-close></div>
+        <section class="helix-modal-panel dm-forward-modal-panel" role="dialog" aria-modal="true" aria-labelledby="dm-forward-title">
+            <button class="helix-modal-close" type="button" data-dm-forward-close aria-label="Close forward dialog">×</button>
+            <p class="system-label">HELIX / FORWARD</p>
+            <h2 id="dm-forward-title">Forward message</h2>
+            <p class="helix-modal-description">Choose a friend. The server will create a new normal text message in that conversation.</p>
+            <div class="dm-forward-list" id="dm-forward-list"></div>
+        </section>
     </div>
 </section>
 
@@ -1139,6 +1237,11 @@
     </script>
     <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
     <script src="app.js?v=20260927-11"></script>
+    <script src="dm/dm-state.js?v=20260927-1"></script>
+    <script src="dm/dm-api.js?v=20260927-1"></script>
+    <script src="dm/dm-render.js?v=20260927-1"></script>
+    <script src="dm/dm-actions.js?v=20260927-1"></script>
+    <script src="dm/dm.js?v=20260927-1"></script>
 
 </body>
 </html>
