@@ -5609,28 +5609,31 @@ bootstrapHelixSession().then((authenticated) => {
         if (sendButton) sendButton.disabled = true;
 
         try {
-            let requestBody;
-            let headers = {};
+            let mediaPayload = null;
 
             if (media?.file) {
-                const formData = new FormData();
-                formData.append("to", recipient);
-                formData.append("text", trimmed);
-                formData.append("media", media.file, media.name || media.file.name);
-                requestBody = formData;
-            } else {
-                headers["Content-Type"] = "application/json";
-                requestBody = JSON.stringify({
-                    to: recipient,
-                    text: trimmed
-                });
+                const dataUrl = await readFileAsDataUrl(media.file);
+
+                if (dataUrl.length > 15_500_000) {
+                    throw new Error("That file is too large to send after upload encoding. Choose a smaller file (10 MB or less).");
+                }
+
+                mediaPayload = {
+                    dataUrl,
+                    name: media.name || media.file.name,
+                    size: media.size || media.file.size
+                };
             }
 
             const response = await fetch("/api/dm/messages", {
                 method: "POST",
                 credentials: "include",
-                headers,
-                body: requestBody
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    to: recipient,
+                    text: trimmed,
+                    media: mediaPayload
+                })
             });
 
             const data = await response.json().catch(() => ({}));
@@ -5648,6 +5651,15 @@ bootstrapHelixSession().then((authenticated) => {
             isSending = false;
             if (sendButton) sendButton.disabled = false;
         }
+    }
+
+    function readFileAsDataUrl(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.addEventListener("load", () => resolve(String(reader.result || "")));
+            reader.addEventListener("error", () => reject(new Error("Could not read that file.")));
+            reader.readAsDataURL(file);
+        });
     }
 
     function updateMediaPreview() {
