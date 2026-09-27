@@ -3109,7 +3109,10 @@ body::before {
 }
 
 #dm-view .message {
-    margin-bottom: 52px;
+    /* Hover reaction rails are portaled and overlaid, so the row never needs
+       reserved space below it. Reactions remain attached naturally beneath
+       the bubble without creating a giant hover gap. */
+    margin-bottom: 0;
 }
 
 #dm-view .message-bubble {
@@ -10913,8 +10916,8 @@ body.helix-reduced-motion *::after {
 }
 
 #dm-view .dm-message-hover-reaction-bar {
-    position: absolute;
-    top: calc(100% + 8px);
+    position: fixed;
+    top: 0;
     bottom: auto;
     left: 0;
     z-index: 40;
@@ -11017,7 +11020,7 @@ body.helix-reduced-motion *::after {
 
 @media (max-width: 700px) {
     #dm-view .dm-message-hover-reaction-bar {
-        top: calc(100% + 6px);
+        top: 0;
         min-height: 42px;
         height: 42px;
         padding: 3px 6px;
