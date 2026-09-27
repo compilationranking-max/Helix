@@ -56,6 +56,17 @@
         return Array.isArray(data.pins) ? data.pins : [];
     }
 
+    async function setNickname(username, nickname) {
+        const data = await request(
+            "/api/dm/conversations/" + encodeURIComponent(username) + "/nickname",
+            {
+                method: "PATCH",
+                body: JSON.stringify({ nickname })
+            }
+        );
+        return data.nickname || null;
+    }
+
     async function sendMessage(username, text) {
         const data = await request("/api/dm/messages", {
             method: "POST",
@@ -124,6 +135,7 @@
     window.HelixDMApi = {
         getConversations,
         getMessages,
+        setNickname,
         getPins,
         sendMessage,
         editMessage,
