@@ -5584,6 +5584,13 @@ bootstrapHelixSession().then((authenticated) => {
             selectedFriend.unreadCount = 0;
         }
 
+        const selectedRow = list.querySelector('[data-user="' + CSS.escape(activeUsername) + '"]');
+        const selectedBadge = selectedRow?.querySelector(".conversation-unread");
+        if (selectedBadge) {
+            selectedBadge.textContent = "(0)";
+            selectedBadge.hidden = true;
+        }
+
         input.disabled = false;
         currentMessages = [];
         showConversationHint("");
@@ -5602,21 +5609,28 @@ bootstrapHelixSession().then((authenticated) => {
         if (sendButton) sendButton.disabled = true;
 
         try {
+            let requestBody;
+            let headers = {};
+
+            if (media?.file) {
+                const formData = new FormData();
+                formData.append("to", recipient);
+                formData.append("text", trimmed);
+                formData.append("media", media.file, media.name || media.file.name);
+                requestBody = formData;
+            } else {
+                headers["Content-Type"] = "application/json";
+                requestBody = JSON.stringify({
+                    to: recipient,
+                    text: trimmed
+                });
+            }
+
             const response = await fetch("/api/dm/messages", {
                 method: "POST",
                 credentials: "include",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    to: recipient,
-                    text: trimmed,
-                    media: media
-                        ? {
-                            dataUrl: media.dataUrl,
-                            name: media.name,
-                            size: media.size
-                        }
-                        : null
-                })
+                headers,
+                body: requestBody
             });
 
             const data = await response.json().catch(() => ({}));
@@ -5655,35 +5669,30 @@ bootstrapHelixSession().then((authenticated) => {
         name.textContent = pendingMedia.name || "Attachment";
         size.textContent = formatFileSize(pendingMedia.size);
 
-        if (pendingMedia.kind === "video") {
+        const previewUrl = pendingMedia.previewUrl || pendingMedia.dataUrl;
+        if (previewUrl && pendingMedia.kind === "video") {
             const video = document.createElement("video");
-            video.src = pendingMedia.dataUrl;
+            video.src = previewUrl;
             video.muted = true;
             video.playsInline = true;
             video.preload = "metadata";
             thumb.appendChild(video);
-        } else {
+        } else if (previewUrl) {
             const image = document.createElement("img");
-            image.src = pendingMedia.dataUrl;
+            image.src = previewUrl;
             image.alt = "Selected photo";
             thumb.appendChild(image);
         }
     }
 
     function clearPendingMedia() {
+        if (pendingMedia?.previewUrl && pendingMedia.previewUrl.startsWith("blob:")) {
+            URL.revokeObjectURL(pendingMedia.previewUrl);
+        }
         pendingMedia = null;
         const mediaInput = document.getElementById("dm-media-input");
         if (mediaInput) mediaInput.value = "";
         updateMediaPreview();
-    }
-
-    function readFileAsDataUrl(file) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.addEventListener("load", () => resolve(String(reader.result || "")));
-            reader.addEventListener("error", () => reject(new Error("Could not read that file.")));
-            reader.readAsDataURL(file);
-        });
     }
 
     form.addEventListener("submit", async (event) => {
@@ -5745,13 +5754,15 @@ bootstrapHelixSession().then((authenticated) => {
 
         try {
             headerStatus && (headerStatus.textContent = "Preparing attachment...");
-            const dataUrl = await readFileAsDataUrl(file);
+
+            clearPendingMedia();
 
             pendingMedia = {
-                dataUrl,
+                file,
                 name: file.name,
                 size: file.size,
-                kind: file.type.startsWith("video/") ? "video" : "image"
+                kind: file.type.startsWith("video/") ? "video" : "image",
+                previewUrl: URL.createObjectURL(file)
             };
 
             updateMediaPreview();
