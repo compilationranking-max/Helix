@@ -1708,7 +1708,7 @@ app.post("/api/dm/media-message", express.raw({
     try {
         await requireDatabase();
 
-        await validateDMReplyTarget(replyToId, user.username, recipient);
+        const replyTarget = await validateDMReplyTarget(replyToId, user.username, recipient);
 
         if (await isBlockedEitherWay(user.username, recipient)) {
             return res.status(403).json({ error: "You cannot message this account." });
@@ -1761,9 +1761,8 @@ app.post("/api/dm/media-message", express.raw({
         });
 
         let savedMessage = result.rows[0];
-        if (replyToId && savedMessage?.replyToId) {
-            const reply = await getDMMessageForUser(replyToId, user.username);
-            savedMessage = expandDMReplyFields(savedMessage, reply);
+        if (replyToId && savedMessage?.replyToId && replyTarget) {
+            savedMessage = expandDMReplyFields(savedMessage, replyTarget);
         }
 
         return res.status(201).json({ ok: true, message: savedMessage });
@@ -1895,9 +1894,8 @@ app.post("/api/dm/messages", async (req, res) => {
         });
 
         let savedMessage = result.rows[0];
-        if (replyToId && savedMessage?.replyToId) {
-            const reply = await getDMMessageForUser(replyToId, user.username);
-            savedMessage = expandDMReplyFields(savedMessage, reply);
+        if (replyToId && savedMessage?.replyToId && replyTarget) {
+            savedMessage = expandDMReplyFields(savedMessage, replyTarget);
         }
 
         return res.status(201).json({ ok: true, message: savedMessage });
