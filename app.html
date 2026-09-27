@@ -34,7 +34,7 @@
 
     <title>Helix</title>
 
-    <link rel="stylesheet" href="app.css?v=20260927-10">
+    <link rel="stylesheet" href="app.css?v=20260927-11">
 </head>
 
 <body>
@@ -103,8 +103,7 @@
 
                 <button class="nav-item" id="nav-console">
                     <img class="nav-icon nav-icon-image" src="images/nav-dm.png" alt="" aria-hidden="true">
-                    <span>Direct Messages</span>
-                    <span class="dm-nav-badge" id="dm-nav-unread" hidden aria-live="polite">+1</span>
+                    <span>Messages — rebuilding soon</span>
                 </button>
 
                 <button class="nav-item" id="nav-friends">
@@ -188,14 +187,14 @@
                                         <span>No active connections yet</span>
                                     </div>
                                 </div>
-                                <button class="hero-online-link" type="button" data-target-nav="nav-console">View active conversations <span>↗</span></button>
+                                <button class="hero-online-link" type="button" data-target-nav="nav-console">Open Messages placeholder <span>↗</span></button>
                             </div>
                         </section>
 
                         <section class="quick-actions" aria-labelledby="quick-actions-title">
                             <div class="section-heading-row"><div><p class="system-label">ACCESS LAYER</p><h2 id="quick-actions-title">Jump back in</h2></div><span class="section-index">01 / 05</span></div>
                             <div class="quick-action-grid">
-                                <button class="quick-action quick-action-cyan quick-conversation" type="button" data-target-nav="nav-console"><img class="quick-icon-image" src="images/nav-dm.png" alt="" aria-hidden="true"><span><strong>Direct Messages</strong><small>No conversations yet</small></span><b>↗</b></button>
+                                <button class="quick-action quick-action-cyan quick-conversation" type="button" data-target-nav="nav-console"><img class="quick-icon-image" src="images/nav-dm.png" alt="" aria-hidden="true"><span><strong>Messages — rebuilding soon</strong><small>Direct Message system temporarily offline</small></span><b>↗</b></button>
                                 <button class="quick-action quick-action-violet" type="button" data-target-nav="nav-friends"><img class="quick-icon-image" src="images/nav-friends.png" alt="" aria-hidden="true"><span><strong>Friends</strong><small>Stay connected with your network</small></span><b>↗</b></button>
                                 <button class="quick-action quick-action-green" type="button" data-target-nav="nav-home" id="home-broadcast-shortcut"><img class="quick-icon-image" src="images/nav-home.png" alt="" aria-hidden="true"><span><strong>Create / Broadcast</strong><small>Share what's in progress</small></span><b>↗</b></button>
                                 <button class="quick-action quick-action-blue" type="button" data-target-nav="nav-reels"><img class="quick-icon-image" src="images/nav-reels.png" alt="" aria-hidden="true"><span><strong>Reels</strong><small>See what is moving now</small></span><b>↗</b></button>
@@ -425,218 +424,14 @@
                 </section>
             </div>
 
-                        <div class="helix-modal dm-nickname-modal" id="dm-nickname-modal" hidden>
-                <div class="helix-modal-backdrop" data-dm-nickname-close></div>
-                <section class="helix-modal-panel dm-nickname-panel" role="dialog" aria-modal="true" aria-labelledby="dm-nickname-title">
-                    <button class="helix-modal-close" type="button" aria-label="Close dialog" data-dm-nickname-close>×</button>
-                    <p class="system-label">DIRECT MESSAGES / PERSONAL LABEL</p>
-                    <h2 id="dm-nickname-title">Keep a custom nickname for a friend</h2>
-                    <p class="helix-modal-description">This nickname is private and only changes how this friend appears to you.</p>
-
-                    <form id="dm-nickname-form" class="dm-nickname-form">
-                        <label class="helix-modal-label" for="dm-nickname-friend">Friend</label>
-                        <select class="helix-modal-input" id="dm-nickname-friend" required></select>
-
-                        <label class="helix-modal-label" for="dm-nickname-value">Custom nickname</label>
-                        <input class="helix-modal-input" id="dm-nickname-value" type="text" maxlength="50" autocomplete="off" placeholder="e.g. Bro, Frost, Physics Guy" required>
-
-                        <p class="dm-nickname-error" id="dm-nickname-error" role="alert"></p>
-
-                        <div class="helix-modal-actions">
-                            <button class="profile-secondary-button" type="button" id="dm-nickname-remove">Remove nickname</button>
-                            <button class="profile-primary-button" type="submit" id="dm-nickname-save">Save nickname</button>
-                        </div>
-                    </form>
-                </section>
-            </div>
-
-<section class="dm-view" id="dm-view" data-main-section="direct-messages" hidden>
-
-    <div class="dm-instagram-shell">
-
-    <!-- DM LEFT COLUMN -->
-    <aside class="dm-inbox">
-
-        <div class="dm-inbox-header">
-            <h2>Messages</h2>
-            <button class="dm-compose-button" type="button" title="Set a Nickname" aria-label="Set a Nickname">✎</button>
-        </div>
-
-        <div class="dm-search">
-            <span class="search-icon">⌕</span>
-            <input
-                type="text"
-                id="chat-search"
-                placeholder="Search"
-                autocomplete="off"
-            >
-        </div>
-
-        <div class="dm-connections-header">
-            <span>Messages</span>
-            <span id="connection-count">0</span>
-        </div>
-
-        <div class="dm-friends-section" id="dm-friends-section">
-            <div class="dm-suggestions-heading">
-                <span>FRIENDS</span>
-                <span id="dm-friends-count">0</span>
-            </div>
-            <div class="conversation-list" id="conversation-list">
-                <div class="dm-empty-state">
-                    <span class="dm-empty-icon">◈</span>
-                    <strong>No friends yet</strong>
-                    <p>Add a friend to start a Direct Message.</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="dm-suggestions-section">
-            <div class="dm-suggestions-heading">
-                <span>SUGGESTIONS</span>
-            </div>
-            <div class="dm-suggestions-card">
-                <span class="dm-suggestions-icon" aria-hidden="true">✦</span>
-                <div>
-                    <strong>Suggestions</strong>
-                    <small>Coming soon</small>
-                </div>
-            </div>
-        </div>
-
-</aside>
-
-    <!-- DM CHAT -->
-    <section class="chat-panel dm-chat-panel" aria-label="Direct messages">
-        <header class="dm-chat-header">
-            <div class="dm-chat-header-profile">
-                <div class="avatar-badge" id="chat-avatar">H</div>
-                <div>
-                    <h3 id="chat-user-name">Select a friend</h3>
-                    <span id="chat-status">Your private Direct Message channel</span>
-                </div>
-            </div>
-            <div class="dm-chat-header-actions">
-                <div class="chat-message-search" id="chat-message-search" hidden>
-                    <input id="message-search-input" type="search" placeholder="Search messages..." autocomplete="off">
-                    <span class="chat-search-result-count" id="chat-search-result-count" aria-live="polite"></span>
-                    <button type="button" id="chat-search-close" aria-label="Close search">×</button>
-                </div>
-
-                <button type="button" id="chat-search-button" aria-label="Search messages" aria-expanded="false" title="Search messages">⌕</button>
-                <button type="button" id="chat-pin-button" class="dm-chat-pin-button" aria-label="Pinned Messages" title="Pinned Messages" aria-expanded="false">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8M9 4l1 7-4 4v2h5v3h2v-3h5v-2l-4-4 1-7"></path></svg>
-                </button>
-                <button type="button" id="chat-info-button" aria-label="Conversation info" title="Conversation info">ⓘ</button>
-            </div>
-        </header>
-
-        <div class="messages" id="messages" aria-live="polite">
-            <div class="dm-chat-empty-state" id="dm-chat-empty-state">
-                <span class="dm-empty-icon" aria-hidden="true">◈</span>
-                <strong>Your Direct Console is ready</strong>
-                <p>Select one of your friends to start chatting.</p>
-            </div>
-        </div>
-
-        <form class="message-form" id="message-form">
-            <div class="dm-media-preview" id="dm-media-preview" hidden>
-                <div class="dm-media-preview-thumb" id="dm-media-preview-thumb"></div>
-                <div class="dm-media-preview-copy">
-                    <strong id="dm-media-preview-name">Attachment</strong>
-                    <small id="dm-media-preview-size">0 MB</small>
-                </div>
-                <button type="button" class="dm-media-preview-remove" id="dm-media-preview-remove" aria-label="Remove attachment">×</button>
-            </div>
-            <div class="dm-reply-bar" id="dm-reply-bar" hidden>
-                <div class="dm-reply-bar-accent" aria-hidden="true"></div>
-                <div class="dm-reply-bar-avatar" id="dm-reply-bar-avatar" aria-hidden="true">HX</div>
-                <div class="dm-reply-bar-copy">
-                    <span id="dm-reply-bar-label">REPLYING TO</span>
-                    <strong id="dm-reply-bar-sender"></strong>
-                    <small id="dm-reply-bar-text"></small>
-                </div>
-                <div class="dm-reply-bar-thumb" id="dm-reply-bar-thumb" hidden></div>
-                <button type="button" id="dm-reply-cancel" aria-label="Cancel reply" title="Cancel reply">×</button>
-            </div>
-            <div class="message-input-shell">
-                <button type="button" class="dm-attach-button" id="dm-attach-button" aria-label="Attach photo or video" title="Attach photo or video">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 12.5 12 8a3.5 3.5 0 0 1 5 5l-6.2 6.2a4.8 4.8 0 0 1-6.8-6.8l7-7a3.8 3.8 0 0 1 5.4 5.4l-6.3 6.3a2 2 0 0 1-2.8-2.8l5.8-5.8"/></svg>
-                </button>
-                <button type="button" class="dm-emoji-button" id="dm-emoji-button" aria-label="Open emoji picker" title="Emoji">+</button>
-                <input id="message-input" type="text" maxlength="4000" placeholder="Message your friend..." autocomplete="off" aria-label="Message your friend...">
-                <button type="submit" class="message-send-button" aria-label="Send message" title="Send message">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h13"></path><path d="m13 6 6 6-6 6"></path></svg>
-                </button>
-            </div>
-            <input id="dm-media-input" type="file" accept="image/*,video/*" hidden>
-            <p class="dm-media-hint" id="dm-media-hint">Photos &amp; videos up to 10 MB</p>
-        </form>
-
-        <div class="dm-emoji-picker-container" id="dm-emoji-picker-container" hidden></div>
-
-        <div class="dm-message-context-menu" id="dm-message-context-menu" hidden role="menu" aria-label="Message actions"></div>
-
-        <div class="dm-pinned-panel" id="dm-pinned-panel" hidden>
-            <div class="dm-popover-header">
-                <div>
-                    <span class="system-label">DIRECT MESSAGES / PINS</span>
-                    <h3>Pinned Messages</h3>
-                </div>
-                <button type="button" class="dm-popover-close" id="dm-pinned-close" aria-label="Close pinned messages">×</button>
-            </div>
-            <div class="dm-pinned-list" id="dm-pinned-list"></div>
-        </div>
-
-        <div class="dm-forward-panel" id="dm-forward-panel" hidden>
-            <div class="dm-popover-header">
-                <div>
-                    <span class="system-label">DIRECT MESSAGES / FORWARD</span>
-                    <h3>Forward message</h3>
-                </div>
-                <button type="button" class="dm-popover-close" id="dm-forward-close" aria-label="Close forward panel">×</button>
-            </div>
-            <p class="dm-forward-copy" id="dm-forward-copy"></p>
-            <div class="dm-forward-list" id="dm-forward-list"></div>
-        </div>
-    </section>
-
-<aside class="dm-info-panel" id="dm-info-panel" hidden>
-
-    <div class="dm-info-header">
-        <h3>Conversation info</h3>
-
-        <button
-            class="dm-info-close"
-            id="dm-info-close"
-            type="button"
-        >×</button>
+                        <section id="messages-rebuild-view" data-main-section="direct-messages" hidden>
+    <div class="messages-rebuild-inner">
+        <span class="system-label">HELIX / MESSAGES</span>
+        <h2>Messages — rebuilding soon</h2>
+        <p>The Direct Message system is temporarily offline while Helix moves to a clean, modular rebuild.</p>
+        <small>The existing implementation is archived and preserved for reference.</small>
     </div>
-
-    <div class="dm-info-profile">
-
-        <div class="avatar-badge" id="info-avatar">A</div>
-
-        <h2 id="info-name">Alex</h2>
-
-        <span id="info-status">Online · 14ms</span>
-
-    </div>
-
-    <div class="dm-info-section">
-        <h4>Shared media</h4>
-        <p>No shared media yet</p>
-    </div>
-
-    <div class="dm-info-section">
-        <h4>Files</h4>
-        <p>No files shared yet</p>
-    </div>
-
-</aside>
-        </section>
-
-
+</section>
 
             <!-- ==================================
                  REELS VIEW
@@ -891,17 +686,6 @@
                                 </div>
                                 <span class="settings-section-index">02</span>
                             </div>
-
-                            <button class="settings-option-row" type="button" data-notification-setting="dm-alerts">
-                                <span class="settings-option-icon"><svg class="settings-option-svg" viewBox="0 0 48 48" aria-hidden="true"><path d="M7 10h34v23H19l-8 7v-7H7z" fill="none"/><path d="M15 17h18M15 23h11" fill="none"/></svg></span>
-                                <span class="settings-option-copy">
-                                    <strong>DM browser alerts</strong>
-                                    <small>Browser notification, bell sound, and unseen-message count for new direct messages.</small>
-                                </span>
-                                <span class="settings-option-state">OFF</span>
-                                <span class="settings-option-arrow">›</span>
-                            </button>
-                            <p class="settings-notification-note" id="settings-notification-note">Off by default. Turning this on will ask your browser for notification permission.</p>
 
                             <button class="settings-option-row" type="button" data-notification-setting="friend-requests">
                                 <span class="settings-option-icon"><svg class="settings-option-svg" viewBox="0 0 48 48" aria-hidden="true"><circle cx="18" cy="17" r="6" fill="none"/><path d="M7 38c1.5-7 5.3-11 11-11s9.5 4 11 11" fill="none"/><path d="M34 16v12M28 22h12" fill="none"/></svg></span>
@@ -1354,7 +1138,7 @@
         };
     </script>
     <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
-    <script src="app.js?v=20260927-10"></script>
+    <script src="app.js?v=20260927-11"></script>
 
 </body>
 </html>
