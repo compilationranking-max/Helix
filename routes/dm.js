@@ -17,6 +17,16 @@ function createDMRouter(options) {
     const MAX_MESSAGE_LENGTH = 4000;
     const MAX_MESSAGES_PER_LOAD = 200;
     const MAX_MEDIA_BYTES = 10 * 1024 * 1024;
+    const SUPPORTED_MEDIA_MIMES = new Set([
+        "image/png",
+        "image/jpeg",
+        "image/gif",
+        "image/webp",
+        "video/mp4",
+        "video/quicktime",
+        "video/webm",
+        "video/ogg"
+    ]);
     const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
     function fail(message, status = 400) {
@@ -180,8 +190,15 @@ function createDMRouter(options) {
     function verifyMedia(buffer, declaredMime) {
         const mime = String(declaredMime || "").toLowerCase().trim();
 
-        if (!mime.startsWith("image/") && !mime.startsWith("video/")) {
+        if (
+            !mime.startsWith("image/") &&
+            !mime.startsWith("video/")
+        ) {
             fail("Only photos and videos can be sent in DMs.");
+        }
+
+        if (!SUPPORTED_MEDIA_MIMES.has(mime)) {
+            fail("That photo or video format is not supported by Helix.");
         }
 
         let actualMime = null;
@@ -1147,6 +1164,12 @@ function createDMRouter(options) {
                 "FROM helix_dm_messages m " +
                 "WHERE m.recipient_username = $1 " +
                 "AND m.read_at IS NULL AND m.deleted_at IS NULL " +
+                "AND m.sender_username <> $1 " +
+                "AND NOT EXISTS (" +
+                    "SELECT 1 FROM helix_blocked_accounts b " +
+                    "WHERE (b.blocker_username = $1 AND b.blocked_username = m.sender_username) " +
+                    "OR (b.blocker_username = m.sender_username AND b.blocked_username = $1)" +
+                ") " +
                 "ORDER BY m.created_at DESC LIMIT 20",
                 [user.username]
             );
@@ -1154,7 +1177,13 @@ function createDMRouter(options) {
             const count = await dbPool.query(
                 "SELECT COUNT(*)::int AS count FROM helix_dm_messages " +
                 "WHERE recipient_username = $1 " +
-                "AND read_at IS NULL AND deleted_at IS NULL",
+                "AND read_at IS NULL AND deleted_at IS NULL " +
+                "AND sender_username <> $1 " +
+                "AND NOT EXISTS (" +
+                    "SELECT 1 FROM helix_blocked_accounts b " +
+                    "WHERE (b.blocker_username = $1 AND b.blocked_username = helix_dm_messages.sender_username) " +
+                    "OR (b.blocker_username = helix_dm_messages.sender_username AND b.blocked_username = $1)" +
+                ")",
                 [user.username]
             );
 
@@ -1192,6 +1221,16 @@ function createDMRouter(options) {
             if (!row || row.deleted_at) {
                 return res.status(404).json({ error: "Media not found." });
             }
+
+            const conversationPartner =
+                row.sender_username === user.username
+                    ? row.recipient_username
+                    : row.sender_username;
+
+            await ensureConversationAccess(
+                user.username,
+                conversationPartner
+            );
 
             res.setHeader(
                 "Content-Type",
