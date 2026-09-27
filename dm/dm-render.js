@@ -332,11 +332,11 @@
 
             box.append(
                 mark,
-                make("strong", "", "No friends available"),
+                make("strong", "", "No conversations yet"),
                 make(
                     "small",
                     "",
-                    "Add a friend in Friends to start a direct message."
+                    "Start a new conversation with someone from your Friends list."
                 )
             );
 
@@ -503,10 +503,10 @@
         const pinsButton = get("dm-pins-button");
 
         if (!state.activeConversation) {
-            if (title) title.textContent = "Select a friend";
+            if (title) title.textContent = "Your messages";
             if (username) {
                 username.textContent =
-                    "Choose a conversation to begin.";
+                    "Select a conversation to start messaging.";
             }
             if (avatar) {
                 avatar.replaceChildren();
@@ -1050,7 +1050,7 @@
                 make(
                     "p",
                     "",
-                    "Choose a conversation to begin messaging."
+                    "Send private messages, photos, reactions and more from one place."
                 )
             );
 
