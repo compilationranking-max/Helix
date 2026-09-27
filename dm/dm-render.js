@@ -607,49 +607,119 @@
     function renderReplyReference(message) {
         if (!message?.replyToId) return null;
 
-        const reference = make("button", "dm-reply-reference");
+        const reference = make(
+            "button",
+            "dm-reply-reference"
+        );
         reference.type = "button";
-        reference.dataset.replyMessageId = String(message.replyToId);
-        reference.title = "Jump to original message";
-        reference.setAttribute("aria-label", "Jump to original message");
-
-        const bar = make("span", "dm-reply-reference-bar");
-        const copy = make("span", "dm-reply-reference-copy");
-        copy.appendChild(
-            make("strong", "", "@" + String(message.replySender || "user"))
+        reference.dataset.replyMessageId =
+            String(message.replyToId);
+        reference.title =
+            "Jump to original message";
+        reference.setAttribute(
+            "aria-label",
+            "Jump to original message"
         );
 
-        const textRow = make("span", "dm-reply-reference-text");
+        const bar = make(
+            "span",
+            "dm-reply-reference-bar"
+        );
+
+        const copy = make(
+            "span",
+            "dm-reply-reference-copy"
+        );
+
+        copy.appendChild(
+            make(
+                "strong",
+                "",
+                "@" +
+                    String(
+                        message.replySender ||
+                        "user"
+                    )
+            )
+        );
+
+        const content = make(
+            "span",
+            "dm-reply-reference-content"
+        );
 
         if (message.replyDeleted) {
-            textRow.classList.add("is-deleted");
-            textRow.textContent = "Original message deleted";
-        } else if (message.replyMediaKind) {
-            const icon = make("span", "dm-reply-reference-media-icon");
-            icon.appendChild(
-                makeIcon(
-                    message.replyMediaKind === "video" ? "video" : "image"
-                )
-            );
-
-            textRow.append(
-                icon,
+            content.appendChild(
                 make(
                     "span",
-                    "",
-                    message.replyText ||
-                    (message.replyMediaKind === "video" ? "Video" : "Photo")
+                    "dm-reply-reference-text is-deleted",
+                    "Original message deleted"
+                )
+            );
+        } else if (message.replyMediaKind) {
+            const thumb = make(
+                "span",
+                "dm-reply-reference-thumb"
+            );
+
+            if (message.replyMediaKind === "video") {
+                const video =
+                    document.createElement("video");
+                video.src =
+                    message.replyMediaUrl || "";
+                video.muted = true;
+                video.playsInline = true;
+                video.preload = "metadata";
+                video.setAttribute(
+                    "aria-hidden",
+                    "true"
+                );
+                thumb.appendChild(video);
+            } else if (message.replyMediaUrl) {
+                const image =
+                    document.createElement("img");
+                image.src =
+                    message.replyMediaUrl;
+                image.alt = "";
+                image.loading = "lazy";
+                thumb.appendChild(image);
+            } else {
+                thumb.appendChild(
+                    makeIcon("image")
+                );
+            }
+
+            const label =
+                message.replyText ||
+                (
+                    message.replyMediaKind === "video"
+                        ? "Video"
+                        : "Photo"
+                );
+
+            content.append(
+                thumb,
+                make(
+                    "span",
+                    "dm-reply-reference-text",
+                    label
                 )
             );
         } else {
-            textRow.textContent =
-                message.replyText ||
-                message.replyMediaName ||
-                "Original message";
+            content.appendChild(
+                make(
+                    "span",
+                    "dm-reply-reference-text",
+                    message.replyText ||
+                        message.replyMediaName ||
+                        "Original message"
+                )
+            );
         }
 
-        copy.appendChild(textRow);
+        copy.appendChild(content);
         reference.append(bar, copy);
+
         return reference;
     }
 
