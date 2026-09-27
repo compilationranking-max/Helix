@@ -607,92 +607,49 @@
     function renderReplyReference(message) {
         if (!message?.replyToId) return null;
 
-        const reference = make(
-            "button",
-            "dm-reply-reference"
-        );
-
+        const reference = make("button", "dm-reply-reference");
         reference.type = "button";
-        reference.dataset.replyMessageId =
-            String(message.replyToId);
-        reference.setAttribute(
-            "aria-label",
-            "Jump to replied message"
-        );
-        reference.title =
-            "Jump to original message";
+        reference.dataset.replyMessageId = String(message.replyToId);
+        reference.title = "Jump to original message";
+        reference.setAttribute("aria-label", "Jump to original message");
 
-        const bar = make(
-            "span",
-            "dm-reply-reference-bar"
+        const bar = make("span", "dm-reply-reference-bar");
+        const copy = make("span", "dm-reply-reference-copy");
+        copy.appendChild(
+            make("strong", "", "@" + String(message.replySender || "user"))
         );
 
-        const content = make(
-            "span",
-            "dm-reply-reference-copy"
-        );
-
-        content.appendChild(
-            make(
-                "strong",
-                "",
-                "@" +
-                    String(
-                        message.replySender ||
-                        "user"
-                    )
-            )
-        );
+        const textRow = make("span", "dm-reply-reference-text");
 
         if (message.replyDeleted) {
-            content.appendChild(
+            textRow.classList.add("is-deleted");
+            textRow.textContent = "Original message deleted";
+        } else if (message.replyMediaKind) {
+            const icon = make("span", "dm-reply-reference-media-icon");
+            icon.appendChild(
+                makeIcon(
+                    message.replyMediaKind === "video" ? "video" : "image"
+                )
+            );
+
+            textRow.append(
+                icon,
                 make(
                     "span",
-                    "dm-reply-reference-text is-deleted",
-                    "Original message deleted"
+                    "",
+                    message.replyText ||
+                    (message.replyMediaKind === "video" ? "Video" : "Photo")
                 )
             );
         } else {
-            const text =
+            textRow.textContent =
                 message.replyText ||
-                (message.replyMediaKind === "video"
-                    ? "Video"
-                    : message.replyMediaKind === "image"
-                        ? "Photo"
-                        : message.replyMediaName
-                            ? "Attachment"
-                            : "Original message");
-
-            const textRow = make(
-                "span",
-                "dm-reply-reference-text"
-            );
-
-            if (message.replyMediaKind) {
-                const mediaMark = make(
-                    "span",
-                    "dm-reply-reference-media-icon"
-                );
-                mediaMark.appendChild(
-                    makeIcon(
-                        message.replyMediaKind ===
-                            "video"
-                            ? "video"
-                            : "image"
-                    )
-                );
-                textRow.append(
-                    mediaMark,
-                    make("span", "", text)
-                );
-            } else {
-                textRow.textContent = text;
-            }
-
-            content.appendChild(textRow);
+                message.replyMediaName ||
+                "Original message";
         }
 
-        reference.append(bar, content);
+        copy.appendChild(textRow);
+        reference.append(bar, copy);
         return reference;
     }
 
@@ -915,158 +872,116 @@
     }
 
     function renderMessage(message) {
-        const sent =
-            message.sender ===
-            currentUsername();
+        const sent = message.sender === currentUsername();
 
         const row = make(
             "article",
             "dm-message-row " +
-                (sent
-                    ? "is-sent"
-                    : "is-received") +
-                (message.isDeleted
-                    ? " is-deleted"
-                    : "")
+            (sent ? "is-sent" : "is-received") +
+            (message.isDeleted ? " is-deleted" : "")
         );
 
-        row.dataset.messageId =
-            String(message.id);
+        row.dataset.messageId = String(message.id);
 
-        const bubble = make(
-            "div",
-            "dm-message-bubble"
-        );
+        const bubble = make("div", "dm-message-bubble");
 
-        const reference =
-            renderReplyReference(message);
-
+        const reference = renderReplyReference(message);
         if (reference) {
             bubble.appendChild(reference);
         }
 
-        if (message.isDeleted) {
-            const deleted = make(
-                "div",
-                "dm-deleted-message"
-            );
-
-            const icon = make("span", "dm-deleted-icon");
-            icon.appendChild(
-                makeIcon("delete")
-            );
-
-            deleted.append(
-                icon,
-                make(
-                    "span",
-                    "",
-                    "Message deleted"
+        if (state.editingMessageId === String(message.id)) {
+            const editor = document.createElement("textarea");
+            editor.className = "dm-inline-editor";
+            editor.dataset.editMessageId = String(message.id);
+            editor.value = message.text || "";
+            editor.maxLength = 4000;
+            editor.rows = Math.max(
+                2,
+                Math.min(
+                    6,
+                    Math.ceil(String(message.text || "").length / 55)
                 )
             );
 
+            const controls = make("div", "dm-inline-editor-actions");
+
+            const cancel = iconButton(
+                "dm-inline-editor-button",
+                "close",
+                "Cancel editing"
+            );
+            cancel.dataset.dmEditAction = "cancel";
+            cancel.dataset.messageId = String(message.id);
+
+            const save = textButton(
+                "dm-inline-editor-button is-primary",
+                "Save",
+                "Save edited message"
+            );
+            save.dataset.dmEditAction = "save";
+            save.dataset.messageId = String(message.id);
+
+            controls.append(cancel, save);
+            bubble.append(editor, controls);
+        } else if (message.isDeleted) {
+            const deleted = make("div", "dm-deleted-message");
+            const icon = make("span", "dm-deleted-icon");
+            icon.appendChild(makeIcon("delete"));
+            deleted.append(
+                icon,
+                make("span", "", "Message deleted")
+            );
             bubble.appendChild(deleted);
         } else {
-            const media =
-                renderMedia(message);
-
-            if (media) {
-                bubble.appendChild(media);
-            }
+            const media = renderMedia(message);
+            if (media) bubble.appendChild(media);
 
             if (message.text) {
                 bubble.appendChild(
-                    make(
-                        "p",
-                        "dm-message-text",
-                        message.text
-                    )
+                    make("p", "dm-message-text", message.text)
                 );
             }
         }
 
-        bubble.appendChild(
-            renderMessageActions(message)
-        );
+        if (state.editingMessageId !== String(message.id)) {
+            bubble.appendChild(renderMessageActions(message));
+        }
 
         row.appendChild(bubble);
 
-        const meta = make(
-            "div",
-            "dm-message-meta"
-        );
-
+        const meta = make("div", "dm-message-meta");
         meta.appendChild(
-            make(
-                "time",
-                "",
-                formatTime(message.createdAt)
-            )
+            make("time", "", formatTime(message.createdAt))
         );
 
         if (message.editedAt) {
             meta.appendChild(
-                make(
-                    "span",
-                    "dm-edited-label",
-                    "Edited"
-                )
+                make("span", "dm-edited-label", "Edited")
             );
         }
 
-        if (message.sender === currentUsername()) {
-            const status = make(
-                "span",
-                "dm-message-status"
-            );
-
-            const readable =
-                message.readAt
-                    ? "Read"
-                    : "Sent";
-
-            status.title =
-                "Message status: " +
-                readable;
-            status.setAttribute(
-                "aria-label",
-                readable
-            );
-
+        if (sent) {
+            const status = make("span", "dm-message-status");
+            const readable = message.readAt ? "Read" : "Sent";
+            status.title = "Message status: " + readable;
+            status.setAttribute("aria-label", readable);
             status.appendChild(
-                makeIcon(
-                    message.readAt
-                        ? "checkDouble"
-                        : "check"
-                )
+                makeIcon(message.readAt ? "checkDouble" : "check")
             );
-
             meta.appendChild(status);
         }
 
         if (message.isPinned) {
-            const pin = make(
-                "span",
-                "dm-pinned-label"
-            );
-            pin.appendChild(
-                makeIcon("pin")
-            );
-            pin.appendChild(
-                make(
-                    "span",
-                    "",
-                    "Pinned"
-                )
-            );
+            const pin = make("span", "dm-pinned-label");
+            pin.appendChild(makeIcon("pin"));
+            pin.appendChild(make("span", "", "Pinned"));
             meta.appendChild(pin);
         }
 
         row.appendChild(meta);
 
-        const reactions =
-            renderReactionStrip(message);
-
+        const reactions = renderReactionStrip(message);
         if (reactions) {
             row.appendChild(reactions);
         }
@@ -2126,6 +2041,145 @@
         menu.hidden = false;
     }
 
+    function renderComposerState() {
+        const replyBar = get("dm-reply-bar");
+        const attachment = state.pendingAttachment;
+
+        if (replyBar) {
+            if (!state.reply) {
+                replyBar.hidden = true;
+            } else {
+                replyBar.hidden = false;
+
+                const conversation = activeConversation();
+                const senderName =
+                    state.reply.sender === currentUsername()
+                        ? "You"
+                        : (
+                            conversation?.nickname ||
+                            conversation?.displayName ||
+                            state.reply.sender ||
+                            "User"
+                        );
+
+                const avatar = get("dm-reply-bar-avatar");
+                if (avatar) {
+                    setAvatar(
+                        avatar,
+                        state.reply.sender === currentUsername()
+                            ? {
+                                username: currentUsername(),
+                                displayName: "You",
+                                profilePhoto:
+                                    localStorage.getItem(
+                                        "helixProfilePhoto:" +
+                                        currentUsername()
+                                    )
+                            }
+                            : {
+                                username: state.reply.sender,
+                                displayName: senderName,
+                                profilePhoto: conversation?.profilePhoto || null
+                            }
+                    );
+                }
+
+                const label = get("dm-reply-bar-label");
+                const sender = get("dm-reply-bar-sender");
+                const text = get("dm-reply-bar-text");
+                const thumb = get("dm-reply-bar-thumb");
+
+                if (label) label.textContent = "REPLYING TO";
+                if (sender) sender.textContent = senderName;
+                if (text) {
+                    text.textContent =
+                        state.reply.text ||
+                        (
+                            state.reply.mediaKind === "video"
+                                ? "Video"
+                                : state.reply.mediaKind === "image"
+                                    ? "Photo"
+                                    : "Original message"
+                        );
+                }
+
+                if (thumb) {
+                    thumb.replaceChildren();
+
+                    if (state.reply.mediaUrl) {
+                        thumb.hidden = false;
+
+                        if (state.reply.mediaKind === "video") {
+                            const video = document.createElement("video");
+                            video.src = state.reply.mediaUrl;
+                            video.muted = true;
+                            video.playsInline = true;
+                            video.preload = "metadata";
+                            thumb.appendChild(video);
+                        } else {
+                            const image = document.createElement("img");
+                            image.src = state.reply.mediaUrl;
+                            image.alt = "";
+                            image.loading = "lazy";
+                            thumb.appendChild(image);
+                        }
+                    } else {
+                        thumb.hidden = true;
+                    }
+                }
+            }
+        }
+
+        const preview = get("dm-media-preview");
+        const previewThumb = get("dm-media-preview-thumb");
+        const previewName = get("dm-media-preview-name");
+        const previewSize = get("dm-media-preview-size");
+        const error = get("dm-attachment-error");
+
+        if (preview) {
+            preview.hidden = !attachment;
+
+            if (attachment) {
+                if (previewName) {
+                    previewName.textContent =
+                        attachment.name || "Attachment";
+                }
+
+                if (previewSize) {
+                    previewSize.textContent =
+                        formatFileSize(attachment.size);
+                }
+
+                if (previewThumb) {
+                    previewThumb.replaceChildren();
+
+                    if (attachment.previewUrl) {
+                        if (attachment.kind === "video") {
+                            const video = document.createElement("video");
+                            video.src = attachment.previewUrl;
+                            video.muted = true;
+                            video.playsInline = true;
+                            video.preload = "metadata";
+                            previewThumb.appendChild(video);
+                        } else {
+                            const image = document.createElement("img");
+                            image.src = attachment.previewUrl;
+                            image.alt = "Selected photo";
+                            previewThumb.appendChild(image);
+                        }
+                    }
+                }
+            } else {
+                previewThumb?.replaceChildren();
+            }
+        }
+
+        if (error) {
+            error.hidden = !state.attachmentError;
+            error.textContent = state.attachmentError || "";
+        }
+    }
+
     function renderAll() {
         renderConversationList();
         renderHeader();
@@ -2136,6 +2190,7 @@
         renderInfoPanel();
         renderMediaViewer();
         renderContextMenu();
+        renderComposerState();
     }
 
     window.HelixDMRender = {
@@ -2149,6 +2204,7 @@
         renderInfoPanel,
         renderMediaViewer,
         renderContextMenu,
+        renderComposerState,
         renderEmojiPicker,
         filterEmojiPicker,
         renderReplyReference,
