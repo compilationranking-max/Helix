@@ -1,41 +1,92 @@
-# Helix DM rebuild boundary
+# Helix DM module
 
-The previous Direct Message implementation is archived on the Git branch `dm-archive-before-rebuild`.
+This directory contains the clean Direct Message rebuild. The previous implementation remains available only on the archived branch \`dm-archive-before-rebuild\`.
 
-## Archived capability inventory
+## Frontend structure
 
-- Text message sending
-- Conversation list and friend-based conversations
-- Unread counts and badges
-- Message history and search
-- Edit and delete
-- Reactions and full emoji picker
-- Forward and copy
-- Pin/unpin and pinned-message panel
-- Timestamps, edited indicator, send status, scrolling, and conversation switching
-- Friend nicknames and friend avatar/profile information used by the DM UI
-- DM notification behavior
-- DM privacy/security, blocking restrictions, friend validation, and existing authentication/session behavior
+- \`dm.js\` — module bootstrap.
+- \`dm-state.js\` — single DM state object, active conversation, loaded messages, searches, loading state and race-control state.
+- \`dm-api.js\` — API requests only.
+- \`dm-render.js\` — conversation rows, message bubbles, search results, empty/loading/error states, pinned panel, emoji picker and forwarding UI.
+- \`dm-actions.js\` — event handling and message actions.
 
-## Excluded from the clean rebuild for now
+The files are loaded in that order by \`app.html\` because Helix currently uses CommonJS and classic browser scripts rather than frontend ES modules.
 
-- Replies and reply previews
-- `reply_to_id` and reply-target validation
-- Reply composer/bar and reply reference UI
-- Reply preview/session storage
-- DM photo/video/media/attachment sending
+## Active message model
 
-The legacy DM database tables and data are intentionally preserved. The cleanup does not drop them.
+The browser receives only:
 
-## Future rebuild phases
+\`\`\`
+{
+  id,
+  sender,
+  recipient,
+  text,
+  createdAt,
+  editedAt,
+  reactions,
+  isPinned
+}
+\`\`\`
 
-1. Text-only conversations: friends list, text send/receive, history, unread counts.
-2. Stable message tools: edit, delete, reactions, search, pin, forward, copy.
-3. Photo/video sending.
-4. Replies.
+There are no active message media fields or relationship fields for future features.
 
-Phase 4 should not be implemented early.
+## Database
 
-## Active boundary
+The active schema is created by the existing database initialization in \`server.js\`:
 
-Main now shows a temporary Messages placeholder. The future implementation should be split across `dm/`, `routes/dm.js`, and `migrations/dm/` rather than being folded back into the old monolithic DM code.
+- \`helix_dm_messages\`
+- \`helix_dm_reactions\`
+- \`helix_dm_pins\`
+
+The message table stores sender, recipient, body, timestamps and read state. Reactions and pins are separate relationships.
+
+## API
+
+Mounted at \`/api/dm\`:
+
+- \`GET /conversations\`
+- \`GET /messages?with=username\`
+- \`GET /pins?with=username\`
+- \`POST /messages\`
+- \`PUT /messages/:id\`
+- \`DELETE /messages/:id\`
+- \`POST /messages/:id/reaction\`
+- \`POST /messages/:id/pin\`
+- \`POST /messages/:id/forward\`
+
+Copying text is a client-side clipboard action, so it does not need a server endpoint.
+
+## Security model
+
+The router uses the existing Helix session, friendship, blocking and privacy helpers. The sender is always taken from the authenticated session. Message ownership, conversation membership and allowed destinations are checked on the server.
+
+## Current phase
+
+Built now:
+
+- friend/conversation list
+- text send/receive
+- persistent history
+- server-backed unread counts
+- conversation switching
+- conversation search
+- message search
+- timestamps
+- edit/delete
+- reactions
+- full emoji picker
+- copy
+- forward
+- pin/unpin
+- pinned messages
+- loading/error/empty states
+- controlled polling with abort/request-serial protection
+
+Not built yet:
+
+- message replies or quoted references
+- reply relationships
+- photos, videos or attachments
+
+These features are deliberately deferred until the text foundation is stable.
