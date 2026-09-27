@@ -5565,6 +5565,9 @@ bootstrapHelixSession().then((authenticated) => {
                 meta.appendChild(status);
             }
 
+            row.appendChild(bubble);
+            row.appendChild(meta);
+
             if (Array.isArray(item.reactions) && item.reactions.length) {
                 const reactionStrip = document.createElement("div");
                 reactionStrip.className = "dm-message-reactions";
@@ -5578,8 +5581,8 @@ bootstrapHelixSession().then((authenticated) => {
                     reactionButton.type = "button";
                     reactionButton.className = "dm-message-reaction" + (reaction.reacted ? " reacted" : "");
                     reactionButton.textContent = String(reaction.emoji);
-                    const count = Number(reaction.count || 1);
-                    reactionButton.setAttribute("aria-label", count + " " + String(reaction.emoji) + " reaction" + (count === 1 ? "" : "s"));
+                    const reactionCount = Number(reaction.count || 1);
+                    reactionButton.setAttribute("aria-label", reactionCount + " " + String(reaction.emoji) + " reaction" + (reactionCount === 1 ? "" : "s"));
                     reactionButton.title = reaction.reacted ? "Remove your reaction" : "React with " + reaction.emoji;
                     reactionButton.addEventListener("click", async (event) => {
                         event.preventDefault();
@@ -5608,8 +5611,6 @@ bootstrapHelixSession().then((authenticated) => {
                 row.appendChild(reactionStrip);
             }
 
-            row.appendChild(bubble);
-            row.appendChild(meta);
             if (item.sender !== loggedInUser) {
                 row.appendChild(createMessageHoverReactionBar(item));
             }
