@@ -13,6 +13,9 @@
                 }
             });
         } catch (error) {
+            if (error?.name === "AbortError") {
+                throw error;
+            }
             throw new Error("Helix could not reach the server. Check your connection and try again.");
         }
 
