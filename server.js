@@ -224,6 +224,18 @@ async function initializeDatabase() {
             ON helix_dm_messages (recipient_username, sender_username, read_at)
             WHERE read_at IS NULL;
 
+        CREATE TABLE IF NOT EXISTS helix_dm_conversation_nicknames (
+            owner_username TEXT NOT NULL REFERENCES helix_users(username) ON DELETE CASCADE,
+            friend_username TEXT NOT NULL REFERENCES helix_users(username) ON DELETE CASCADE,
+            nickname TEXT NOT NULL CHECK (length(nickname) BETWEEN 1 AND 50),
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            PRIMARY KEY (owner_username, friend_username),
+            CHECK (owner_username <> friend_username)
+        );
+
+        CREATE INDEX IF NOT EXISTS helix_dm_conversation_nicknames_friend_idx
+            ON helix_dm_conversation_nicknames (friend_username);
+
         CREATE TABLE IF NOT EXISTS helix_dm_message_reactions (
             message_id UUID NOT NULL REFERENCES helix_dm_messages(id) ON DELETE CASCADE,
             username TEXT NOT NULL REFERENCES helix_users(username) ON DELETE CASCADE,
