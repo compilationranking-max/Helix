@@ -8373,3 +8373,24 @@ MATH & PHOTO ATTACHMENTS
         height: 34px;
     }
 }
+
+
+/* =========================================================
+   HELIX DM — REDESIGN RESET / BLANK CANVAS
+   ========================================================= */
+/*
+ * First redesign pass: remove the existing DM presentation from view only.
+ * The DM DOM, JavaScript modules, state, API layer, and backend remain intact
+ * so the interface can be rebuilt incrementally without losing functionality.
+ */
+#dm-view > * {
+    display: none !important;
+}
+
+#dm-view {
+    min-height: 100%;
+    width: 100%;
+    padding: 0 !important;
+    overflow: hidden;
+    background: transparent;
+}
