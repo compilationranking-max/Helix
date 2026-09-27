@@ -6894,6 +6894,47 @@ MATH & PHOTO ATTACHMENTS
     height: 30px;
 }
 
+.dm-picker-search {
+    grid-column: 1 / -1;
+    min-width: 0;
+    display: grid;
+    grid-template-columns: 18px minmax(0, 1fr);
+    align-items: center;
+    gap: 6px;
+    height: 34px;
+    padding: 0 9px;
+    border: 1px solid rgba(100, 132, 151, 0.16);
+    border-radius: 8px;
+    background: rgba(4, 9, 15, 0.75);
+    transition: border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+}
+
+.dm-picker-search:focus-within {
+    border-color: rgba(0, 229, 255, 0.32);
+    background: rgba(7, 14, 22, 0.92);
+    box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.03);
+}
+
+.dm-picker-search .dm-search-icon {
+    color: #5f7a8b;
+}
+
+.dm-picker-search:focus-within .dm-search-icon {
+    color: var(--cyan);
+}
+
+.dm-picker-search input {
+    min-width: 0;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    outline: 0;
+    color: #edfaff;
+    background: transparent;
+    font-size: 10px;
+}
+
 .dm-emoji-picker-header input {
     grid-column: 1 / -1;
     width: 100%;
