@@ -5127,6 +5127,14 @@ bootstrapHelixSession().then((authenticated) => {
 // HELIX — ISOLATED CLOUD DMS
 // =========================================================
 (function () {
+    const DM_REPLY_DEBUG =
+        location.hostname === "localhost" ||
+        location.hostname === "127.0.0.1";
+
+    const replyDebug = (...args) => {
+        if (DM_REPLY_DEBUG) console.log(...args);
+    };
+
     const root = document.getElementById("dm-view");
     const list = document.getElementById("conversation-list");
     const count = document.getElementById("dm-friends-count");
@@ -5246,6 +5254,7 @@ bootstrapHelixSession().then((authenticated) => {
                 (x.replyMediaUrl || null) === (y.replyMediaUrl || null) &&
                 (x.replyMediaName || null) === (y.replyMediaName || null) &&
                 (x.replyMediaKind || null) === (y.replyMediaKind || null) &&
+                JSON.stringify(x.replyPreview || null) === JSON.stringify(y.replyPreview || null) &&
                 JSON.stringify(x.reactions || []) === JSON.stringify(y.reactions || []);
         });
     }
@@ -5418,6 +5427,13 @@ bootstrapHelixSession().then((authenticated) => {
     }
 
     function renderReplyReference(item, bubble) {
+        replyDebug("[HELIX REPLY DEBUG] rendering", {
+            id: item?.id,
+            replyToId: item?.replyToId,
+            replySender: item?.replySender,
+            replyText: item?.replyText,
+            replyPreview: item?.replyPreview
+        });
         if (!item || !bubble) return;
 
         // PostgreSQL is authoritative. The local store is only an immediate
@@ -5854,6 +5870,18 @@ bootstrapHelixSession().then((authenticated) => {
             rows.push(row);
         });
 
+        replyDebug(
+            "[HELIX REPLY DEBUG] DOM reply nodes after render",
+            messages.querySelectorAll(".dm-reply-reference").length,
+            Array.from(messages.querySelectorAll(".message")).filter((row) =>
+                row.querySelector(".dm-reply-reference")
+            ).map((row) => ({
+                messageId: row.dataset.messageId,
+                replyToId: row.querySelector(".dm-reply-reference")?.dataset.replyMessageId || null,
+                text: row.querySelector(".dm-message-text")?.textContent || ""
+            }))
+        );
+
         messages.appendChild(fragment);
 
         if (query) rows[0]?.scrollIntoView({ block: "center", behavior: "auto" });
@@ -5881,6 +5909,11 @@ bootstrapHelixSession().then((authenticated) => {
             if (!response.ok) throw new Error(data.error || "Could not load conversation.");
             if (activeUsername !== username || requestSerial !== messageLoadSerial) return;
             const nextMessages = Array.isArray(data.messages) ? data.messages : [];
+
+            replyDebug(
+                "[HELIX REPLY DEBUG] loaded replies",
+                nextMessages.filter((message) => message?.replyToId)
+            );
 
             // Some older deployments may return replyToId without the expanded
             // preview fields. Build the preview client-side from the same
@@ -6093,6 +6126,14 @@ bootstrapHelixSession().then((authenticated) => {
         replyBar.hidden = false;
         replyBar.setAttribute("data-reply-sender", senderName);
         replyBar.setAttribute("data-reply-message-id", String(item.id));
+        replyDebug("[HELIX REPLY DEBUG] selected", {
+            id: item.id,
+            sender: item.sender,
+            text: item.text,
+            activeReplyToId,
+            activeReplyTarget,
+            dataReplyMessageId: replyBar.getAttribute("data-reply-message-id")
+        });
         input.focus();
     }
 
@@ -6597,6 +6638,13 @@ bootstrapHelixSession().then((authenticated) => {
         try {
             let response;
             let data = {};
+
+            replyDebug("[HELIX REPLY DEBUG] sending", {
+                recipient,
+                replyToId,
+                replySource
+            });
+
             if (media?.file) {
                 response = await fetch("/api/dm/media-message", {
                     method: "POST",
@@ -6620,6 +6668,9 @@ bootstrapHelixSession().then((authenticated) => {
                 });
                 data = await response.json().catch(() => ({}));
             }
+
+            replyDebug("[HELIX REPLY DEBUG] POST response", data?.message);
+
             if (!response.ok) throw new Error(data.error || "Could not send message.");
 
             // Normalize the reply reference from the exact message the user
