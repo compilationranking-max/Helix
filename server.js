@@ -1480,6 +1480,12 @@ app.get("/api/dm/messages", async (req, res) => {
             return res.status(403).json({ error: "You can only message friends on Helix." });
         }
 
+        await dbPool.query(`
+            UPDATE helix_messages
+            SET read_at = NOW()
+            WHERE recipient_username = $1 AND sender_username = $2 AND read_at IS NULL
+        `, [user.username, withUser]);
+
         const result = await dbPool.query(`
             SELECT id, sender_username AS "sender", recipient_username AS "recipient",
                    body AS "text", created_at AS "createdAt", read_at AS "readAt",
@@ -1493,12 +1499,6 @@ app.get("/api/dm/messages", async (req, res) => {
                OR (sender_username = $2 AND recipient_username = $1)
             ORDER BY created_at ASC
             LIMIT 200
-        `, [user.username, withUser]);
-
-        await dbPool.query(`
-            UPDATE helix_messages
-            SET read_at = NOW()
-            WHERE recipient_username = $1 AND sender_username = $2 AND read_at IS NULL
         `, [user.username, withUser]);
 
         res.json({ messages: result.rows });
