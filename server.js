@@ -540,7 +540,6 @@ const SERVER_SETTING_DEFAULTS = {
         "activity-visibility": "VISIBLE"
     },
     notifications: {
-        "dm-alerts": false,
         "friend-requests": false,
         "accepted-requests": false,
         likes: false,
