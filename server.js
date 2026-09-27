@@ -214,6 +214,20 @@ async function initializeDatabase() {
             ALTER COLUMN body SET DEFAULT '';
 
         ALTER TABLE helix_messages
+            ADD COLUMN IF NOT EXISTS edited_at TIMESTAMPTZ;
+        ALTER TABLE helix_messages
+            ADD COLUMN IF NOT EXISTS reply_to_id UUID;
+
+        CREATE TABLE IF NOT EXISTS helix_dm_pins (
+            owner_username TEXT NOT NULL REFERENCES helix_users(username) ON DELETE CASCADE,
+            message_id UUID NOT NULL REFERENCES helix_messages(id) ON DELETE CASCADE,
+            pinned_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            PRIMARY KEY (owner_username, message_id)
+        );
+
+        CREATE INDEX IF NOT EXISTS helix_dm_pins_owner_idx
+            ON helix_dm_pins (owner_username, pinned_at DESC);
+        ALTER TABLE helix_messages
             DROP CONSTRAINT IF EXISTS helix_messages_body_check;
         ALTER TABLE helix_messages
             ADD CONSTRAINT helix_messages_body_check CHECK (
@@ -1486,19 +1500,34 @@ app.get("/api/dm/messages", async (req, res) => {
         `, [user.username, withUser]);
 
         const result = await dbPool.query(`
-            SELECT id, sender_username AS "sender", recipient_username AS "recipient",
-                   body AS "text", created_at AS "createdAt", read_at AS "readAt",
-                   CASE WHEN media_data IS NOT NULL THEN '/api/dm/media/' || id::text ELSE NULL END AS "mediaUrl",
-                   media_mime AS "mediaMime",
-                   media_name AS "mediaName",
-                   media_size AS "mediaSize",
-                   media_kind AS "mediaKind"
-            FROM helix_messages
-            WHERE (sender_username = $1 AND recipient_username = $2)
-               OR (sender_username = $2 AND recipient_username = $1)
-            ORDER BY created_at ASC
+            SELECT
+                m.id,
+                m.sender_username AS "sender",
+                m.recipient_username AS "recipient",
+                m.body AS "text",
+                m.created_at AS "createdAt",
+                m.read_at AS "readAt",
+                m.edited_at AS "editedAt",
+                m.reply_to_id AS "replyToId",
+                r.sender_username AS "replySender",
+                r.body AS "replyText",
+                r.media_name AS "replyMediaName",
+                CASE WHEN m.media_data IS NOT NULL THEN '/api/dm/media/' || m.id::text ELSE NULL END AS "mediaUrl",
+                m.media_mime AS "mediaMime",
+                m.media_name AS "mediaName",
+                m.media_size AS "mediaSize",
+                m.media_kind AS "mediaKind",
+                EXISTS (
+                    SELECT 1 FROM helix_dm_pins p
+                    WHERE p.owner_username = $1 AND p.message_id = m.id
+                ) AS "isPinned"
+            FROM helix_messages m
+            LEFT JOIN helix_messages r ON r.id = m.reply_to_id
+            WHERE (m.sender_username = $1 AND m.recipient_username = $2)
+               OR (m.sender_username = $2 AND m.recipient_username = $1)
+            ORDER BY m.created_at ASC
             LIMIT 200
-        `, [user.username, withUser]);
+        `, [user.username, withUser]);`, [user.username, withUser]);
 
         res.json({ messages: result.rows });
     } catch (error) {
@@ -1601,6 +1630,7 @@ app.post("/api/dm/media-message", express.raw({
 
     const recipient = normalizeUsername(req.get("X-DM-To"));
     const body = String(req.get("X-DM-Text") || "").trim();
+    const replyToId = String(req.get("X-DM-Reply-To") || "").trim();
     const originalName = (() => {
         try {
             return decodeURIComponent(String(req.get("X-DM-Name") || "attachment"));
@@ -1636,6 +1666,8 @@ app.post("/api/dm/media-message", express.raw({
     try {
         await requireDatabase();
 
+        await validateDMReplyTarget(replyToId, user.username, recipient);
+
         if (await isBlockedEitherWay(user.username, recipient)) {
             return res.status(403).json({ error: "You cannot message this account." });
         }
@@ -1651,10 +1683,10 @@ app.post("/api/dm/media-message", express.raw({
 
         const result = await dbPool.query(`
             INSERT INTO helix_messages (
-                id, sender_username, recipient_username, body,
+                id, sender_username, recipient_username, body, reply_to_id,
                 media_data, media_mime, media_name, media_size, media_kind
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
             RETURNING
                 id,
                 sender_username AS "sender",
@@ -1672,6 +1704,7 @@ app.post("/api/dm/media-message", express.raw({
             user.username,
             recipient,
             body,
+            replyToId || null,
             mediaBuffer,
             mime,
             originalName || "attachment",
@@ -1698,6 +1731,7 @@ app.post("/api/dm/messages", async (req, res) => {
     const recipient = normalizeUsername(req.body?.to);
     const body = typeof req.body?.text === "string" ? req.body.text.trim() : "";
     const incomingMedia = req.body?.media;
+    const replyToId = String(req.body?.replyToId || "").trim();
 
     if (!validUsername(recipient) || recipient === user.username) {
         return res.status(400).json({ error: "Invalid recipient." });
@@ -1767,16 +1801,18 @@ app.post("/api/dm/messages", async (req, res) => {
         if (!dbPool) return res.status(503).json({ error: "Cloud messaging is not configured." });
         await requireDatabase();
 
+        await validateDMReplyTarget(replyToId, user.username, recipient);
+
         if (!(await areCloudFriends(user.username, recipient))) {
             return res.status(403).json({ error: "You can only message friends on Helix." });
         }
 
         const result = await dbPool.query(`
             INSERT INTO helix_messages (
-                id, sender_username, recipient_username, body,
+                id, sender_username, recipient_username, body, reply_to_id,
                 media_data, media_mime, media_name, media_size, media_kind
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
             RETURNING
                 id,
                 sender_username AS "sender",
@@ -1784,6 +1820,8 @@ app.post("/api/dm/messages", async (req, res) => {
                 body AS "text",
                 created_at AS "createdAt",
                 read_at AS "readAt",
+                edited_at AS "editedAt",
+                reply_to_id AS "replyToId",
                 CASE WHEN media_data IS NOT NULL THEN '/api/dm/media/' || id::text ELSE NULL END AS "mediaUrl",
                 media_mime AS "mediaMime",
                 media_name AS "mediaName",
@@ -1794,6 +1832,7 @@ app.post("/api/dm/messages", async (req, res) => {
             user.username,
             recipient,
             body,
+            replyToId || null,
             media?.buffer || null,
             media?.mime || null,
             media?.name || null,
@@ -1813,6 +1852,210 @@ app.post("/api/dm/messages", async (req, res) => {
     }
 });
 
+async function getDMMessageForUser(messageId, username) {
+    const result = await dbPool.query(`
+        SELECT id, sender_username AS "sender", recipient_username AS "recipient",
+               body AS "text", created_at AS "createdAt", read_at AS "readAt",
+               edited_at AS "editedAt", reply_to_id AS "replyToId",
+               media_data, media_mime AS "mediaMime", media_name AS "mediaName",
+               media_size AS "mediaSize", media_kind AS "mediaKind"
+        FROM helix_messages
+        WHERE id = $1 AND (sender_username = $2 OR recipient_username = $2)
+        LIMIT 1
+    `, [messageId, username]);
+    return result.rows[0] || null;
+}
+
+async function validateDMReplyTarget(replyToId, username, recipient) {
+    if (!replyToId) return null;
+    const reply = await getDMMessageForUser(replyToId, username);
+    if (!reply) {
+        const error = new Error("Reply target not found.");
+        error.status = 400;
+        throw error;
+    }
+    const validConversation =
+        (reply.sender === username && reply.recipient === recipient) ||
+        (reply.sender === recipient && reply.recipient === username);
+    if (!validConversation) {
+        const error = new Error("Reply target is outside this conversation.");
+        error.status = 400;
+        throw error;
+    }
+    return reply;
+}
+
+app.patch("/api/dm/messages/:messageId", async (req, res) => {
+    const user = await requireCurrentUser(req, res);
+    if (!user) return;
+    const messageId = String(req.params.messageId || "");
+    const body = typeof req.body?.text === "string" ? req.body.text.trim() : "";
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(messageId)) {
+        return res.status(400).json({ error: "Invalid message." });
+    }
+    if (!body || body.length > 4000) {
+        return res.status(400).json({ error: "Edited message must be between 1 and 4000 characters." });
+    }
+    try {
+        await requireDatabase();
+        const result = await dbPool.query(`
+            UPDATE helix_messages
+            SET body = $1, edited_at = NOW()
+            WHERE id = $2 AND sender_username = $3 AND media_data IS NULL
+            RETURNING id, sender_username AS "sender", recipient_username AS "recipient",
+                      body AS "text", created_at AS "createdAt", edited_at AS "editedAt"
+        `, [body, messageId, user.username]);
+        if (!result.rowCount) return res.status(404).json({ error: "Only your text messages can be edited." });
+        return res.json({ ok: true, message: result.rows[0] });
+    } catch (error) {
+        console.error("DM edit failed:", error);
+        return res.status(500).json({ error: "Could not edit the message." });
+    }
+});
+
+app.delete("/api/dm/messages/:messageId", async (req, res) => {
+    const user = await requireCurrentUser(req, res);
+    if (!user) return;
+    const messageId = String(req.params.messageId || "");
+    try {
+        await requireDatabase();
+        const result = await dbPool.query(
+            "DELETE FROM helix_messages WHERE id = $1 AND sender_username = $2 RETURNING id",
+            [messageId, user.username]
+        );
+        if (!result.rowCount) return res.status(404).json({ error: "Only your messages can be deleted." });
+        return res.json({ ok: true, messageId });
+    } catch (error) {
+        console.error("DM delete failed:", error);
+        return res.status(500).json({ error: "Could not delete the message." });
+    }
+});
+
+app.post("/api/dm/messages/:messageId/pin", async (req, res) => {
+    const user = await requireCurrentUser(req, res);
+    if (!user) return;
+    const messageId = String(req.params.messageId || "");
+    try {
+        await requireDatabase();
+        const message = await getDMMessageForUser(messageId, user.username);
+        if (!message) return res.status(404).json({ error: "Message not found." });
+        const otherUser = message.sender === user.username ? message.recipient : message.sender;
+        if (!(await areCloudFriends(user.username, otherUser))) {
+            return res.status(403).json({ error: "You can only pin messages in a friend conversation." });
+        }
+        await dbPool.query(`
+            INSERT INTO helix_dm_pins (owner_username, message_id)
+            VALUES ($1, $2)
+            ON CONFLICT (owner_username, message_id) DO NOTHING
+        `, [user.username, messageId]);
+        return res.json({ ok: true, messageId });
+    } catch (error) {
+        console.error("DM pin failed:", error);
+        return res.status(500).json({ error: "Could not pin the message." });
+    }
+});
+
+app.delete("/api/dm/messages/:messageId/pin", async (req, res) => {
+    const user = await requireCurrentUser(req, res);
+    if (!user) return;
+    const messageId = String(req.params.messageId || "");
+    try {
+        await requireDatabase();
+        await dbPool.query(
+            "DELETE FROM helix_dm_pins WHERE owner_username = $1 AND message_id = $2",
+            [user.username, messageId]
+        );
+        return res.json({ ok: true, messageId });
+    } catch (error) {
+        console.error("DM unpin failed:", error);
+        return res.status(500).json({ error: "Could not unpin the message." });
+    }
+});
+
+app.get("/api/dm/pins", async (req, res) => {
+    const user = await requireCurrentUser(req, res);
+    if (!user) return;
+    const withUser = normalizeUsername(req.query.with);
+    if (!validUsername(withUser) || withUser === user.username) {
+        return res.status(400).json({ error: "Invalid conversation." });
+    }
+    try {
+        await requireDatabase();
+        const result = await dbPool.query(`
+            SELECT
+                m.id,
+                m.sender_username AS "sender",
+                m.recipient_username AS "recipient",
+                m.body AS "text",
+                m.created_at AS "createdAt",
+                m.edited_at AS "editedAt",
+                m.media_name AS "mediaName",
+                m.media_kind AS "mediaKind",
+                CASE WHEN m.media_data IS NOT NULL THEN '/api/dm/media/' || m.id::text ELSE NULL END AS "mediaUrl",
+                p.pinned_at AS "pinnedAt"
+            FROM helix_dm_pins p
+            JOIN helix_messages m ON m.id = p.message_id
+            WHERE p.owner_username = $1
+              AND ((m.sender_username = $1 AND m.recipient_username = $2)
+                OR (m.sender_username = $2 AND m.recipient_username = $1))
+            ORDER BY p.pinned_at DESC
+        `, [user.username, withUser]);
+        return res.json({ ok: true, messages: result.rows });
+    } catch (error) {
+        console.error("DM pins load failed:", error);
+        return res.status(500).json({ error: "Could not load pinned messages." });
+    }
+});
+
+app.post("/api/dm/messages/:messageId/forward", async (req, res) => {
+    const user = await requireCurrentUser(req, res);
+    if (!user) return;
+    const messageId = String(req.params.messageId || "");
+    const recipient = normalizeUsername(req.body?.to);
+    if (!validUsername(recipient) || recipient === user.username) {
+        return res.status(400).json({ error: "Invalid forwarding recipient." });
+    }
+    try {
+        await requireDatabase();
+        const original = await getDMMessageForUser(messageId, user.username);
+        if (!original) return res.status(404).json({ error: "Message not found." });
+        if (!(await areCloudFriends(user.username, recipient))) {
+            return res.status(403).json({ error: "You can only forward messages to friends." });
+        }
+        if (await isBlockedEitherWay(user.username, recipient)) {
+            return res.status(403).json({ error: "You cannot message this account." });
+        }
+        if ((await getPrivacySetting(recipient, "direct-messages")) === "NOBODY") {
+            return res.status(403).json({ error: "This user is not accepting direct messages." });
+        }
+        const result = await dbPool.query(`
+            INSERT INTO helix_messages (
+                id, sender_username, recipient_username, body,
+                media_data, media_mime, media_name, media_size, media_kind
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            RETURNING id, sender_username AS "sender", recipient_username AS "recipient",
+                      body AS "text", created_at AS "createdAt",
+                      CASE WHEN media_data IS NOT NULL THEN '/api/dm/media/' || id::text ELSE NULL END AS "mediaUrl",
+                      media_mime AS "mediaMime", media_name AS "mediaName",
+                      media_size AS "mediaSize", media_kind AS "mediaKind"
+        `, [
+            crypto.randomUUID(),
+            user.username,
+            recipient,
+            original.text || "",
+            original.media_data || null,
+            original.mediaMime || null,
+            original.mediaName || null,
+            original.mediaSize || null,
+            original.mediaKind || null
+        ]);
+        return res.status(201).json({ ok: true, message: result.rows[0] });
+    } catch (error) {
+        console.error("DM forward failed:", error);
+        return res.status(500).json({ error: "Could not forward the message." });
+    }
+});
 app.get("/api/dm/media/:messageId", async (req, res) => {
     const user = await requireCurrentUser(req, res);
     if (!user) return;
