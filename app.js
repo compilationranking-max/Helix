@@ -5201,6 +5201,12 @@ bootstrapHelixSession().then((authenticated) => {
     let pendingMedia = null;
     let activeReplyToId = null;
     let activeReplyTarget = null;
+    let replyPreviewStore = {};
+    try {
+        replyPreviewStore = JSON.parse(sessionStorage.getItem("helixDMReplyPreviews") || "{}") || {};
+    } catch {
+        replyPreviewStore = {};
+    }
     let activeContextMessage = null;
     let emojiPickerPromise = null;
     let editingMessageId = null;
@@ -5412,8 +5418,19 @@ bootstrapHelixSession().then((authenticated) => {
     }
 
     function renderReplyReference(item, bubble) {
-        const replyId = String(item?.replyToId || "").trim();
-        if (!replyId || !bubble) return;
+        if (!item || !bubble) return;
+
+        const localPreview = replyPreviewStore[String(item.id)] || null;
+        const replyId = String(item.replyToId || localPreview?.id || "").trim();
+        const replySender = String(item.replySender || localPreview?.sender || "").trim();
+        const replyText = String(item.replyText || localPreview?.text || "").trim();
+        const replyMediaUrl = item.replyMediaUrl || localPreview?.mediaUrl || null;
+        const replyMediaName = item.replyMediaName || localPreview?.mediaName || null;
+        const replyMediaKind = item.replyMediaKind || localPreview?.mediaKind || null;
+
+        // A locally captured preview is enough to render the reply even when
+        // an older API response arrives without reply expansion.
+        if (!replyId && !localPreview) return;
 
         const reference = document.createElement("button");
         reference.type = "button";
@@ -5421,7 +5438,7 @@ bootstrapHelixSession().then((authenticated) => {
         reference.title = "Jump to replied message";
         reference.dataset.replyMessageId = replyId;
 
-        const senderUsername = String(item.replySender || "Friend");
+        const senderUsername = replySender || "Friend";
         const senderLabel = document.createElement("strong");
         senderLabel.textContent = "@" + senderUsername;
 
@@ -5444,10 +5461,10 @@ bootstrapHelixSession().then((authenticated) => {
         const previewText = document.createElement("small");
         previewText.className = "dm-reply-reference-text";
         previewText.textContent =
-            String(item.replyText || "").trim() ||
-            (item.replyMediaKind === "video"
+            replyText ||
+            (replyMediaKind === "video"
                 ? "🎥 Video"
-                : item.replyMediaUrl || item.replyMediaName
+                : replyMediaUrl || replyMediaName
                     ? "📷 Photo"
                     : "Attachment");
 
@@ -5460,7 +5477,7 @@ bootstrapHelixSession().then((authenticated) => {
         reference.addEventListener("click", (event) => {
             event.preventDefault();
             event.stopPropagation();
-            scrollToMessage(replyId);
+            if (replyId) scrollToMessage(replyId);
         });
 
         bubble.appendChild(reference);
@@ -5846,13 +5863,23 @@ bootstrapHelixSession().then((authenticated) => {
 
             nextMessages.forEach((message) => {
                 const replyId = String(message.replyToId || "").trim();
-                if (!replyId) return;
+                const localPreview = replyPreviewStore[String(message.id)] || null;
 
-                const original = messageById.get(replyId);
+                if (localPreview) {
+                    message.replyToId = message.replyToId || localPreview.id || null;
+                    message.replySender = message.replySender || localPreview.sender || "";
+                    message.replyText = message.replyText || localPreview.text || "";
+                    message.replyMediaUrl = message.replyMediaUrl || localPreview.mediaUrl || null;
+                    message.replyMediaName = message.replyMediaName || localPreview.mediaName || null;
+                    message.replyMediaKind = message.replyMediaKind || localPreview.mediaKind || null;
+                }
+
+                const effectiveReplyId = String(message.replyToId || "").trim();
+                if (!effectiveReplyId) return;
+
+                const original = messageById.get(effectiveReplyId);
                 if (!original) return;
 
-                // Always fill the local snapshot. This makes the renderer
-                // independent of whether the server expanded the reply.
                 message.replySender = message.replySender || original.sender || "";
                 message.replyText = message.replyText || original.text || "";
                 message.replyMediaUrl = message.replyMediaUrl || original.mediaUrl || null;
@@ -6062,6 +6089,21 @@ bootstrapHelixSession().then((authenticated) => {
             startReply(item);
         });
         return button;
+    }
+
+    function saveReplyPreview(messageId, target) {
+        if (!messageId || !target) return;
+        replyPreviewStore[String(messageId)] = {
+            id: target.id ? String(target.id) : null,
+            sender: target.sender || "",
+            text: target.text || "",
+            mediaUrl: target.mediaUrl || null,
+            mediaName: target.mediaName || null,
+            mediaKind: target.mediaKind || null
+        };
+        try {
+            sessionStorage.setItem("helixDMReplyPreviews", JSON.stringify(replyPreviewStore));
+        } catch {}
     }
 
     function clearReply() {
@@ -6556,13 +6598,16 @@ bootstrapHelixSession().then((authenticated) => {
             // selected. Do this even if the API response does not expand it.
             const sentMessage = data?.message;
             if (sentMessage) {
-                if (replyToId) {
-                    sentMessage.replyToId = sentMessage.replyToId || replyToId;
-                    sentMessage.replySender = sentMessage.replySender || replySource?.sender || "";
-                    sentMessage.replyText = sentMessage.replyText || replySource?.text || "";
-                    sentMessage.replyMediaUrl = sentMessage.replyMediaUrl || replySource?.mediaUrl || null;
-                    sentMessage.replyMediaName = sentMessage.replyMediaName || replySource?.mediaName || null;
-                    sentMessage.replyMediaKind = sentMessage.replyMediaKind || replySource?.mediaKind || null;
+                if (replyToId && replySource) {
+                    // The exact selected message becomes the authoritative UI
+                    // preview immediately; server refresh is reconciliation.
+                    sentMessage.replyToId = replyToId;
+                    sentMessage.replySender = replySource.sender || "";
+                    sentMessage.replyText = replySource.text || "";
+                    sentMessage.replyMediaUrl = replySource.mediaUrl || null;
+                    sentMessage.replyMediaName = replySource.mediaName || null;
+                    sentMessage.replyMediaKind = replySource.mediaKind || null;
+                    saveReplyPreview(sentMessage.id, replySource);
                 }
 
                 const withoutExisting = currentMessages.filter(
