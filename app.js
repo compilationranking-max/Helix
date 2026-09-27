@@ -5517,17 +5517,18 @@ bootstrapHelixSession().then((authenticated) => {
         const bar = document.createElement("div");
         bar.className = "dm-message-hover-reaction-bar";
         bar.setAttribute("role", "toolbar");
-        bar.setAttribute("aria-label", "Quick emoji");
+        bar.setAttribute("aria-label", "Message reactions");
 
         ["❤️", "😂", "😮", "😢", "😡", "👍"].forEach((emoji) => {
             const button = document.createElement("button");
             button.type = "button";
             button.className = "dm-hover-reaction";
             button.textContent = emoji;
-            button.setAttribute("aria-label", "Insert " + emoji);
+            button.setAttribute("aria-label", "React with " + emoji);
             button.addEventListener("click", async (event) => {
                 event.preventDefault();
                 event.stopPropagation();
+                bar.closest(".message-bubble")?.classList.remove("dm-reaction-bar-open");
                 await reactToMessage(item, emoji);
             });
             bar.appendChild(button);
@@ -5541,6 +5542,7 @@ bootstrapHelixSession().then((authenticated) => {
         more.addEventListener("click", async (event) => {
             event.preventDefault();
             event.stopPropagation();
+            bar.closest(".message-bubble")?.classList.remove("dm-reaction-bar-open");
             await openEmojiPicker(item);
         });
         bar.appendChild(more);
@@ -5667,9 +5669,22 @@ bootstrapHelixSession().then((authenticated) => {
             }
 
             if (item.sender !== loggedInUser) {
-                // Keep the quick-reaction bar attached to the actual message bubble,
-                // not the full message row, so hovering reaction pills does not open it.
-                bubble.appendChild(createMessageHoverReactionBar(item));
+                const reactionBar = createMessageHoverReactionBar(item);
+                bubble.appendChild(reactionBar);
+
+                bubble.addEventListener("pointerenter", () => {
+                    document.querySelectorAll("#dm-view .message-bubble.dm-reaction-bar-open").forEach((openBubble) => {
+                        if (openBubble !== bubble) openBubble.classList.remove("dm-reaction-bar-open");
+                    });
+                    bubble.classList.add("dm-reaction-bar-open");
+                });
+
+                bubble.addEventListener("focusin", () => {
+                    document.querySelectorAll("#dm-view .message-bubble.dm-reaction-bar-open").forEach((openBubble) => {
+                        if (openBubble !== bubble) openBubble.classList.remove("dm-reaction-bar-open");
+                    });
+                    bubble.classList.add("dm-reaction-bar-open");
+                });
             }
 
             if (item.isPinned) {
@@ -6577,7 +6592,7 @@ bootstrapHelixSession().then((authenticated) => {
         }
     });
 
-    // Instagram-style swipe-right reply for touch devices.
+    // Swipe-right reply for touch devices.
     let swipeState = null;
     messages.addEventListener("pointerdown", (event) => {
         if (event.pointerType !== "touch") return;
