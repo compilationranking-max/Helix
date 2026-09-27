@@ -572,7 +572,10 @@
             const box = make("div", "dm-chat-state");
             const mark = make("span", "dm-chat-state-mark");
             mark.appendChild(makeIcon("messages"));
-            box.appendChild(make("strong", "", "No messages yet"));
+            box.append(
+                mark,
+                make("strong", "", "No messages yet")
+            );
             box.appendChild(
                 make("p", "", "Send a text message to start the conversation.")
             );
@@ -706,12 +709,17 @@
         close.dataset.dmAction = "close-emoji-picker";
         header.appendChild(close);
 
+        const searchWrap = make("label", "dm-picker-search");
+        searchWrap.setAttribute("aria-label", "Search emoji");
+        const searchIcon = make("span", "dm-search-icon");
+        searchIcon.appendChild(makeIcon("search"));
         const search = document.createElement("input");
         search.type = "search";
         search.id = "dm-emoji-search";
         search.placeholder = "Search emoji";
         search.autocomplete = "off";
-        header.appendChild(search);
+        searchWrap.append(searchIcon, search);
+        header.appendChild(searchWrap);
 
         const grid = make("div", "dm-emoji-grid");
 
