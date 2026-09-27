@@ -50,6 +50,8 @@
         if (state.conversationListRequestInFlight) return;
 
         state.conversationListRequestInFlight = true;
+        const hadConversations = state.conversations.length > 0;
+        let changed = false;
 
         if (!options.silent) {
             state.loadingConversations = true;
@@ -58,7 +60,9 @@
         }
 
         try {
-            state.conversations = await api.getConversations();
+            const nextConversations = await api.getConversations();
+            changed = JSON.stringify(nextConversations) !== JSON.stringify(state.conversations);
+            state.conversations = nextConversations;
             state.conversationError = "";
 
             if (
@@ -74,18 +78,25 @@
                 state.messageError = "";
                 state.loadingMessages = false;
                 get("dm-view")?.classList.remove("dm-mobile-chat-open");
+                changed = true;
             }
         } catch (error) {
-            state.conversationError =
-                error.message || "Could not load your message conversations.";
+            if (!options.silent || !hadConversations) {
+                state.conversationError =
+                    error.message || "Could not load your message conversations.";
+                changed = true;
+            }
         } finally {
             state.loadingConversations = false;
             state.conversationListRequestInFlight = false;
-            render.renderConversationList();
-            render.renderHeader();
-            render.renderMessages();
-            render.renderStatus();
-            setComposerEnabled(Boolean(state.activeConversation));
+
+            if (!options.silent || changed) {
+                render.renderConversationList();
+                render.renderHeader();
+                render.renderMessages();
+                render.renderStatus();
+                setComposerEnabled(Boolean(state.activeConversation));
+            }
         }
     }
 
@@ -218,10 +229,11 @@
 
         if (
             serial === state.conversationRequestSerial &&
-            username === state.activeConversation &&
-            !options.silent
+            username === state.activeConversation
         ) {
-            await refreshPins();
+            if (!options.silent) {
+                await refreshPins();
+            }
             await refreshConversations({ silent: true });
         }
     }
