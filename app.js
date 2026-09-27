@@ -5570,6 +5570,10 @@ bootstrapHelixSession().then((authenticated) => {
                 reactionStrip.className = "dm-message-reactions";
                 item.reactions.forEach((reaction) => {
                     if (!reaction?.emoji) return;
+
+                    const reactionWrap = document.createElement("span");
+                    reactionWrap.className = "dm-message-reaction-wrap";
+
                     const reactionButton = document.createElement("button");
                     reactionButton.type = "button";
                     reactionButton.className = "dm-message-reaction" + (reaction.reacted ? " reacted" : "");
@@ -5582,7 +5586,24 @@ bootstrapHelixSession().then((authenticated) => {
                         event.stopPropagation();
                         await reactToMessage(item, String(reaction.emoji));
                     });
-                    reactionStrip.appendChild(reactionButton);
+                    reactionWrap.appendChild(reactionButton);
+
+                    if (reaction.reacted) {
+                        const remove = document.createElement("button");
+                        remove.type = "button";
+                        remove.className = "dm-message-reaction-remove";
+                        remove.textContent = "×";
+                        remove.setAttribute("aria-label", "Remove your " + String(reaction.emoji) + " reaction");
+                        remove.title = "Remove reaction";
+                        remove.addEventListener("click", async (event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            await reactToMessage(item, String(reaction.emoji));
+                        });
+                        reactionWrap.appendChild(remove);
+                    }
+
+                    reactionStrip.appendChild(reactionWrap);
                 });
                 row.appendChild(reactionStrip);
             }
