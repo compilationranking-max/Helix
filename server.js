@@ -1751,7 +1751,13 @@ app.post("/api/dm/media-message", express.raw({
             mediaKind: mime.startsWith("video/") ? "video" : "image"
         });
 
-        return res.status(201).json({ ok: true, message: result.rows[0] });
+        let savedMessage = result.rows[0];
+        if (replyToId && savedMessage?.replyToId) {
+            const reply = await getDMMessageForUser(replyToId, user.username);
+            savedMessage = expandDMReplyFields(savedMessage, reply);
+        }
+
+        return res.status(201).json({ ok: true, message: savedMessage });
     } catch (error) {
         console.error("DM media message failed:", error);
         return res.status(500).json({ error: "Could not send the photo or video." });
@@ -1879,7 +1885,13 @@ app.post("/api/dm/messages", async (req, res) => {
             mediaKind: media?.kind || null
         });
 
-        return res.status(201).json({ ok: true, message: result.rows[0] });
+        let savedMessage = result.rows[0];
+        if (replyToId && savedMessage?.replyToId) {
+            const reply = await getDMMessageForUser(replyToId, user.username);
+            savedMessage = expandDMReplyFields(savedMessage, reply);
+        }
+
+        return res.status(201).json({ ok: true, message: savedMessage });
     } catch (error) {
         console.error("DM send failed:", error);
         return res.status(500).json({ error: "Could not send the message." });
@@ -1898,6 +1910,19 @@ async function getDMMessageForUser(messageId, username) {
         LIMIT 1
     `, [messageId, username]);
     return result.rows[0] || null;
+}
+
+function expandDMReplyFields(message, reply) {
+    if (!message || !reply || !message.replyToId) return message;
+
+    return {
+        ...message,
+        replySender: reply.sender || "",
+        replyText: reply.text || "",
+        replyMediaUrl: reply.media_data ? "/api/dm/media/" + reply.id : null,
+        replyMediaName: reply.mediaName || null,
+        replyMediaKind: reply.mediaKind || null
+    };
 }
 
 async function validateDMReplyTarget(replyToId, username, recipient) {
