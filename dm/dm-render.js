@@ -788,34 +788,6 @@
         emoji.dataset.messageId = message.id;
         actions.appendChild(emoji);
 
-        const copy = iconButton(
-            "dm-message-tool",
-            "copy",
-            "Copy message"
-        );
-        copy.dataset.dmAction = "copy-message";
-        copy.dataset.messageId = message.id;
-        actions.appendChild(copy);
-
-        const forward = iconButton(
-            "dm-message-tool",
-            "forward",
-            "Forward message"
-        );
-        forward.dataset.dmAction = "forward-message";
-        forward.dataset.messageId = message.id;
-        actions.appendChild(forward);
-
-        const pin = iconButton(
-            "dm-message-tool" +
-            (message.isPinned ? " is-active" : ""),
-            "pin",
-            message.isPinned ? "Unpin message" : "Pin message"
-        );
-        pin.dataset.dmAction = "toggle-pin";
-        pin.dataset.messageId = message.id;
-        actions.appendChild(pin);
-
         const more = iconButton(
             "dm-message-tool",
             "moreVertical",
@@ -824,26 +796,6 @@
         more.dataset.dmAction = "context-menu";
         more.dataset.messageId = message.id;
         actions.appendChild(more);
-
-        if (message.sender === currentUsername()) {
-            const edit = iconButton(
-                "dm-message-tool",
-                "edit",
-                "Edit message"
-            );
-            edit.dataset.dmAction = "edit-message";
-            edit.dataset.messageId = message.id;
-            actions.appendChild(edit);
-
-            const remove = iconButton(
-                "dm-message-tool dm-danger-tool",
-                "delete",
-                "Delete message"
-            );
-            remove.dataset.dmAction = "delete-message";
-            remove.dataset.messageId = message.id;
-            actions.appendChild(remove);
-        }
 
         return actions;
     }
