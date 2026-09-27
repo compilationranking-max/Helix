@@ -5309,7 +5309,10 @@ bootstrapHelixSession().then((authenticated) => {
                 meta.appendChild(unread);
             }
 
-            button.append(avatar, copy, meta);
+            const arrow = document.createElement("span");
+            arrow.className = "conversation-arrow";
+            arrow.textContent = "↗";
+            button.append(avatar, copy, meta, arrow);
             button.addEventListener("click", () => openFriend(friend));
             list.appendChild(button);
         });
