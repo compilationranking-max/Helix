@@ -3109,7 +3109,7 @@ body::before {
 }
 
 #dm-view .message {
-    margin-bottom: 15px;
+    margin-bottom: 52px;
 }
 
 #dm-view .message-bubble {
@@ -10909,7 +10909,8 @@ body.helix-reduced-motion *::after {
 
 #dm-view .dm-message-hover-reaction-bar {
     position: absolute;
-    top: -39px;
+    top: auto;
+    bottom: -39px;
     left: 8px;
     z-index: 40;
     display: flex;
@@ -10924,14 +10925,14 @@ body.helix-reduced-motion *::after {
     opacity: 0;
     pointer-events: none;
     transform: translateY(5px) scale(.97);
-    transform-origin: left bottom;
+    transform-origin: left top;
     transition: opacity .15s ease, transform .15s ease;
     backdrop-filter: blur(12px);
 }
 #dm-view .message.sent .dm-message-hover-reaction-bar {
     left: auto;
     right: 8px;
-    transform-origin: right bottom;
+    transform-origin: right top;
 }
 #dm-view .message:hover .dm-message-hover-reaction-bar,
 #dm-view .dm-message-hover-reaction-bar:hover,
@@ -11032,6 +11033,51 @@ body.helix-reduced-motion *::after {
    ========================================================= */
 
 /* Reactions sit directly underneath the message/reply content. */
+#dm-view .dm-message-reaction-wrap {
+    position: relative;
+    width: 27px;
+    height: 25px;
+    flex: 0 0 27px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#dm-view .dm-message-reaction-wrap .dm-message-reaction {
+    width: 24px;
+    height: 24px;
+}
+
+#dm-view .dm-message-reaction-remove {
+    position: absolute;
+    top: -5px;
+    right: -4px;
+    width: 11px;
+    height: 11px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 1px solid rgba(4, 20, 29, .95);
+    border-radius: 50%;
+    background: #0a111a;
+    color: #89a1ad;
+    font: 700 8px/1 "Segoe UI", Arial, sans-serif;
+    cursor: pointer;
+    opacity: 0;
+    transform: scale(.8);
+    transition: opacity .12s ease, color .12s ease, border-color .12s ease, transform .12s ease;
+    z-index: 2;
+}
+#dm-view .dm-message-reaction-wrap:hover .dm-message-reaction-remove,
+#dm-view .dm-message-reaction-remove:focus-visible {
+    opacity: 1;
+    transform: scale(1);
+}
+#dm-view .dm-message-reaction-remove:hover {
+    color: #ff7088;
+    border-color: rgba(255,112,136,.45);
+}
+
 #dm-view .dm-message-reactions {
     display: flex;
     flex-wrap: wrap;
