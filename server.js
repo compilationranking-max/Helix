@@ -1849,7 +1849,7 @@ app.post("/api/dm/messages", async (req, res) => {
         if (!dbPool) return res.status(503).json({ error: "Cloud messaging is not configured." });
         await requireDatabase();
 
-        await validateDMReplyTarget(replyToId, user.username, recipient);
+        const replyTarget = await validateDMReplyTarget(replyToId, user.username, recipient);
 
         if (!(await areCloudFriends(user.username, recipient))) {
             return res.status(403).json({ error: "You can only message friends on Helix." });
