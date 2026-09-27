@@ -5513,6 +5513,22 @@ bootstrapHelixSession().then((authenticated) => {
         }
     }
 
+    function setMessageReactionBarPlacement(bubble, bar) {
+        if (!bubble || !bar || !messages) return;
+
+        const messageRect = bubble.getBoundingClientRect();
+        const chatRect = messages.getBoundingClientRect();
+        const barWidth = bar.getBoundingClientRect().width || 300;
+        const gap = 8;
+        const rightLimit = chatRect.right - gap;
+
+        // Keep the bar on the right side of the other person's bubble when
+        // there is enough room. When the bubble reaches the chat's right edge,
+        // move the bar below it so it never gets pushed off-screen.
+        const shouldPlaceBelow = messageRect.right + gap + barWidth > rightLimit;
+        bubble.classList.toggle("dm-reaction-bar-below", shouldPlaceBelow);
+    }
+
     function createMessageHoverReactionBar(item) {
         const bar = document.createElement("div");
         bar.className = "dm-message-hover-reaction-bar";
@@ -5676,6 +5692,7 @@ bootstrapHelixSession().then((authenticated) => {
                     document.querySelectorAll("#dm-view .message-bubble.dm-reaction-bar-open").forEach((openBubble) => {
                         if (openBubble !== bubble) openBubble.classList.remove("dm-reaction-bar-open");
                     });
+                    setMessageReactionBarPlacement(bubble, reactionBar);
                     bubble.classList.add("dm-reaction-bar-open");
                 });
 
@@ -5683,6 +5700,7 @@ bootstrapHelixSession().then((authenticated) => {
                     document.querySelectorAll("#dm-view .message-bubble.dm-reaction-bar-open").forEach((openBubble) => {
                         if (openBubble !== bubble) openBubble.classList.remove("dm-reaction-bar-open");
                     });
+                    setMessageReactionBarPlacement(bubble, reactionBar);
                     bubble.classList.add("dm-reaction-bar-open");
                 });
             }
@@ -5707,6 +5725,18 @@ bootstrapHelixSession().then((authenticated) => {
         else if (scrollToBottom || wasNearBottom) messages.scrollTop = messages.scrollHeight;
         else messages.scrollTop = previousScrollTop;
     }
+
+    messages?.addEventListener("scroll", () => {
+        const openBubble = document.querySelector("#dm-view .message.received .message-bubble.dm-reaction-bar-open");
+        const bar = openBubble?.querySelector(".dm-message-hover-reaction-bar");
+        if (openBubble && bar) setMessageReactionBarPlacement(openBubble, bar);
+    }, { passive: true });
+
+    window.addEventListener("resize", () => {
+        const openBubble = document.querySelector("#dm-view .message.received .message-bubble.dm-reaction-bar-open");
+        const bar = openBubble?.querySelector(".dm-message-hover-reaction-bar");
+        if (openBubble && bar) setMessageReactionBarPlacement(openBubble, bar);
+    });
 
     async function loadMessages(username, { force = false, scrollToBottom = false } = {}) {
         const requestSerial = ++messageLoadSerial;
