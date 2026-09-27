@@ -1904,7 +1904,7 @@ function handleNavigation(id) {
             break;
 
         case "nav-console":
-            console.log("Direct Console selected");
+            console.log("Messages rebuild placeholder selected");
             break;
 
         case "nav-friends":
