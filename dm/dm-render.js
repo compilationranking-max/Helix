@@ -1,41 +1,80 @@
 (() => {
     const state = window.HelixDMState.state;
-    const loggedInUser = () => localStorage.getItem("helixLoggedIn") || "";
 
     const get = (id) => document.getElementById(id);
+    const currentUsername = () =>
+        localStorage.getItem("helixLoggedIn") || "";
+
+    const ICONS = {
+        messages:
+            '<path d="M7 9.5A3.5 3.5 0 0 1 10.5 6h27A3.5 3.5 0 0 1 41 9.5v16A3.5 3.5 0 0 1 37.5 29H22l-8.5 6.5V29h-3A3.5 3.5 0 0 1 7 25.5z"/><path d="M15 15h18M15 21h12"/>',
+        back:
+            '<path d="m29 9-15 15 15 15"/><path d="M15 24h24"/>',
+        search:
+            '<circle cx="21" cy="21" r="11"/><path d="m30 30 8 8"/>',
+        send:
+            '<path d="m6 8 32 16-32 16 6-16z"/><path d="M12 24h18"/>',
+        more:
+            '<circle cx="12" cy="24" r="1.6" fill="currentColor" stroke="none"/><circle cx="24" cy="24" r="1.6" fill="currentColor" stroke="none"/><circle cx="36" cy="24" r="1.6" fill="currentColor" stroke="none"/>',
+        moreVertical:
+            '<circle cx="24" cy="10" r="1.6" fill="currentColor" stroke="none"/><circle cx="24" cy="24" r="1.6" fill="currentColor" stroke="none"/><circle cx="24" cy="38" r="1.6" fill="currentColor" stroke="none"/>',
+        edit:
+            '<path d="M9 35.5V39h3.5L34 20.5l-7-7z"/><path d="m31 10 7 7"/><path d="M9 39h30"/>',
+        delete:
+            '<path d="M10 13h28M19 13V9h10v4M16 13l2 25h12l2-25M21 19v13M27 19v13"/>',
+        copy:
+            '<rect x="10" y="10" width="23" height="26" rx="3"/><path d="M17 10V7h17a4 4 0 0 1 4 4v22h-5"/>',
+        reaction:
+            '<path d="M10 12h28v20H22l-7 6v-6h-5z"/><path d="M18 22h.01M24 22h.01M30 22h.01"/>',
+        emoji:
+            '<circle cx="24" cy="24" r="15"/><path d="M18 21h.01M30 21h.01M17 28c4 4 10 4 14 0"/>',
+        pin:
+            '<path d="m18 8 12 12"/><path d="m28 10 7 7-5 5 3 8-4 4-8-3-5 5-7-7 5-5-3-8 4-4 8 3z"/><path d="m24 28-9 9"/>',
+        forward:
+            '<path d="M31 10 41 20 31 30"/><path d="M41 20H19a10 10 0 0 0-10 10v8"/>',
+        reply:
+            '<path d="m18 10-10 10 10 10"/><path d="M9 20h17a12 12 0 0 1 12 12v4"/>',
+        close:
+            '<path d="m13 13 22 22M35 13 13 35"/>',
+        retry:
+            '<path d="M11 20a14 14 0 1 1 4 13"/><path d="M11 10v10h10"/>',
+        warning:
+            '<path d="m24 7 16 29H8z"/><path d="M24 17v10M24 31h.01"/>',
+        refresh:
+            '<path d="M10 20a14 14 0 0 1 24-7l3 3"/><path d="M37 9v8h-8"/><path d="M38 28a14 14 0 0 1-24 7l-3-3"/><path d="M11 39v-8h8"/>',
+        check:
+            '<path d="m10 24 9 9 19-20"/>',
+        checkDouble:
+            '<path d="m7 24 8 8 17-18"/><path d="m18 25 5 5 18-19"/>',
+        attachment:
+            '<path d="M17 32 29.5 19.5a5 5 0 0 1 7 7L23 40a8 8 0 1 1-11.3-11.3l12.7-12.7a5.5 5.5 0 0 1 7.8 7.8l-11.6 11.6a3 3 0 0 1-4.3-4.2L26 22"/>',
+        info:
+            '<circle cx="24" cy="24" r="16"/><path d="M24 21v11M24 15h.01"/>',
+        image:
+            '<rect x="7" y="9" width="34" height="30" rx="4"/><circle cx="18" cy="19" r="3"/><path d="m11 34 9-9 6 6 4-4 7 7"/>',
+        video:
+            '<rect x="7" y="11" width="26" height="26" rx="4"/><path d="m33 19 8-5v20l-8-5z"/>',
+        file:
+            '<path d="M14 6h14l7 7v29H14z"/><path d="M28 6v8h7"/>'
+    };
 
     function make(tag, className, text) {
         const element = document.createElement(tag);
-        if (className) element.className = className;
-        if (text !== undefined) element.textContent = text;
+
+        if (className) {
+            element.className = className;
+        }
+
+        if (text !== undefined) {
+            element.textContent = text;
+        }
+
         return element;
     }
 
-    const ICONS = {
-        messages: '<path d="M7 9.5A3.5 3.5 0 0 1 10.5 6h27A3.5 3.5 0 0 1 41 9.5v16A3.5 3.5 0 0 1 37.5 29H22l-8.5 6.5V29h-3A3.5 3.5 0 0 1 7 25.5z"/><path d="M15 15h18M15 21h12"/>',
-        back: '<path d="m29 9-15 15 15 15"/><path d="M15 24h24"/>',
-        search: '<circle cx="21" cy="21" r="11"/><path d="m30 30 8 8"/>',
-        send: '<path d="m6 8 32 16-32 16 6-16z"/><path d="M12 24h18"/>',
-        more: '<circle cx="12" cy="24" r="1.6" fill="currentColor" stroke="none"/><circle cx="24" cy="24" r="1.6" fill="currentColor" stroke="none"/><circle cx="36" cy="24" r="1.6" fill="currentColor" stroke="none"/>',
-        edit: '<path d="M9 35.5V39h3.5L34 20.5l-7-7z"/><path d="m31 10 7 7"/><path d="M9 39h30"/>',
-        delete: '<path d="M10 13h28M19 13V9h10v4M16 13l2 25h12l2-25M21 19v13M27 19v13"/>',
-        copy: '<rect x="10" y="10" width="23" height="26" rx="3"/><path d="M17 10V7h17a4 4 0 0 1 4 4v22h-5"/>',
-        reaction: '<path d="M10 12h28v20H22l-7 6v-6h-5z"/><path d="M18 22h.01M24 22h.01M30 22h.01"/>',
-        emoji: '<circle cx="24" cy="24" r="15"/><path d="M18 21h.01M30 21h.01M17 28c4 4 10 4 14 0"/>',
-        pin: '<path d="m18 8 12 12"/><path d="m28 10 7 7-5 5 3 8-4 4-8-3-5 5-7-7 5-5-3-8 4-4 8 3z"/><path d="m24 28-9 9"/>',
-        forward: '<path d="M31 10 41 20 31 30"/><path d="M41 20H19a10 10 0 0 0-10 10v8"/>',
-        close: '<path d="m13 13 22 22M35 13 13 35"/>',
-        retry: '<path d="M11 20a14 14 0 1 1 4 13"/><path d="M11 10v10h10"/>',
-        warning: '<path d="m24 7 16 29H8z"/><path d="M24 17v10M24 31h.01"/>',
-        refresh: '<path d="M10 20a14 14 0 0 1 24-7l3 3"/><path d="M37 9v8h-8"/><path d="M38 28a14 14 0 0 1-24 7l-3-3"/><path d="M11 39v-8h8"/>',
-        check: '<path d="m10 24 9 9 19-20"/>',
-        moreVertical: '<circle cx="24" cy="10" r="1.7" fill="currentColor" stroke="none"/><circle cx="24" cy="24" r="1.7" fill="currentColor" stroke="none"/><circle cx="24" cy="38" r="1.7" fill="currentColor" stroke="none"/>',
-        empty: '<rect x="9" y="11" width="30" height="26" rx="5"/><path d="M15 18h18M15 24h12M15 30h7"/>'
-    };
-
-    function makeIcon(name, label, className = "") {
+    function makeIcon(name, label) {
         const svg = document.createElement("svg");
-        svg.className = ("dm-icon " + className).trim();
+        svg.className = "dm-icon";
         svg.setAttribute("viewBox", "0 0 48 48");
         svg.setAttribute("fill", "none");
         svg.setAttribute("stroke", "currentColor");
@@ -45,6 +84,7 @@
         svg.setAttribute("aria-hidden", "true");
 
         if (label) {
+            svg.setAttribute("role", "img");
             svg.setAttribute("focusable", "false");
         }
 
@@ -52,29 +92,33 @@
         return svg;
     }
 
-    function iconButton(className, name, title) {
-        const element = make("button", className);
-        element.type = "button";
-        element.appendChild(makeIcon(name, title));
+    function iconButton(className, icon, title) {
+        const button = make("button", className);
+        button.type = "button";
+        button.appendChild(makeIcon(icon, title));
+
         if (title) {
-            element.title = title;
-            element.setAttribute("aria-label", title);
+            button.title = title;
+            button.setAttribute("aria-label", title);
         }
-        return element;
+
+        return button;
     }
 
-    function button(className, label, title) {
-        const element = make("button", className, label);
-        element.type = "button";
+    function textButton(className, text, title) {
+        const button = make("button", className, text);
+        button.type = "button";
+
         if (title) {
-            element.title = title;
-            element.setAttribute("aria-label", title);
+            button.title = title;
+            button.setAttribute("aria-label", title);
         }
-        return element;
+
+        return button;
     }
 
-    function initials(name) {
-        return String(name || "U")
+    function initials(value) {
+        return String(value || "U")
             .trim()
             .split(/\s+/)
             .slice(0, 2)
@@ -83,26 +127,78 @@
             .toUpperCase() || "U";
     }
 
-    function time(value) {
+    function formatTime(value) {
         const date = new Date(value);
         if (Number.isNaN(date.getTime())) return "";
-        return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+
+        return date.toLocaleTimeString([], {
+            hour: "numeric",
+            minute: "2-digit"
+        });
     }
 
-    function day(value) {
+    function formatDay(value) {
         const date = new Date(value);
         if (Number.isNaN(date.getTime())) return "";
-        const options = { month: "short", day: "numeric" };
+
+        const options = {
+            month: "short",
+            day: "numeric"
+        };
+
         if (date.getFullYear() !== new Date().getFullYear()) {
             options.year = "numeric";
         }
+
         return date.toLocaleDateString([], options);
     }
 
-    function setAvatar(element, user) {
-        element.replaceChildren();
+    function formatFileSize(bytes) {
+        const value = Number(bytes || 0);
 
-        if (user && user.profilePhoto) {
+        if (!value) return "0 B";
+        if (value < 1024) return value + " B";
+        if (value < 1024 * 1024) {
+            return (value / 1024).toFixed(1) + " KB";
+        }
+
+        return (value / (1024 * 1024)).toFixed(1) + " MB";
+    }
+
+    function previewText(message, max = 80) {
+        if (!message) return "";
+
+        let value = "";
+
+        if (message.text) {
+            value = String(message.text)
+                .replace(/\s+/g, " ")
+                .trim();
+        } else if (message.mediaKind === "video") {
+            value = "Video";
+        } else if (message.mediaKind === "image") {
+            value = "Photo";
+        } else if (message.isDeleted) {
+            value = "Message deleted";
+        }
+
+        if (value.length > max) {
+            return value.slice(0, max - 1) + "…";
+        }
+
+        return value;
+    }
+
+    function setAvatar(element, user) {
+        if (!element) return;
+
+        element.replaceChildren();
+        element.classList.toggle(
+            "has-profile-photo",
+            Boolean(user?.profilePhoto)
+        );
+
+        if (user?.profilePhoto) {
             const image = document.createElement("img");
             image.src = user.profilePhoto;
             image.alt = "";
@@ -113,14 +209,49 @@
         }
 
         element.textContent = initials(
-            user && (user.nickname || user.displayName || user.username)
+            user?.nickname ||
+            user?.displayName ||
+            user?.username
         );
     }
 
-    function currentConversation() {
+    function activeConversation() {
         return state.conversations.find(
             (item) => item.username === state.activeConversation
         ) || null;
+    }
+
+    function findMessage(messageId) {
+        return state.messages.find(
+            (item) => String(item.id) === String(messageId)
+        ) || null;
+    }
+
+    function renderSearchStatus() {
+        const element = get("dm-message-search-count");
+        if (!element) return;
+
+        const query = state.messageSearch.trim().toLowerCase();
+
+        if (!query) {
+            element.textContent = "";
+            return;
+        }
+
+        const count = state.messages.filter((message) => {
+            const textMatch = String(message.text || "")
+                .toLowerCase()
+                .includes(query);
+
+            const mediaMatch = String(message.mediaName || "")
+                .toLowerCase()
+                .includes(query);
+
+            return textMatch || mediaMatch;
+        }).length;
+
+        element.textContent =
+            count + "/" + state.messages.length;
     }
 
     function renderConversationList() {
@@ -147,29 +278,39 @@
         }
 
         if (state.loadingConversations) {
-            const loadingWrap = make("div", "dm-list-skeletons");
-            loadingWrap.setAttribute("aria-label", "Loading conversations");
+            const wrap = make("div", "dm-list-skeletons");
+            wrap.setAttribute("aria-label", "Loading conversations");
 
             for (let i = 0; i < 4; i += 1) {
-                const skeleton = make("div", "dm-conversation-skeleton");
-                skeleton.append(
+                const row = make("div", "dm-conversation-skeleton");
+                row.append(
                     make("span", "dm-skeleton-avatar"),
                     make("span", "dm-skeleton-copy")
                 );
-                loadingWrap.appendChild(skeleton);
+                wrap.appendChild(row);
             }
 
-            list.appendChild(loadingWrap);
+            list.appendChild(wrap);
             return;
         }
 
         if (state.conversationError) {
-            const box = make("div", "dm-list-state dm-list-state-error");
-            const mark = make("span", "dm-list-state-mark dm-state-error-icon");
+            const box = make(
+                "div",
+                "dm-list-state dm-list-state-error"
+            );
+
+            const mark = make(
+                "span",
+                "dm-list-state-mark"
+            );
             mark.appendChild(makeIcon("warning"));
-            box.appendChild(mark);
-            box.appendChild(make("strong", "", "Messages are unavailable"));
-            box.appendChild(make("small", "", state.conversationError));
+
+            box.append(
+                mark,
+                make("strong", "", "Messages are unavailable"),
+                make("small", "", state.conversationError)
+            );
 
             const retry = iconButton(
                 "dm-inline-button dm-icon-button-with-label",
@@ -178,8 +319,8 @@
             );
             retry.dataset.dmAction = "refresh-conversations";
             retry.appendChild(make("span", "", "Retry"));
-            box.appendChild(retry);
 
+            box.appendChild(retry);
             list.appendChild(box);
             return;
         }
@@ -188,107 +329,150 @@
             const box = make("div", "dm-list-state");
             const mark = make("span", "dm-list-state-mark");
             mark.appendChild(makeIcon("messages"));
+
             box.append(
                 mark,
-                make("strong", "", "No friends available")
-            );
-            box.appendChild(
+                make("strong", "", "No friends available"),
                 make(
                     "small",
                     "",
                     "Add a friend in Friends to start a direct message."
                 )
             );
+
             list.appendChild(box);
             return;
         }
 
-        const query = state.conversationSearch.trim().toLowerCase();
-        const visible = state.conversations.filter((item) => {
-            if (!query) return true;
+        const query =
+            state.conversationSearch.trim().toLowerCase();
 
-            return [
-                item.username,
-                item.displayName,
-                item.nickname,
-                item.latestMessage && item.latestMessage.text
-            ].some((value) =>
-                String(value || "").toLowerCase().includes(query)
-            );
-        });
+        const visible = state.conversations.filter(
+            (conversation) => {
+                if (!query) return true;
+
+                return [
+                    conversation.username,
+                    conversation.displayName,
+                    conversation.nickname,
+                    conversation.latestMessage?.text,
+                    conversation.latestMessage?.mediaKind
+                ].some((value) =>
+                    String(value || "")
+                        .toLowerCase()
+                        .includes(query)
+                );
+            }
+        );
 
         if (!visible.length) {
             const box = make("div", "dm-list-state");
             const mark = make("span", "dm-list-state-mark");
             mark.appendChild(makeIcon("search"));
+
             box.append(
                 mark,
-                make("strong", "", "No matching conversations")
-            );
-            box.appendChild(
+                make("strong", "", "No matching conversations"),
                 make(
                     "small",
                     "",
                     "Try another display name or username."
                 )
             );
+
             list.appendChild(box);
             return;
         }
 
         visible.forEach((conversation) => {
-            const row = button(
+            const row = make(
+                "button",
                 "dm-conversation" +
-                (state.activeConversation === conversation.username
-                    ? " is-active"
-                    : ""),
-                "",
-                "Open " +
-                (conversation.displayName || conversation.username)
+                    (conversation.username === state.activeConversation
+                        ? " is-active"
+                        : "") +
+                    (Number(conversation.unreadCount || 0) > 0
+                        ? " has-unread"
+                        : "")
             );
 
+            row.type = "button";
             row.dataset.username = conversation.username;
+            row.title =
+                "Open " +
+                (conversation.nickname ||
+                    conversation.displayName ||
+                    conversation.username);
+            row.setAttribute(
+                "aria-label",
+                row.title
+            );
 
-            const avatar = make("span", "dm-conversation-avatar");
+            const avatar = make(
+                "span",
+                "dm-conversation-avatar"
+            );
             setAvatar(avatar, conversation);
 
-            const copy = make("span", "dm-conversation-copy");
-            copy.appendChild(
+            const copy = make(
+                "span",
+                "dm-conversation-copy"
+            );
+
+            copy.append(
                 make(
                     "strong",
                     "",
                     conversation.nickname ||
-                    conversation.displayName ||
-                    conversation.username
-                )
-            );
-            copy.appendChild(
+                        conversation.displayName ||
+                        conversation.username
+                ),
                 make("small", "", "-" + conversation.username)
             );
 
-            const latestText =
-                conversation.latestMessage &&
-                conversation.latestMessage.text
-                    ? conversation.latestMessage.text
-                        .replace(/\s+/g, " ")
-                        .trim()
-                    : "No messages yet";
+            const latest = conversation.latestMessage;
+            const latestValue = latest
+                ? previewText(latest)
+                : "No messages yet";
 
-            copy.appendChild(
-                make("span", "dm-conversation-preview", latestText)
+            const preview = make(
+                "span",
+                "dm-conversation-preview"
             );
 
-            const meta = make("span", "dm-conversation-meta");
+            if (latest?.mediaKind) {
+                const mediaIcon = make(
+                    "span",
+                    "dm-conversation-preview-icon"
+                );
+                mediaIcon.appendChild(
+                    makeIcon(
+                        latest.mediaKind === "video"
+                            ? "video"
+                            : "image"
+                    )
+                );
+                preview.append(
+                    mediaIcon,
+                    make("span", "", latestValue)
+                );
+            } else {
+                preview.textContent = latestValue;
+            }
 
-            if (
-                conversation.latestMessage &&
-                conversation.latestMessage.createdAt
-            ) {
+            copy.appendChild(preview);
+
+            const meta = make(
+                "span",
+                "dm-conversation-meta"
+            );
+
+            if (latest?.createdAt) {
                 meta.appendChild(
                     make(
                         "time",
                         "",
-                        time(conversation.latestMessage.createdAt)
+                        formatTime(latest.createdAt)
                     )
                 );
             }
@@ -314,18 +498,29 @@
         const title = get("dm-chat-title");
         const username = get("dm-chat-username");
         const avatar = get("dm-chat-avatar");
+        const infoButton = get("dm-info-button");
+        const nicknameButton = get("dm-nickname-button");
+        const pinsButton = get("dm-pins-button");
 
         if (!state.activeConversation) {
             if (title) title.textContent = "Select a friend";
-            if (username) username.textContent = "Choose a conversation to begin.";
+            if (username) {
+                username.textContent =
+                    "Choose a conversation to begin.";
+            }
             if (avatar) {
                 avatar.replaceChildren();
+                avatar.classList.remove("has-profile-photo");
                 avatar.textContent = "DM";
             }
+            if (infoButton) infoButton.disabled = true;
+            if (nicknameButton) nicknameButton.disabled = true;
+            if (pinsButton) pinsButton.disabled = true;
             return;
         }
 
-        const conversation = currentConversation();
+        const conversation = activeConversation();
+
         if (!conversation) return;
 
         if (title) {
@@ -336,52 +531,44 @@
         }
 
         if (username) {
-            username.textContent = "-" + conversation.username;
+            username.textContent =
+                "-" + conversation.username;
         }
 
         if (avatar) {
             setAvatar(avatar, conversation);
         }
+
+        if (infoButton) infoButton.disabled = false;
+        if (nicknameButton) nicknameButton.disabled = false;
+        if (pinsButton) pinsButton.disabled = false;
     }
 
-    function renderStatus() {
+    function renderMessageStatus() {
         const element = get("dm-message-status");
         if (!element) return;
 
         if (!state.activeConversation) {
             element.textContent = "";
-        } else if (state.loadingMessages) {
-            element.textContent = "LOADING";
-        } else if (state.messageError) {
-            element.textContent = "ERROR";
-        } else {
-            element.textContent =
-                state.messages.length + " " +
-                (state.messages.length === 1 ? "message" : "messages");
+            return;
         }
-    }
 
-    function visibleMessages() {
-        const query = state.messageSearch.trim().toLowerCase();
+        if (state.loadingMessages) {
+            element.textContent = "SYNCING";
+            return;
+        }
 
-        if (!query) return state.messages;
-
-        return state.messages.filter((message) =>
-            String(message.text || "").toLowerCase().includes(query)
-        );
-    }
-
-    function renderSearchCount() {
-        const element = get("dm-message-search-count");
-        if (!element) return;
-
-        if (!state.messageSearch.trim()) {
-            element.textContent = "";
+        if (state.messageError) {
+            element.textContent = "ERROR";
             return;
         }
 
         element.textContent =
-            visibleMessages().length + "/" + state.messages.length + " matches";
+            state.messages.length +
+            " " +
+            (state.messages.length === 1
+                ? "message"
+                : "messages");
     }
 
     function renderReactionStrip(message) {
@@ -391,224 +578,746 @@
 
         if (!reactions.length) return null;
 
-        const strip = make("div", "dm-reaction-strip");
+        const strip = make(
+            "div",
+            "dm-reaction-strip"
+        );
 
         reactions.forEach((reaction) => {
-            const item = button(
-                "dm-reaction-pill" + (reaction.reacted ? " is-reacted" : ""),
-                "",
-                "Toggle " + reaction.emoji + " reaction"
-            );
-            item.dataset.dmReaction = reaction.emoji;
-            item.dataset.messageId = message.id;
-
-            item.append(
-                make("span", "dm-reaction-emoji", reaction.emoji),
-                make("span", "dm-reaction-count", String(reaction.count))
+            const pill = textButton(
+                "dm-reaction-pill" +
+                    (reaction.reacted ? " is-reacted" : ""),
+                String(reaction.emoji || ""),
+                reaction.reacted
+                    ? "Remove your reaction"
+                    : "React with " + reaction.emoji
             );
 
-            strip.appendChild(item);
+            pill.dataset.dmReaction =
+                reaction.emoji;
+            pill.dataset.messageId =
+                message.id;
+
+            strip.appendChild(pill);
         });
 
         return strip;
     }
 
+    function renderReplyReference(message) {
+        if (!message?.replyToId) return null;
+
+        const reference = make(
+            "button",
+            "dm-reply-reference"
+        );
+
+        reference.type = "button";
+        reference.dataset.replyMessageId =
+            String(message.replyToId);
+        reference.setAttribute(
+            "aria-label",
+            "Jump to replied message"
+        );
+        reference.title =
+            "Jump to original message";
+
+        const bar = make(
+            "span",
+            "dm-reply-reference-bar"
+        );
+
+        const content = make(
+            "span",
+            "dm-reply-reference-copy"
+        );
+
+        content.appendChild(
+            make(
+                "strong",
+                "",
+                "@" +
+                    String(
+                        message.replySender ||
+                        "user"
+                    )
+            )
+        );
+
+        if (message.replyDeleted) {
+            content.appendChild(
+                make(
+                    "span",
+                    "dm-reply-reference-text is-deleted",
+                    "Original message deleted"
+                )
+            );
+        } else {
+            const text =
+                message.replyText ||
+                (message.replyMediaKind === "video"
+                    ? "Video"
+                    : message.replyMediaKind === "image"
+                        ? "Photo"
+                        : message.replyMediaName
+                            ? "Attachment"
+                            : "Original message");
+
+            const textRow = make(
+                "span",
+                "dm-reply-reference-text"
+            );
+
+            if (message.replyMediaKind) {
+                const mediaMark = make(
+                    "span",
+                    "dm-reply-reference-media-icon"
+                );
+                mediaMark.appendChild(
+                    makeIcon(
+                        message.replyMediaKind ===
+                            "video"
+                            ? "video"
+                            : "image"
+                    )
+                );
+                textRow.append(
+                    mediaMark,
+                    make("span", "", text)
+                );
+            } else {
+                textRow.textContent = text;
+            }
+
+            content.appendChild(textRow);
+        }
+
+        reference.append(bar, content);
+        return reference;
+    }
+
+    function renderMedia(message) {
+        if (!message.mediaUrl || message.isDeleted) {
+            return null;
+        }
+
+        const wrapper = make(
+            "div",
+            "dm-message-media"
+        );
+
+        if (message.mediaKind === "video") {
+            const video = document.createElement("video");
+            video.className =
+                "dm-message-video";
+            video.src = message.mediaUrl;
+            video.controls = true;
+            video.preload = "metadata";
+            video.playsInline = true;
+            video.setAttribute(
+                "aria-label",
+                message.mediaName ||
+                    "Shared video"
+            );
+
+            wrapper.appendChild(video);
+        } else {
+            const button = make(
+                "button",
+                "dm-message-image-button"
+            );
+            button.type = "button";
+            button.dataset.dmAction =
+                "open-media";
+            button.dataset.messageId =
+                message.id;
+            button.title =
+                "Open photo";
+
+            const image =
+                document.createElement("img");
+
+            image.className =
+                "dm-message-image";
+            image.src = message.mediaUrl;
+            image.alt =
+                message.mediaName ||
+                "Shared photo";
+            image.loading = "lazy";
+
+            button.appendChild(image);
+            wrapper.appendChild(button);
+        }
+
+        if (message.mediaName) {
+            const meta = make(
+                "div",
+                "dm-message-media-meta"
+            );
+
+            const icon = make("span", "");
+            icon.appendChild(
+                makeIcon(
+                    message.mediaKind ===
+                        "video"
+                        ? "video"
+                        : "image"
+                )
+            );
+
+            meta.append(
+                icon,
+                make(
+                    "span",
+                    "",
+                    message.mediaName
+                ),
+                make(
+                    "small",
+                    "",
+                    formatFileSize(
+                        message.mediaSize
+                    )
+                )
+            );
+
+            wrapper.appendChild(meta);
+        }
+
+        return wrapper;
+    }
+
     function renderMessageActions(message) {
-        const tools = make("div", "dm-message-actions");
-        const quick = ["👍", "❤️", "😂", "😮", "😢", "🔥"];
+        const actions = make(
+            "div",
+            "dm-message-actions"
+        );
 
-        quick.forEach((emoji) => {
-            const current = (message.reactions || []).find(
-                (reaction) => reaction.emoji === emoji
-            );
+        const reply = iconButton(
+            "dm-message-tool",
+            "reply",
+            "Reply"
+        );
+        reply.dataset.dmAction = "reply";
+        reply.dataset.messageId = message.id;
+        actions.appendChild(reply);
 
-            const item = button(
-                "dm-message-tool dm-message-quick-reaction" +
-                (current && current.reacted ? " is-reacted" : ""),
-                emoji,
-                "React with " + emoji
-            );
+        ["❤️", "😂", "😮", "😢", "😡", "👍"]
+            .forEach((emoji) => {
+                const existing =
+                    (message.reactions || []).find(
+                        (reaction) =>
+                            reaction.emoji === emoji
+                    );
 
-            item.dataset.dmQuickReaction = emoji;
-            item.dataset.messageId = message.id;
-            tools.appendChild(item);
-        });
+                const reaction = textButton(
+                    "dm-message-tool dm-message-quick-reaction" +
+                        (existing?.reacted
+                            ? " is-reacted"
+                            : ""),
+                    emoji,
+                    existing?.reacted
+                        ? "Remove your reaction"
+                        : "React with " + emoji
+                );
 
-        const emojiPicker = iconButton(
+                reaction.dataset.dmQuickReaction =
+                    emoji;
+                reaction.dataset.messageId =
+                    message.id;
+
+                actions.appendChild(reaction);
+            });
+
+        const emoji = iconButton(
             "dm-message-tool",
             "emoji",
             "Open full emoji picker"
         );
-        emojiPicker.dataset.dmEmojiPicker = "open";
-        emojiPicker.dataset.messageId = message.id;
-        tools.appendChild(emojiPicker);
+        emoji.dataset.dmEmojiPicker = "open";
+        emoji.dataset.messageId = message.id;
+        actions.appendChild(emoji);
 
         const copy = iconButton(
             "dm-message-tool",
             "copy",
             "Copy message"
         );
-        copy.dataset.dmAction = "copy-message";
-        copy.dataset.messageId = message.id;
-        tools.appendChild(copy);
-
-        const pin = iconButton(
-            "dm-message-tool" +
-            (message.isPinned ? " is-active" : ""),
-            "pin",
-            message.isPinned ? "Unpin message" : "Pin message"
-        );
-        pin.dataset.dmAction = "toggle-pin";
-        pin.dataset.messageId = message.id;
-        tools.appendChild(pin);
+        copy.dataset.dmAction =
+            "copy-message";
+        copy.dataset.messageId =
+            message.id;
+        actions.appendChild(copy);
 
         const forward = iconButton(
             "dm-message-tool",
             "forward",
             "Forward message"
         );
-        forward.dataset.dmAction = "forward-message";
-        forward.dataset.messageId = message.id;
-        tools.appendChild(forward);
+        forward.dataset.dmAction =
+            "forward-message";
+        forward.dataset.messageId =
+            message.id;
+        actions.appendChild(forward);
 
-        if (message.sender === loggedInUser()) {
+        const pin = iconButton(
+            "dm-message-tool" +
+                (message.isPinned
+                    ? " is-active"
+                    : ""),
+            "pin",
+            message.isPinned
+                ? "Unpin message"
+                : "Pin message"
+        );
+        pin.dataset.dmAction =
+            "toggle-pin";
+        pin.dataset.messageId =
+            message.id;
+        actions.appendChild(pin);
+
+        const more = iconButton(
+            "dm-message-tool",
+            "moreVertical",
+            "More message actions"
+        );
+        more.dataset.dmAction =
+            "context-menu";
+        more.dataset.messageId =
+            message.id;
+        actions.appendChild(more);
+
+        if (message.sender === currentUsername()) {
             const edit = iconButton(
                 "dm-message-tool",
                 "edit",
                 "Edit message"
             );
-            edit.dataset.dmAction = "edit-message";
-            edit.dataset.messageId = message.id;
-            tools.appendChild(edit);
+            edit.dataset.dmAction =
+                "edit-message";
+            edit.dataset.messageId =
+                message.id;
+            actions.appendChild(edit);
 
             const remove = iconButton(
                 "dm-message-tool dm-danger-tool",
                 "delete",
                 "Delete message"
             );
-            remove.dataset.dmAction = "delete-message";
-            remove.dataset.messageId = message.id;
-            tools.appendChild(remove);
+            remove.dataset.dmAction =
+                "delete-message";
+            remove.dataset.messageId =
+                message.id;
+            actions.appendChild(remove);
         }
 
-        return tools;
+        return actions;
     }
 
     function renderMessage(message) {
-        const sent = message.sender === loggedInUser();
+        const sent =
+            message.sender ===
+            currentUsername();
+
         const row = make(
             "article",
-            "dm-message-row " + (sent ? "is-sent" : "is-received")
+            "dm-message-row " +
+                (sent
+                    ? "is-sent"
+                    : "is-received") +
+                (message.isDeleted
+                    ? " is-deleted"
+                    : "")
         );
-        row.dataset.messageId = message.id;
 
-        const query = state.messageSearch.trim().toLowerCase();
-        if (query && String(message.text || "").toLowerCase().includes(query)) {
-            row.classList.add("is-search-match");
+        row.dataset.messageId =
+            String(message.id);
+
+        const bubble = make(
+            "div",
+            "dm-message-bubble"
+        );
+
+        const reference =
+            renderReplyReference(message);
+
+        if (reference) {
+            bubble.appendChild(reference);
         }
 
-        const bubble = make("div", "dm-message-bubble");
-        bubble.appendChild(make("p", "dm-message-text", message.text));
-        bubble.appendChild(renderMessageActions(message));
+        if (message.isDeleted) {
+            const deleted = make(
+                "div",
+                "dm-deleted-message"
+            );
 
-        const reactionStrip = renderReactionStrip(message);
-        if (reactionStrip) row.appendChild(reactionStrip);
+            const icon = make("span", "dm-deleted-icon");
+            icon.appendChild(
+                makeIcon("delete")
+            );
 
-        const meta = make("div", "dm-message-meta");
-        meta.appendChild(make("time", "", time(message.createdAt)));
+            deleted.append(
+                icon,
+                make(
+                    "span",
+                    "",
+                    "Message deleted"
+                )
+            );
+
+            bubble.appendChild(deleted);
+        } else {
+            const media =
+                renderMedia(message);
+
+            if (media) {
+                bubble.appendChild(media);
+            }
+
+            if (message.text) {
+                bubble.appendChild(
+                    make(
+                        "p",
+                        "dm-message-text",
+                        message.text
+                    )
+                );
+            }
+        }
+
+        bubble.appendChild(
+            renderMessageActions(message)
+        );
+
+        row.appendChild(bubble);
+
+        const meta = make(
+            "div",
+            "dm-message-meta"
+        );
+
+        meta.appendChild(
+            make(
+                "time",
+                "",
+                formatTime(message.createdAt)
+            )
+        );
 
         if (message.editedAt) {
-            meta.appendChild(make("span", "dm-edited-label", "Edited"));
+            meta.appendChild(
+                make(
+                    "span",
+                    "dm-edited-label",
+                    "Edited"
+                )
+            );
+        }
+
+        if (message.sender === currentUsername()) {
+            const status = make(
+                "span",
+                "dm-message-status"
+            );
+
+            const readable =
+                message.readAt
+                    ? "Read"
+                    : "Sent";
+
+            status.title =
+                "Message status: " +
+                readable;
+            status.setAttribute(
+                "aria-label",
+                readable
+            );
+
+            status.appendChild(
+                makeIcon(
+                    message.readAt
+                        ? "checkDouble"
+                        : "check"
+                )
+            );
+
+            meta.appendChild(status);
         }
 
         if (message.isPinned) {
-            meta.appendChild(make("span", "dm-pinned-label", "Pinned"));
+            const pin = make(
+                "span",
+                "dm-pinned-label"
+            );
+            pin.appendChild(
+                makeIcon("pin")
+            );
+            pin.appendChild(
+                make(
+                    "span",
+                    "",
+                    "Pinned"
+                )
+            );
+            meta.appendChild(pin);
         }
 
-        row.append(bubble, meta);
+        row.appendChild(meta);
+
+        const reactions =
+            renderReactionStrip(message);
+
+        if (reactions) {
+            row.appendChild(reactions);
+        }
+
         return row;
     }
 
+    function visibleMessages() {
+        const query =
+            state.messageSearch.trim().toLowerCase();
+
+        if (!query) {
+            return state.messages;
+        }
+
+        return state.messages.filter(
+            (message) =>
+                String(
+                    message.text || ""
+                )
+                    .toLowerCase()
+                    .includes(query) ||
+                String(
+                    message.mediaName || ""
+                )
+                    .toLowerCase()
+                    .includes(query)
+        );
+    }
+
     function renderMessages() {
-        const list = get("dm-message-list");
+        const list = get(
+            "dm-message-list"
+        );
+
         if (!list) return;
 
+        const wasNearBottom =
+            list.scrollHeight -
+                list.scrollTop -
+                list.clientHeight <
+            90;
+
         list.replaceChildren();
-        renderSearchCount();
+        renderSearchStatus();
 
         if (!state.activeConversation) {
-            list.appendChild(
-                make("div", "dm-chat-state", "Select a friend to open a conversation.")
+            const box = make(
+                "div",
+                "dm-chat-state"
             );
+            const mark = make(
+                "span",
+                "dm-chat-state-mark"
+            );
+            mark.appendChild(
+                makeIcon("messages")
+            );
+
+            box.append(
+                mark,
+                make(
+                    "strong",
+                    "",
+                    "Select a friend"
+                ),
+                make(
+                    "p",
+                    "",
+                    "Choose a conversation to begin messaging."
+                )
+            );
+
+            list.appendChild(box);
             return;
         }
 
         if (state.loadingMessages) {
-            const loading = make("div", "dm-message-skeletons");
-            loading.setAttribute("role", "status");
+            const wrap = make(
+                "div",
+                "dm-message-skeletons"
+            );
+            wrap.setAttribute(
+                "role",
+                "status"
+            );
+            wrap.setAttribute(
+                "aria-label",
+                "Loading messages"
+            );
+
             for (let i = 0; i < 5; i += 1) {
-                const row = make("div", "dm-message-skeleton " + (i % 2 ? "is-left" : "is-right"));
-                row.appendChild(make("span", "dm-skeleton-bubble"));
-                loading.appendChild(row);
+                const row = make(
+                    "div",
+                    "dm-message-skeleton " +
+                        (i % 2
+                            ? "is-left"
+                            : "is-right")
+                );
+
+                row.appendChild(
+                    make(
+                        "span",
+                        "dm-skeleton-bubble"
+                    )
+                );
+
+                wrap.appendChild(row);
             }
-            list.appendChild(loading);
+
+            list.appendChild(wrap);
             return;
         }
 
         if (state.messageError) {
-            const box = make("div", "dm-chat-state dm-chat-state-error");
-            box.appendChild(make("strong", "", "Conversation unavailable"));
-            box.appendChild(make("p", "", state.messageError));
+            const box = make(
+                "div",
+                "dm-chat-state dm-chat-state-error"
+            );
 
-            const retry = iconButton("dm-inline-button dm-icon-button-with-label", "retry", "Retry loading messages"); retry.appendChild(make("span", "", "Retry"));
-            retry.dataset.dmAction = "retry-conversation";
-            box.appendChild(retry);
+            const mark = make(
+                "span",
+                "dm-chat-state-mark"
+            );
+            mark.appendChild(
+                makeIcon("warning")
+            );
 
-            list.appendChild(box);
-            return;
-        }
-
-        if (!state.messages.length) {
-            const box = make("div", "dm-chat-state");
-            const mark = make("span", "dm-chat-state-mark");
-            mark.appendChild(makeIcon("messages"));
             box.append(
                 mark,
-                make("strong", "", "No messages yet")
+                make(
+                    "strong",
+                    "",
+                    "Conversation unavailable"
+                ),
+                make(
+                    "p",
+                    "",
+                    state.messageError
+                )
             );
-            box.appendChild(
-                make("p", "", "Send a text message to start the conversation.")
+
+            const retry = iconButton(
+                "dm-inline-button dm-icon-button-with-label",
+                "retry",
+                "Retry loading messages"
             );
+
+            retry.dataset.dmAction =
+                "retry-conversation";
+            retry.appendChild(
+                make("span", "", "Retry")
+            );
+
+            box.appendChild(retry);
             list.appendChild(box);
             return;
         }
 
-        const visible = visibleMessages();
+        const messages = visibleMessages();
 
-        if (!visible.length) {
-            const box = make("div", "dm-chat-state");
-            const mark = make("span", "dm-chat-state-mark");
-            mark.appendChild(makeIcon("search"));
-            box.append(mark, make("strong", "", "No matching messages"));
-            box.appendChild(make("p", "", "Try a different search term."));
+        if (!state.messages.length) {
+            const box = make(
+                "div",
+                "dm-chat-state"
+            );
+            const mark = make(
+                "span",
+                "dm-chat-state-mark"
+            );
+            mark.appendChild(
+                makeIcon("messages")
+            );
+
+            box.append(
+                mark,
+                make(
+                    "strong",
+                    "",
+                    "No messages yet"
+                ),
+                make(
+                    "p",
+                    "",
+                    "Send a message to start the conversation."
+                )
+            );
+
             list.appendChild(box);
             return;
         }
 
-        let lastDay = "";
+        if (!messages.length) {
+            const box = make(
+                "div",
+                "dm-chat-state"
+            );
+            const mark = make(
+                "span",
+                "dm-chat-state-mark"
+            );
+            mark.appendChild(
+                makeIcon("search")
+            );
 
-        visible.forEach((message) => {
-            const currentDay = day(message.createdAt);
+            box.append(
+                mark,
+                make(
+                    "strong",
+                    "",
+                    "No matching messages"
+                ),
+                make(
+                    "p",
+                    "",
+                    "Try another search term."
+                )
+            );
 
-            if (currentDay && currentDay !== lastDay) {
+            list.appendChild(box);
+            return;
+        }
+
+        let previousDay = "";
+
+        messages.forEach((message) => {
+            const currentDay =
+                formatDay(message.createdAt);
+
+            if (
+                currentDay &&
+                currentDay !== previousDay
+            ) {
                 list.appendChild(
-                    make("div", "dm-date-separator", currentDay)
+                    make(
+                        "div",
+                        "dm-date-separator",
+                        currentDay
+                    )
                 );
-                lastDay = currentDay;
+                previousDay = currentDay;
             }
 
-            list.appendChild(renderMessage(message));
+            list.appendChild(
+                renderMessage(message)
+            );
         });
+
+        if (wasNearBottom) {
+            list.scrollTop = list.scrollHeight;
+        }
     }
 
     function renderPinnedPanel() {
@@ -620,112 +1329,223 @@
         list.replaceChildren();
 
         if (state.loadingPins) {
-            const loading = make("div", "dm-list-skeletons");
-            loading.setAttribute("aria-label", "Loading pinned messages");
+            const loading = make(
+                "div",
+                "dm-list-skeletons"
+            );
 
             for (let i = 0; i < 3; i += 1) {
-                const skeleton = make("div", "dm-pin-skeleton");
-                skeleton.append(
-                    make("span", "dm-skeleton-line dm-skeleton-line-wide"),
-                    make("span", "dm-skeleton-line")
+                const row = make(
+                    "div",
+                    "dm-pin-skeleton"
                 );
-                loading.appendChild(skeleton);
+
+                row.append(
+                    make(
+                        "span",
+                        "dm-skeleton-line dm-skeleton-line-wide"
+                    ),
+                    make(
+                        "span",
+                        "dm-skeleton-line"
+                    )
+                );
+
+                loading.appendChild(row);
             }
 
             list.appendChild(loading);
         } else if (!state.pinnedMessages.length) {
-            const empty = make("div", "dm-panel-state");
-            const mark = make("span", "dm-list-state-mark");
-            mark.appendChild(makeIcon("pin"));
+            const empty = make(
+                "div",
+                "dm-panel-state"
+            );
+            const mark = make(
+                "span",
+                "dm-list-state-mark"
+            );
+            mark.appendChild(
+                makeIcon("pin")
+            );
+
             empty.append(
                 mark,
-                make("strong", "", "No pinned messages")
-            );
-            empty.appendChild(
+                make(
+                    "strong",
+                    "",
+                    "No pinned messages"
+                ),
                 make(
                     "small",
                     "",
-                    "Pinned messages from this conversation will appear here."
+                    "Pinned messages in this conversation will appear here."
                 )
             );
+
             list.appendChild(empty);
         } else {
-            state.pinnedMessages.forEach((message) => {
-                const item = button(
-                    "dm-pinned-item",
-                    "",
-                    "Jump to pinned message"
-                );
-                item.dataset.dmAction = "jump-to-message";
-                item.dataset.messageId = message.id;
+            state.pinnedMessages.forEach(
+                (message) => {
+                    const row = make(
+                        "article",
+                        "dm-pinned-item"
+                    );
+                    row.dataset.messageId =
+                        String(message.id);
 
-                const pinIcon = make("span", "dm-pinned-icon");
-                pinIcon.appendChild(makeIcon("pin"));
+                    const icon =
+                        make(
+                            "span",
+                            "dm-pinned-icon"
+                        );
+                    icon.appendChild(
+                        makeIcon("pin")
+                    );
 
-                const copy = make("span", "dm-pinned-copy");
-                copy.append(
-                    make("span", "dm-pinned-text", message.text),
-                    make(
-                        "small",
-                        "dm-pinned-time",
-                        time(message.pinnedAt || message.createdAt)
-                    )
-                );
+                    const copy =
+                        make(
+                            "div",
+                            "dm-pinned-copy"
+                        );
 
-                item.append(pinIcon, copy);
-                list.appendChild(item);
-            });
+                    copy.append(
+                        make(
+                            "strong",
+                            "",
+                            message.sender ===
+                                currentUsername()
+                                ? "You"
+                                : "@" +
+                                    message.sender
+                        ),
+                        make(
+                            "span",
+                            "dm-pinned-text",
+                            previewText(
+                                message,
+                                120
+                            ) ||
+                                "Message"
+                        ),
+                        make(
+                            "small",
+                            "dm-pinned-time",
+                            formatTime(
+                                message.pinnedAt ||
+                                    message.createdAt
+                            )
+                        )
+                    );
+
+                    const unpin =
+                        iconButton(
+                            "dm-pinned-unpin",
+                            "pin",
+                            "Unpin message"
+                        );
+                    unpin.dataset.dmAction =
+                        "unpin-message";
+                    unpin.dataset.messageId =
+                        String(message.id);
+
+                    row.append(
+                        icon,
+                        copy,
+                        unpin
+                    );
+
+                    list.appendChild(row);
+                }
+            );
         }
 
-        panel.hidden = !panel.classList.contains("is-open");
+        panel.hidden =
+            !panel.classList.contains(
+                "is-open"
+            );
     }
 
-
-
     const EMOJI = [
-        "😀","😃","😄","😁","😆","😅","😂","🤣","😊","😇","🙂","🙃","😉","😌","😍","🥰","😘","😗","😙","😚",
-        "😋","😛","😝","😜","🤪","🤨","🧐","🤓","😎","🤩","🥳","😏","😒","😞","😔","😟","😕","🙁","☹️","😣",
-        "😖","😫","😩","🥺","😢","😭","😤","😠","😡","🤬","🤯","😳","🥵","🥶","😱","😨","😰","😥","😓","🤗",
-        "🤔","🫡","🤭","🫢","🫣","🤫","🤥","😶","🫠","😐","😑","😬","🙄","😯","😦","😧","😮","😲","🥱","😴",
-        "🤤","😪","😵","🤐","🥴","🤢","🤮","🤧","😷","🤒","🤕","🤑","🤠","😈","👿","👹","👺","🤡","💩","👻",
-        "💀","☠️","👽","👾","🤖","🎃","😺","😸","😹","😻","😼","😽","🙀","😿","😾","🙈","🙉","🙊","💋","💯",
-        "💥","💫","💦","💨","🔥","⭐","🌟","✨","⚡","💡","🎉","🎊","❤️","🧡","💛","💚","💙","💜","🖤","🤍",
-        "🤎","💔","❣️","💕","💞","💓","💗","💖","💘","💝","💟","👍","👎","👏","🙌","🫶","🤝","🙏","💪","👀",
-        "👋","✌️","🤞","🤟","🤘","👌","🤌","🤏","🫰","☝️","👇","👉","👈","✍️","💅","🤳","🧠","💭","💬","✅",
-        "❌","⚠️","❓","❗","‼️","⁉️","➕","➖","🎯","🚀","🌙","☀️","🌈","🌊","🍕","🍔","🍟","🍎","🍉","🍓",
-        "☕","🍩","🎂","🍪","⚽","🏀","🏆","🎮","🎧","🎵","🎸","📚","💻","📱","⌚","🔒","🔑","🔔","📌","✏️"
+        "😀","😃","😄","😁","😆","😅","😂","🤣","😊","😇","🙂","🙃",
+        "😉","😌","😍","🥰","😘","😗","😙","😚","😋","😛","😝","😜",
+        "🤪","🤨","🧐","🤓","😎","🤩","🥳","😏","😒","😞","😔","😟",
+        "😕","🙁","☹️","😣","😖","😫","😩","🥺","😢","😭","😤","😠",
+        "😡","🤬","🤯","😳","🥵","🥶","😱","😨","😰","😥","😓","🤗",
+        "🤔","🫡","🤭","🫢","🫣","🤫","🤥","😶","🫠","😐","😑","😬",
+        "🙄","😯","😦","😧","😮","😲","🥱","😴","🤤","😪","😵","🤐",
+        "🥴","🤢","🤮","🤧","😷","🤒","🤕","🤑","🤠","😈","👿","👹",
+        "👺","🤡","💩","👻","💀","☠️","👽","👾","🤖","🎃","😺","😸",
+        "😹","😻","😼","😽","🙀","😿","😾","🙈","🙉","🙊","💯","💥",
+        "💫","💦","💨","🔥","⭐","🌟","✨","⚡","💡","🎉","🎊","❤️",
+        "🧡","💛","💚","💙","💜","🖤","🤍","🤎","💔","❣️","💕","💞",
+        "💓","💗","💖","💘","💝","💟","👍","👎","👏","🙌","🫶","🤝",
+        "🙏","💪","👀","👋","✌️","🤞","🤟","🤘","👌","🤌","🤏","🫰",
+        "☝️","👇","👉","👈","✍️","💅","🤳","🧠","💭","💬","✅","❌",
+        "⚠️","❓","❗","‼️","⁉️","➕","➖","🎯","🚀","🌙","☀️","🌈",
+        "🌊","🍕","🍔","🍟","🍎","🍉","🍓","☕","🍩","🎂","🍪","⚽",
+        "🏀","🏆","🎮","🎧","🎵","🎸","📚","💻","📱","⌚","🔒","🔑",
+        "🔔","📌","✏️"
     ];
 
     function renderEmojiPicker() {
-        const picker = get("dm-emoji-picker");
+        const picker = get(
+            "dm-emoji-picker"
+        );
+
         if (!picker) return;
 
         picker.replaceChildren();
 
-        const header = make("div", "dm-emoji-picker-header");
-        header.appendChild(make("strong", "", "Emoji"));
+        const header = make(
+            "div",
+            "dm-emoji-picker-header"
+        );
 
-        const close = iconButton("dm-panel-close", "close", "Close emoji picker");
-        close.dataset.dmAction = "close-emoji-picker";
+        header.appendChild(
+            make("strong", "", "Emoji")
+        );
+
+        const close = iconButton(
+            "dm-panel-close",
+            "close",
+            "Close emoji picker"
+        );
+
+        close.dataset.dmAction =
+            "close-emoji-picker";
+
         header.appendChild(close);
 
-        const searchWrap = make("label", "dm-picker-search");
-        searchWrap.setAttribute("aria-label", "Search emoji");
-        const searchIcon = make("span", "dm-search-icon");
-        searchIcon.appendChild(makeIcon("search"));
-        const search = document.createElement("input");
-        search.type = "search";
+        const search = document.createElement(
+            "input"
+        );
         search.id = "dm-emoji-search";
-        search.placeholder = "Search emoji";
+        search.type = "search";
+        search.placeholder =
+            "Search emoji";
         search.autocomplete = "off";
-        searchWrap.append(searchIcon, search);
-        header.appendChild(searchWrap);
+        search.setAttribute(
+            "aria-label",
+            "Search emoji"
+        );
 
-        const grid = make("div", "dm-emoji-grid");
+        header.appendChild(search);
 
-        EMOJI.forEach((item) => {
-            const option = button("dm-emoji-option", item, "Use " + item);
-            option.dataset.emoji = item;
+        const grid = make(
+            "div",
+            "dm-emoji-grid"
+        );
+
+        EMOJI.forEach((emoji) => {
+            const option = textButton(
+                "dm-emoji-option",
+                emoji,
+                "Insert " + emoji
+            );
+
+            option.dataset.emoji =
+                emoji;
+
             grid.appendChild(option);
         });
 
@@ -734,99 +1554,588 @@
     }
 
     function filterEmojiPicker(value) {
-        const query = String(value || "").trim();
-        document.querySelectorAll(".dm-emoji-option").forEach((item) => {
-            item.hidden =
-                Boolean(query) &&
-                !item.dataset.emoji.includes(query);
-        });
+        const query = String(value || "")
+            .trim();
+
+        get("dm-emoji-picker")
+            ?.querySelectorAll(
+                ".dm-emoji-option"
+            )
+            .forEach((option) => {
+                option.hidden =
+                    Boolean(query) &&
+                    !option.dataset.emoji.includes(
+                        query
+                    );
+            });
     }
 
-    function renderForwardModal() {
-        const modal = get("dm-forward-modal");
-        const list = get("dm-forward-list");
-        if (!modal || !list) return;
+    function renderForwardPanel() {
+        const panel = get(
+            "dm-forward-modal"
+        );
+        const list = get(
+            "dm-forward-list"
+        );
+
+        if (!panel || !list) return;
 
         list.replaceChildren();
 
-        if (!state.forwardModalOpen) {
-            modal.hidden = true;
+        if (!state.forwardPanelOpen) {
+            panel.hidden = true;
             return;
         }
 
-        state.conversations.forEach((conversation) => {
-            const target = button(
-                "dm-forward-target",
-                "",
-                "Forward message to " +
-                (conversation.displayName || conversation.username)
-            );
-            target.dataset.username = conversation.username;
+        const source =
+            findMessage(state.forwardMessageId);
 
-            const avatar = make("span", "dm-forward-avatar");
-            setAvatar(avatar, conversation);
+        if (source) {
+            const preview =
+                get("dm-forward-preview");
 
-            const copy = make("span", "dm-forward-copy");
-            copy.append(
-                make(
-                    "strong",
-                    "",
-                    conversation.nickname ||
-                    conversation.displayName ||
-                    conversation.username
-                ),
-                make("small", "", "-" + conversation.username)
-            );
+            if (preview) {
+                preview.replaceChildren();
 
-            target.append(avatar, copy);
-            list.appendChild(target);
-        });
+                if (source.mediaKind) {
+                    const icon =
+                        make(
+                            "span",
+                            "dm-forward-preview-icon"
+                        );
+                    icon.appendChild(
+                        makeIcon(
+                            source.mediaKind ===
+                                "video"
+                                ? "video"
+                                : "image"
+                        )
+                    );
+                    preview.appendChild(icon);
+                }
+
+                preview.appendChild(
+                    make(
+                        "span",
+                        "",
+                        previewText(
+                            source,
+                            120
+                        ) ||
+                            "Message"
+                    )
+                );
+            }
+        }
 
         if (!state.conversations.length) {
             list.appendChild(
                 make(
                     "div",
                     "dm-panel-state",
-                    "Add another friend before forwarding messages."
+                    "Add another friend before forwarding."
+                )
+            );
+        } else {
+            state.conversations
+                .filter(
+                    (conversation) =>
+                        conversation.username !==
+                        state.activeConversation
+                )
+                .forEach((conversation) => {
+                    const row = make(
+                        "button",
+                        "dm-forward-target"
+                    );
+
+                    row.type = "button";
+                    row.dataset.username =
+                        conversation.username;
+
+                    const avatar =
+                        make(
+                            "span",
+                            "dm-forward-avatar"
+                        );
+                    setAvatar(
+                        avatar,
+                        conversation
+                    );
+
+                    const copy =
+                        make(
+                            "span",
+                            "dm-forward-copy"
+                        );
+
+                    copy.append(
+                        make(
+                            "strong",
+                            "",
+                            conversation.nickname ||
+                                conversation.displayName ||
+                                conversation.username
+                        ),
+                        make(
+                            "small",
+                            "",
+                            "-" +
+                                conversation.username
+                        )
+                    );
+
+                    const check =
+                        make(
+                            "span",
+                            "dm-forward-check"
+                        );
+                    check.appendChild(
+                        makeIcon("forward")
+                    );
+
+                    row.append(
+                        avatar,
+                        copy,
+                        check
+                    );
+
+                    list.appendChild(row);
+                });
+        }
+
+        panel.hidden = false;
+    }
+
+    function renderInfoPanel() {
+        const panel = get(
+            "dm-info-panel"
+        );
+        if (!panel) return;
+
+        const conversation =
+            activeConversation();
+
+        if (!state.infoPanelOpen ||
+            !conversation) {
+            panel.hidden = true;
+            return;
+        }
+
+        const info =
+            state.info || {};
+
+        const avatar =
+            get("dm-info-avatar");
+
+        const displayName =
+            get("dm-info-display-name");
+
+        const username =
+            get("dm-info-username");
+
+        const status =
+            get("dm-info-status");
+
+        if (avatar) {
+            setAvatar(
+                avatar,
+                {
+                    username:
+                        info.conversation?.username ||
+                        conversation.username,
+                    displayName:
+                        info.conversation?.displayName ||
+                        conversation.displayName,
+                    nickname:
+                        conversation.nickname,
+                    profilePhoto:
+                        info.conversation?.profilePhoto ||
+                        conversation.profilePhoto
+                }
+            );
+        }
+
+        if (displayName) {
+            displayName.textContent =
+                conversation.nickname ||
+                info.conversation?.displayName ||
+                conversation.displayName ||
+                conversation.username;
+        }
+
+        if (username) {
+            username.textContent =
+                "-" +
+                (
+                    info.conversation?.username ||
+                    conversation.username
+                );
+        }
+
+        if (status) {
+            status.replaceChildren(
+                makeIcon("check"),
+                make(
+                    "span",
+                    "",
+                    info.conversation?.friendship ||
+                        "Friends on Helix"
                 )
             );
         }
 
-        modal.hidden = false;
+        const mediaList =
+            get("dm-info-media-list");
+        const mediaEmpty =
+            get("dm-info-media-empty");
+
+        if (mediaList) {
+            mediaList.replaceChildren();
+
+            const media =
+                Array.isArray(
+                    info.sharedMedia
+                )
+                    ? info.sharedMedia
+                    : [];
+
+            if (!media.length) {
+                mediaList.hidden = true;
+                if (mediaEmpty) {
+                    mediaEmpty.hidden = false;
+                }
+            } else {
+                mediaList.hidden = false;
+                if (mediaEmpty) {
+                    mediaEmpty.hidden = true;
+                }
+
+                media.forEach((item) => {
+                    const button =
+                        make(
+                            "button",
+                            "dm-info-media-item"
+                        );
+                    button.type = "button";
+                    button.dataset.dmAction =
+                        "open-media";
+                    button.dataset.messageId =
+                        item.id;
+
+                    if (item.mediaKind === "video") {
+                        const wrapper =
+                            make(
+                                "span",
+                                "dm-info-media-video"
+                            );
+                        wrapper.appendChild(
+                            makeIcon("video")
+                        );
+                        button.appendChild(
+                            wrapper
+                        );
+                    } else {
+                        const img =
+                            document.createElement(
+                                "img"
+                            );
+                        img.src =
+                            item.mediaUrl;
+                        img.alt =
+                            item.mediaName ||
+                            "Shared photo";
+                        img.loading = "lazy";
+                        button.appendChild(
+                            img
+                        );
+                    }
+
+                    button.title =
+                        item.mediaName ||
+                        "Shared media";
+
+                    mediaList.appendChild(
+                        button
+                    );
+                });
+            }
+        }
+
+        const filesEmpty =
+            get("dm-info-files-empty");
+
+        if (filesEmpty) {
+            filesEmpty.hidden =
+                Array.isArray(info.files) &&
+                info.files.length > 0;
+        }
     }
 
-    function scrollToBottom(smooth) {
-        const list = get("dm-message-list");
-        if (!list) return;
+    function renderMediaViewer() {
+        const viewer = get(
+            "dm-media-viewer"
+        );
+        if (!viewer) return;
 
-        list.scrollTo({
-            top: list.scrollHeight,
-            behavior: smooth ? "smooth" : "auto"
-        });
-    }
+        viewer.replaceChildren();
 
-    function scrollToMessage(messageId) {
-        const row = get("dm-message-list")?.querySelector(
-            '[data-message-id="' + CSS.escape(messageId) + '"]'
+        if (!state.mediaViewerOpen) {
+            viewer.hidden = true;
+            return;
+        }
+
+        const message =
+            findMessage(
+                state.mediaViewerMessageId
+            );
+
+        if (!message?.mediaUrl) {
+            viewer.hidden = true;
+            return;
+        }
+
+        const backdrop =
+            make(
+                "button",
+                "dm-media-viewer-backdrop"
+            );
+        backdrop.type = "button";
+        backdrop.dataset.dmAction =
+            "close-media";
+
+        const panel =
+            make(
+                "section",
+                "dm-media-viewer-panel"
+            );
+        panel.setAttribute(
+            "role",
+            "dialog"
+        );
+        panel.setAttribute(
+            "aria-modal",
+            "true"
+        );
+        panel.setAttribute(
+            "aria-label",
+            message.mediaName ||
+                "Media viewer"
         );
 
-        if (!row) return;
+        const close =
+            iconButton(
+                "dm-media-viewer-close",
+                "close",
+                "Close media"
+            );
+        close.dataset.dmAction =
+            "close-media";
 
-        row.scrollIntoView({
-            behavior: "smooth",
-            block: "center"
-        });
+        panel.appendChild(close);
 
-        row.classList.add("is-jumped");
-        window.setTimeout(() => row.classList.remove("is-jumped"), 850);
+        if (message.mediaKind === "video") {
+            const video =
+                document.createElement(
+                    "video"
+                );
+            video.className =
+                "dm-media-viewer-media";
+            video.src =
+                message.mediaUrl;
+            video.controls = true;
+            video.autoplay = false;
+            video.playsInline = true;
+            panel.appendChild(video);
+        } else {
+            const img =
+                document.createElement(
+                    "img"
+                );
+            img.className =
+                "dm-media-viewer-media";
+            img.src =
+                message.mediaUrl;
+            img.alt =
+                message.mediaName ||
+                "Shared photo";
+            panel.appendChild(img);
+        }
+
+        const caption =
+            make(
+                "div",
+                "dm-media-viewer-caption"
+            );
+        caption.append(
+            make(
+                "strong",
+                "",
+                message.mediaName ||
+                    "Shared media"
+            ),
+            make(
+                "small",
+                "",
+                formatFileSize(
+                    message.mediaSize
+                )
+            )
+        );
+
+        panel.appendChild(caption);
+        viewer.append(
+            backdrop,
+            panel
+        );
+
+        viewer.hidden = false;
+    }
+
+    function renderContextMenu() {
+        const menu =
+            get("dm-context-menu");
+
+        if (!menu) return;
+
+        menu.replaceChildren();
+
+        if (!state.contextMenu.open) {
+            menu.hidden = true;
+            return;
+        }
+
+        const message =
+            findMessage(
+                state.contextMenu.messageId
+            );
+
+        if (!message) {
+            menu.hidden = true;
+            return;
+        }
+
+        function addAction(
+            label,
+            icon,
+            action,
+            options = {}
+        ) {
+            const item = iconButton(
+                "dm-context-item" +
+                    (options.danger
+                        ? " is-danger"
+                        : ""),
+                icon,
+                label
+            );
+
+            item.dataset.dmContextAction =
+                action;
+            item.dataset.messageId =
+                message.id;
+
+            const text =
+                make(
+                    "span",
+                    "",
+                    label
+                );
+
+            item.appendChild(text);
+            menu.appendChild(item);
+        }
+
+        addAction(
+            "Reply",
+            "reply",
+            "reply"
+        );
+
+        if (
+            message.sender ===
+                currentUsername() &&
+            !message.isDeleted &&
+            !message.mediaUrl
+        ) {
+            addAction(
+                "Edit message",
+                "edit",
+                "edit-message"
+            );
+        }
+
+        addAction(
+            "React",
+            "reaction",
+            "react"
+        );
+
+        addAction(
+            "Copy message",
+            "copy",
+            "copy-message"
+        );
+
+        addAction(
+            "Forward",
+            "forward",
+            "forward-message"
+        );
+
+        addAction(
+            message.isPinned
+                ? "Unpin message"
+                : "Pin message",
+            "pin",
+            "toggle-pin"
+        );
+
+        if (
+            message.sender ===
+            currentUsername()
+        ) {
+            addAction(
+                "Delete message",
+                "delete",
+                "delete-message",
+                { danger: true }
+            );
+        }
+
+        menu.style.left =
+            Math.max(
+                8,
+                Math.min(
+                    state.contextMenu.x,
+                    window.innerWidth -
+                        240
+                )
+            ) + "px";
+
+        menu.style.top =
+            Math.max(
+                8,
+                Math.min(
+                    state.contextMenu.y,
+                    window.innerHeight -
+                        360
+                )
+            ) + "px";
+
+        menu.hidden = false;
     }
 
     function renderAll() {
         renderConversationList();
         renderHeader();
         renderMessages();
-        renderStatus();
+        renderMessageStatus();
         renderPinnedPanel();
+        renderForwardPanel();
+        renderInfoPanel();
+        renderMediaViewer();
+        renderContextMenu();
     }
 
     window.HelixDMRender = {
@@ -834,13 +2143,52 @@
         renderConversationList,
         renderHeader,
         renderMessages,
-        renderStatus,
+        renderMessageStatus,
         renderPinnedPanel,
+        renderForwardPanel,
+        renderInfoPanel,
+        renderMediaViewer,
+        renderContextMenu,
         renderEmojiPicker,
         filterEmojiPicker,
-        renderForwardModal,
-        scrollToBottom,
-        scrollToMessage,
-        visibleMessages
+        renderReplyReference,
+        renderMessage,
+        renderReactionStrip,
+        findMessage,
+        previewText,
+        formatFileSize,
+        scrollToMessage: (messageId) => {
+            const row =
+                get(
+                    "dm-message-list"
+                )?.querySelector(
+                    '[data-message-id="' +
+                        CSS.escape(
+                            String(
+                                messageId
+                            )
+                        ) +
+                    '"]'
+                );
+
+            if (!row) return false;
+
+            row.scrollIntoView({
+                behavior: "smooth",
+                block: "center"
+            });
+
+            row.classList.add(
+                "is-jumped"
+            );
+
+            window.setTimeout(() => {
+                row.classList.remove(
+                    "is-jumped"
+                );
+            }, 1000);
+
+            return true;
+        }
     };
 })();
