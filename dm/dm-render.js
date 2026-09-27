@@ -1628,6 +1628,7 @@
                 "Close conversation info"
             );
             close.id = "dm-info-close";
+            close.dataset.dmAction = "close-info";
             header.append(title, close);
 
             const loading = make("div", "dm-info-loading");
