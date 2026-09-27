@@ -36,7 +36,7 @@ There are no active message media fields or relationship fields for future featu
 The active schema is created by the existing database initialization in \`server.js\`:
 
 - \`helix_dm_messages\`
-- \`helix_dm_reactions\`
+- \`helix_dm_message_reactions\`
 - \`helix_dm_pins\`
 
 The message table stores sender, recipient, body, timestamps and read state. Reactions and pins are separate relationships.
