@@ -1,15 +1,22 @@
 # Helix DM migrations
 
-The active text-only DM schema is initialized by the existing database bootstrap in \`server.js\`.
+The active DM system uses additive migrations. Existing active DM rows and the archived/original DM tables are not deleted by the full-feature restore.
 
-Current active tables:
+## 001-full-features.sql
 
-- \`helix_dm_messages\`
-- \`helix_dm_message_reactions\`
-- \`helix_dm_message_pins\`
+Adds:
+- media_data, media_mime, media_name, media_size, media_kind
+- reply_to_id with a self foreign key and index
+- deleted_at for safe soft deletion
+- validation constraints for media kind/size and message body
 
-The old DM tables/data from the pre-rebuild system are intentionally not dropped or rewritten by this implementation.
+Active relationship tables remain separate:
+- helix_dm_message_reactions
+- helix_dm_message_pins
+- helix_dm_conversation_nicknames
 
-Future schema changes should be added here as explicit migrations rather than extending the old DM schema in place.
+Runtime database initialization in server.js applies the same additive shape so new deployments self-heal missing columns without destroying existing DM data.
 
-Do not add relationship fields for future message types until those features are actually being implemented.
+Replies use soft deletion for originals. A deleted original remains as a database row, allowing existing replies to render a graceful Original message deleted state.
+
+Media is stored only for supported image/video messages and is limited to 10 MB.
