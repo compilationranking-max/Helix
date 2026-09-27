@@ -5584,12 +5584,15 @@ bootstrapHelixSession().then((authenticated) => {
         const reactions = document.createElement("div");
         reactions.className = "dm-context-reactions";
         ["❤️", "😂", "😮", "😢", "😡", "👍"].forEach((emoji) => reactions.appendChild(reactionAction(emoji)));
-        const reactionMore = reactionAction("+");
-        reactionMore.classList.add("more");
+        const reactionMore = document.createElement("button");
+        reactionMore.type = "button";
+        reactionMore.className = "dm-context-reaction more";
+        reactionMore.textContent = "+";
+        reactionMore.setAttribute("aria-label", "Open full emoji picker");
         reactionMore.addEventListener("click", async () => {
             closeContextMenu();
             await openEmojiPicker();
-        }, { once: true });
+        });
         reactions.appendChild(reactionMore);
         contextMenu.appendChild(reactions);
 
@@ -5800,16 +5803,27 @@ bootstrapHelixSession().then((authenticated) => {
                 return;
             }
             pinned.forEach((item) => {
-                const row = document.createElement("button");
-                row.type = "button";
+                const row = document.createElement("div");
                 row.className = "dm-pinned-item";
                 row.dataset.messageId = String(item.id);
+                row.tabIndex = 0;
+                row.setAttribute("role", "button");
                 const who = item.sender === loggedInUser ? "You" : item.sender;
                 const body = shortMessagePreview(item, 120) || "Attachment";
                 row.innerHTML = "<span class=\"dm-pinned-item-icon\">" + contextIcon("pin") + "</span><span class=\"dm-pinned-item-copy\"><strong>" + safe(who) + "</strong><small>" + safe(body) + "</small></span><span class=\"dm-pinned-item-time\">" + new Date(item.pinnedAt).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"}) + "</span>";
-                row.addEventListener("click", () => {
+                const openPinnedMessage = () => {
                     closePinnedPanel();
                     scrollToMessage(item.id);
+                };
+                row.addEventListener("click", (event) => {
+                    if (event.target.closest(".dm-pinned-item-unpin")) return;
+                    openPinnedMessage();
+                });
+                row.addEventListener("keydown", (event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        openPinnedMessage();
+                    }
                 });
                 const unpin = document.createElement("button");
                 unpin.type = "button";
