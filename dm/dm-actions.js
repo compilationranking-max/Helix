@@ -50,7 +50,7 @@
         const input = get("dm-message-input");
         const send = get("dm-send-button");
         const attach = get("dm-attach-button");
-        const emoji = get("dm-composer-emoji-button") || get("dm-emoji-button");
+        const emoji = get("dm-composer-emoji-button");
 
         const available =
             enabled &&
