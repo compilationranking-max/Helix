@@ -11614,3 +11614,127 @@ body.helix-reduced-motion *::after {
         display: none;
     }
 }
+
+
+/* =========================================================
+   HELIX — FINAL DM QUICK REACTION BAR POSITION / BEHAVIOR
+   ========================================================= */
+
+/* Make the actual message bubble its own content-sized anchor.
+   The reaction strip underneath messages remains a separate element,
+   so it never gets its own hover reaction bar. */
+#dm-view .message-bubble {
+    width: fit-content;
+    max-width: min(520px, 70%);
+    overflow: visible;
+}
+
+#dm-view .message.received .message-bubble {
+    position: relative;
+}
+
+/* Match the compact rounded reference bar: six quick reactions + +. */
+#dm-view .dm-message-hover-reaction-bar {
+    width: max-content !important;
+    min-width: 0 !important;
+    height: 50px !important;
+    min-height: 50px !important;
+    padding: 5px 8px !important;
+    gap: 3px !important;
+    border: 1px solid rgba(156, 165, 177, .28) !important;
+    border-radius: 999px !important;
+    background: linear-gradient(180deg, rgba(43, 46, 53, .98), rgba(31, 34, 40, .98)) !important;
+    box-shadow:
+        0 16px 36px rgba(0,0,0,.50),
+        0 0 0 1px rgba(0,229,255,.06),
+        0 0 22px rgba(0,229,255,.13) !important;
+    backdrop-filter: blur(14px);
+}
+
+/* Only the other person's messages get this toolbar. */
+#dm-view .message.sent .dm-message-hover-reaction-bar {
+    display: none !important;
+}
+
+/* Default: immediately to the right of the received message bubble. */
+#dm-view .message.received .dm-message-hover-reaction-bar {
+    top: 50% !important;
+    left: calc(100% + 8px) !important;
+    right: auto !important;
+    bottom: auto !important;
+    transform: translateY(-50%) scale(.98) !important;
+    transform-origin: left center !important;
+}
+
+/* When the bubble is too close to the right edge, place the bar below it. */
+#dm-view .message.received .message-bubble.dm-reaction-bar-below .dm-message-hover-reaction-bar {
+    top: calc(100% + 8px) !important;
+    left: 0 !important;
+    right: auto !important;
+    bottom: auto !important;
+    transform: translateY(-2px) scale(.98) !important;
+    transform-origin: left top !important;
+}
+
+/* Once opened, keep it open even after the cursor leaves the message.
+   It closes when one of the bar buttons is clicked. */
+#dm-view .message.received .message-bubble.dm-reaction-bar-open .dm-message-hover-reaction-bar,
+#dm-view .message.received .dm-message-hover-reaction-bar:hover,
+#dm-view .message.received .dm-message-hover-reaction-bar:focus-within {
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+    transform: translateY(-50%) scale(1) !important;
+}
+
+#dm-view .message.received .message-bubble.dm-reaction-bar-below.dm-reaction-bar-open .dm-message-hover-reaction-bar,
+#dm-view .message.received .message-bubble.dm-reaction-bar-below .dm-message-hover-reaction-bar:hover,
+#dm-view .message.received .message-bubble.dm-reaction-bar-below .dm-message-hover-reaction-bar:focus-within {
+    transform: translateY(0) scale(1) !important;
+}
+
+#dm-view .dm-hover-reaction {
+    width: 40px !important;
+    height: 40px !important;
+    flex: 0 0 40px !important;
+    font-size: 25px !important;
+}
+
+#dm-view .dm-hover-reaction-more {
+    width: 42px !important;
+    height: 42px !important;
+    flex: 0 0 42px !important;
+    margin-left: 4px !important;
+    border-radius: 50% !important;
+    background: rgba(255,255,255,.075) !important;
+    color: #f4f6f8 !important;
+}
+
+#dm-view .dm-hover-reaction:hover,
+#dm-view .dm-hover-reaction:focus-visible {
+    background: rgba(255,255,255,.10) !important;
+}
+
+@media (max-width: 700px) {
+    #dm-view .message-bubble {
+        max-width: min(520px, 76%);
+    }
+
+    #dm-view .dm-message-hover-reaction-bar {
+        height: 48px !important;
+        min-height: 48px !important;
+    }
+
+    #dm-view .dm-hover-reaction {
+        width: 38px !important;
+        height: 38px !important;
+        flex-basis: 38px !important;
+        font-size: 23px !important;
+    }
+
+    #dm-view .dm-hover-reaction-more {
+        width: 40px !important;
+        height: 40px !important;
+        flex-basis: 40px !important;
+    }
+}
