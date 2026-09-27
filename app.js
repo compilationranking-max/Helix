@@ -5516,31 +5516,32 @@ bootstrapHelixSession().then((authenticated) => {
     function setMessageReactionBarPlacement(bubble, bar) {
         if (!bubble || !bar || !messages) return;
 
-        // The quick-reaction bar is positioned against the viewport itself.
-        // This prevents the scrollable DM area from clipping or pushing it
-        // to a random/far edge of the chat panel.
-        const messageRect = bubble.getBoundingClientRect();
+        // The hover reaction rail is portaled to <body> and overlays the
+        // message row. It must never take up vertical space or get inserted
+        // above/below the message, because that makes the conversation jump.
+        const row = bubble.closest(".message") || bubble;
+        const rowRect = row.getBoundingClientRect();
         const chatRect = messages.getBoundingClientRect();
         const barRect = bar.getBoundingClientRect();
         const barWidth = Math.max(bar.offsetWidth || barRect.width || 304, 1);
         const barHeight = Math.max(bar.offsetHeight || barRect.height || 50, 1);
-        const gap = 8;
+        const inset = 8;
 
-        const leftLimit = Math.max(chatRect.left + 4, 4);
-        const rightLimit = Math.min(chatRect.right - 4, window.innerWidth - 4);
-        const rightSideLeft = messageRect.right + gap;
-        const fitsOnRight = rightSideLeft + barWidth <= rightLimit;
+        const leftLimit = Math.max(chatRect.left + 6, 4);
+        const rightLimit = Math.min(chatRect.right - 6, window.innerWidth - 4);
 
-        let left = fitsOnRight
-            ? rightSideLeft
-            : messageRect.left;
+        // Match the reference UI: keep the reaction rail on the side of the
+        // message row, aligned toward its upper-right edge.
+        let left = rightLimit - barWidth;
+        let top = rowRect.top + inset;
 
-        let top = fitsOnRight
-            ? messageRect.top + (messageRect.height - barHeight) / 2
-            : messageRect.bottom + gap;
+        // On very narrow screens, keep it visible without ever moving it
+        // underneath the message.
+        if (rightLimit - leftLimit < barWidth + 8) {
+            left = leftLimit;
+            top = rowRect.top + Math.max(4, (rowRect.height - barHeight) / 2);
+        }
 
-        // When the message is too close to the right edge, the bar goes
-        // directly underneath it. Keep the whole bar inside the chat/viewport.
         left = Math.max(leftLimit, Math.min(left, rightLimit - barWidth));
         top = Math.max(4, Math.min(top, window.innerHeight - barHeight - 4));
 
@@ -5549,8 +5550,8 @@ bootstrapHelixSession().then((authenticated) => {
         bar.style.setProperty("right", "auto", "important");
         bar.style.setProperty("bottom", "auto", "important");
 
-        bar.dataset.placement = fitsOnRight ? "right" : "below";
-        bubble.classList.toggle("dm-reaction-bar-below", !fitsOnRight);
+        bar.dataset.placement = "row-side";
+        bubble.classList.remove("dm-reaction-bar-below");
     }
 
     function createMessageHoverReactionBar(item) {
@@ -6473,8 +6474,33 @@ bootstrapHelixSession().then((authenticated) => {
                 data = await response.json().catch(() => ({}));
             }
             if (!response.ok) throw new Error(data.error || "Could not send message.");
+
+            // Render the reply reference immediately from the message the user
+            // selected. This makes replies show the quoted preview at once,
+            // even before the next conversation refresh completes.
+            const sentMessage = data?.message;
+            if (sentMessage && replyToId) {
+                const replySource = currentMessages.find((entry) => String(entry.id) === String(replyToId));
+                if (replySource) {
+                    sentMessage.replyToId = sentMessage.replyToId || replyToId;
+                    sentMessage.replySender = replySource.sender;
+                    sentMessage.replyText = replySource.text || "";
+                    sentMessage.replyMediaUrl = replySource.mediaUrl || null;
+                    sentMessage.replyMediaName = replySource.mediaName || null;
+                    sentMessage.replyMediaKind = replySource.mediaKind || null;
+
+                    const withoutPending = currentMessages.filter(
+                        (entry) => String(entry.id) !== String(sentMessage.id)
+                    );
+                    currentMessages = [...withoutPending, sentMessage];
+                    renderMessages({ scrollToBottom: true });
+                }
+            }
+
             clearReply();
-            if (activeUsername === recipient) await loadMessages(recipient, { force: true, scrollToBottom: true });
+            if (activeUsername === recipient) {
+                await loadMessages(recipient, { force: true, scrollToBottom: true });
+            }
             return true;
         } finally {
             isSending = false;
