@@ -1,7 +1,15 @@
 # Helix DM migrations
 
-The legacy DM tables and data are intentionally preserved during the temporary removal.
+The active text-only DM schema is initialized by the existing database bootstrap in \`server.js\`.
 
-Do not DROP or rewrite the old DM tables as part of this cleanup.
+Current active tables:
 
-Future DM schema changes belong here and should begin with the Phase 1 text-only message model. Replies and media should be added only in their later rebuild phases.
+- \`helix_dm_messages\`
+- \`helix_dm_reactions\`
+- \`helix_dm_pins\`
+
+The old DM tables/data from the pre-rebuild system are intentionally not dropped or rewritten by this implementation.
+
+Future schema changes should be added here as explicit migrations rather than extending the old DM schema in place.
+
+Do not add relationship fields for future message types until those features are actually being implemented.
