@@ -697,6 +697,17 @@
             }
 
             await refreshConversations({ silent: true });
+
+            if (
+                state.activeConversation === recipient &&
+                state.conversationRequestSerial > 0
+            ) {
+                await refreshActiveConversation({
+                    silent: true,
+                    preserveScroll: true
+                });
+            }
+
             await refreshNotifications();
         } catch (error) {
             showToast(
@@ -1556,9 +1567,47 @@
             closePinnedPanel
         );
 
+        get("dm-pins-panel")?.addEventListener(
+            "click",
+            async (event) => {
+                const action =
+                    event.target.closest("[data-dm-action]");
+
+                if (!action) return;
+
+                const name = action.dataset.dmAction;
+
+                if (name === "jump-to-message") {
+                    await scrollToReferencedMessage(
+                        action.dataset.messageId
+                    );
+                } else if (name === "unpin-message") {
+                    await togglePin(action.dataset.messageId);
+                }
+            }
+        );
+
         get("dm-info-button")?.addEventListener(
             "click",
             openInfoPanel
+        );
+
+        get("dm-info-panel")?.addEventListener(
+            "click",
+            (event) => {
+                const action =
+                    event.target.closest("[data-dm-action]");
+
+                if (!action) return;
+
+                if (action.dataset.dmAction === "open-media") {
+                    openMedia(action.dataset.messageId);
+                } else if (
+                    action.dataset.dmAction === "private-nickname"
+                ) {
+                    openNicknameModal();
+                }
+            }
         );
 
         get("dm-info-close")?.addEventListener(
@@ -1567,6 +1616,11 @@
         );
 
         get("dm-nickname-button")?.addEventListener(
+            "click",
+            openNicknameModal
+        );
+
+        get("dm-info-nickname-button")?.addEventListener(
             "click",
             openNicknameModal
         );
