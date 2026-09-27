@@ -3090,6 +3090,7 @@ async function openAccountActivityModal() {
 (() => {
     const notificationStorageKey = "helixNotificationSettings:v2";
     const notificationDefaults = {
+        "dm-alerts": false,
         "friend-requests": false,
         "accepted-requests": false,
         "likes": false,
