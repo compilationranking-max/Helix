@@ -27,6 +27,13 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY 
 const MODEL = process.env.GEMINI_MODEL || "gemini-3.8-flash";
 const MAX_HISTORY_MESSAGES = 20;
 const DAILY_AI_IMAGE_LIMIT = 5;
+const DM_REPLY_DEBUG =
+    process.env.NODE_ENV !== "production" ||
+    process.env.HELIX_DM_REPLY_DEBUG === "1";
+
+function replyDebug(...args) {
+    if (DM_REPLY_DEBUG) console.log(...args);
+}
 
 const HELIX_AI_INSTRUCTIONS = `
 You are HELIX AI, the built-in AI assistant of the Helix platform.
@@ -1586,6 +1593,11 @@ app.get("/api/dm/messages", async (req, res) => {
             LIMIT 200
         `, [user.username, withUser]);
 
+        replyDebug(
+            "[HELIX REPLY DEBUG] GET replies",
+            result.rows.filter((message) => message?.replyToId)
+        );
+
         res.json({ messages: result.rows });
     } catch (error) {
         console.error("DM load failed:", error);
@@ -1796,6 +1808,12 @@ app.post("/api/dm/messages", async (req, res) => {
     const incomingMedia = req.body?.media;
     const replyToId = String(req.body?.replyToId || "").trim();
 
+    replyDebug("[HELIX REPLY DEBUG] POST request", {
+        from: user.username,
+        recipient,
+        replyToId
+    });
+
     if (!validUsername(recipient) || recipient === user.username) {
         return res.status(400).json({ error: "Invalid recipient." });
     }
@@ -1908,10 +1926,19 @@ app.post("/api/dm/messages", async (req, res) => {
             mediaKind: media?.kind || null
         });
 
+        const persistedReplyCheck = await dbPool.query(
+            'SELECT id, reply_to_id AS "replyToId", sender_username AS "sender", recipient_username AS "recipient" FROM helix_messages WHERE id = $1',
+            [result.rows[0]?.id]
+        );
+
+        replyDebug("[HELIX REPLY DEBUG] INSERT/database check", persistedReplyCheck.rows[0]);
+
         let savedMessage = result.rows[0];
         if (replyToId && savedMessage?.replyToId && replyTarget) {
             savedMessage = expandDMReplyFields(savedMessage, replyTarget);
         }
+
+        replyDebug("[HELIX REPLY DEBUG] POST response payload", savedMessage);
 
         return res.status(201).json({ ok: true, message: savedMessage });
     } catch (error) {
