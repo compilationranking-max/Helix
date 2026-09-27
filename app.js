@@ -5200,6 +5200,7 @@ bootstrapHelixSession().then((authenticated) => {
     let isSending = false;
     let pendingMedia = null;
     let activeReplyToId = null;
+    let activeReplyTarget = null;
     let activeContextMessage = null;
     let emojiPickerPromise = null;
     let editingMessageId = null;
@@ -5234,6 +5235,11 @@ bootstrapHelixSession().then((authenticated) => {
                 (x.mediaName || null) === (y.mediaName || null) &&
                 (x.mediaSize || null) === (y.mediaSize || null) &&
                 (x.mediaKind || null) === (y.mediaKind || null) &&
+                (x.replySender || null) === (y.replySender || null) &&
+                (x.replyText || null) === (y.replyText || null) &&
+                (x.replyMediaUrl || null) === (y.replyMediaUrl || null) &&
+                (x.replyMediaName || null) === (y.replyMediaName || null) &&
+                (x.replyMediaKind || null) === (y.replyMediaKind || null) &&
                 JSON.stringify(x.reactions || []) === JSON.stringify(y.reactions || []);
         });
     }
@@ -5406,17 +5412,18 @@ bootstrapHelixSession().then((authenticated) => {
     }
 
     function renderReplyReference(item, bubble) {
-        if (!item.replyToId) return;
+        const replyId = String(item?.replyToId || "").trim();
+        if (!replyId || !bubble) return;
 
         const reference = document.createElement("button");
         reference.type = "button";
         reference.className = "dm-reply-reference";
         reference.title = "Jump to replied message";
+        reference.dataset.replyMessageId = replyId;
 
-        const senderUsername = item.replySender || "Friend";
-        const sender = senderUsername === loggedInUser
-            ? "@" + senderUsername
-            : "@" + senderUsername;
+        const senderUsername = String(item.replySender || "Friend");
+        const senderLabel = document.createElement("strong");
+        senderLabel.textContent = "@" + senderUsername;
 
         const avatar = document.createElement("span");
         avatar.className = "dm-reply-reference-avatar";
@@ -5434,28 +5441,26 @@ bootstrapHelixSession().then((authenticated) => {
             avatar.style.color = "transparent";
         }
 
-        const copy = document.createElement("span");
-        copy.className = "dm-reply-reference-copy";
-
-        const senderLabel = document.createElement("strong");
-        senderLabel.textContent = sender;
-
         const previewText = document.createElement("small");
+        previewText.className = "dm-reply-reference-text";
         previewText.textContent =
-            item.replyText ||
+            String(item.replyText || "").trim() ||
             (item.replyMediaKind === "video"
                 ? "🎥 Video"
                 : item.replyMediaUrl || item.replyMediaName
                     ? "📷 Photo"
                     : "Attachment");
 
+        const copy = document.createElement("span");
+        copy.className = "dm-reply-reference-copy";
         copy.append(senderLabel, previewText);
 
         reference.append(avatar, copy);
 
         reference.addEventListener("click", (event) => {
+            event.preventDefault();
             event.stopPropagation();
-            scrollToMessage(item.replyToId);
+            scrollToMessage(replyId);
         });
 
         bubble.appendChild(reference);
@@ -5840,16 +5845,19 @@ bootstrapHelixSession().then((authenticated) => {
             );
 
             nextMessages.forEach((message) => {
-                if (!message.replyToId || message.replyText || message.replyMediaUrl) return;
+                const replyId = String(message.replyToId || "").trim();
+                if (!replyId) return;
 
-                const original = messageById.get(String(message.replyToId));
+                const original = messageById.get(replyId);
                 if (!original) return;
 
-                message.replySender = original.sender;
-                message.replyText = original.text || "";
-                message.replyMediaUrl = original.mediaUrl || null;
-                message.replyMediaName = original.mediaName || null;
-                message.replyMediaKind = original.mediaKind || null;
+                // Always fill the local snapshot. This makes the renderer
+                // independent of whether the server expanded the reply.
+                message.replySender = message.replySender || original.sender || "";
+                message.replyText = message.replyText || original.text || "";
+                message.replyMediaUrl = message.replyMediaUrl || original.mediaUrl || null;
+                message.replyMediaName = message.replyMediaName || original.mediaName || null;
+                message.replyMediaKind = message.replyMediaKind || original.mediaKind || null;
             });
 
             const changed = force || !sameMessages(currentMessages, nextMessages);
@@ -5943,6 +5951,15 @@ bootstrapHelixSession().then((authenticated) => {
 
     function setReplyBar(item) {
         activeReplyToId = item?.id ? String(item.id) : null;
+        activeReplyTarget = item ? {
+            id: item.id ? String(item.id) : null,
+            sender: item.sender || null,
+            recipient: item.recipient || null,
+            text: item.text || "",
+            mediaUrl: item.mediaUrl || null,
+            mediaName: item.mediaName || null,
+            mediaKind: item.mediaKind || null
+        } : null;
         if (!replyBar) return;
 
         if (!item) {
@@ -6049,8 +6066,11 @@ bootstrapHelixSession().then((authenticated) => {
 
     function clearReply() {
         activeReplyToId = null;
+        activeReplyTarget = null;
         if (replyBar) replyBar.hidden = true;
         if (replyBarText) replyBarText.textContent = "";
+        replyBar?.removeAttribute("data-reply-message-id");
+        replyBar?.removeAttribute("data-reply-sender");
     }
 
     function enterEditMode(item, row) {
@@ -6488,7 +6508,19 @@ bootstrapHelixSession().then((authenticated) => {
     async function sendMessage(text, media = null) {
         const recipient = activeUsername;
         const trimmed = String(text || "").trim();
-        const replyToId = activeReplyToId;
+
+        // Snapshot the selected reply before any network/polling work can
+        // replace currentMessages. The reply must be deterministic.
+        const replyToId = String(
+            activeReplyToId ||
+            replyBar?.getAttribute("data-reply-message-id") ||
+            ""
+        ).trim();
+        const replySource = activeReplyTarget || (
+            replyToId
+                ? currentMessages.find((entry) => String(entry.id) === replyToId) || null
+                : null
+        );
         if (!recipient || (!trimmed && !media) || isSending) return false;
         isSending = true;
         if (sendButton) sendButton.disabled = true;
@@ -6520,26 +6552,24 @@ bootstrapHelixSession().then((authenticated) => {
             }
             if (!response.ok) throw new Error(data.error || "Could not send message.");
 
-            // Render the reply reference immediately from the message the user
-            // selected. This makes replies show the quoted preview at once,
-            // even before the next conversation refresh completes.
+            // Normalize the reply reference from the exact message the user
+            // selected. Do this even if the API response does not expand it.
             const sentMessage = data?.message;
-            if (sentMessage && replyToId) {
-                const replySource = currentMessages.find((entry) => String(entry.id) === String(replyToId));
-                if (replySource) {
+            if (sentMessage) {
+                if (replyToId) {
                     sentMessage.replyToId = sentMessage.replyToId || replyToId;
-                    sentMessage.replySender = replySource.sender;
-                    sentMessage.replyText = replySource.text || "";
-                    sentMessage.replyMediaUrl = replySource.mediaUrl || null;
-                    sentMessage.replyMediaName = replySource.mediaName || null;
-                    sentMessage.replyMediaKind = replySource.mediaKind || null;
-
-                    const withoutPending = currentMessages.filter(
-                        (entry) => String(entry.id) !== String(sentMessage.id)
-                    );
-                    currentMessages = [...withoutPending, sentMessage];
-                    renderMessages({ scrollToBottom: true });
+                    sentMessage.replySender = sentMessage.replySender || replySource?.sender || "";
+                    sentMessage.replyText = sentMessage.replyText || replySource?.text || "";
+                    sentMessage.replyMediaUrl = sentMessage.replyMediaUrl || replySource?.mediaUrl || null;
+                    sentMessage.replyMediaName = sentMessage.replyMediaName || replySource?.mediaName || null;
+                    sentMessage.replyMediaKind = sentMessage.replyMediaKind || replySource?.mediaKind || null;
                 }
+
+                const withoutExisting = currentMessages.filter(
+                    (entry) => String(entry.id) !== String(sentMessage.id)
+                );
+                currentMessages = [...withoutExisting, sentMessage];
+                renderMessages({ scrollToBottom: true });
             }
 
             clearReply();
