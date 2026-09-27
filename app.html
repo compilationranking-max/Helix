@@ -549,10 +549,14 @@
                 <button type="button" class="dm-media-preview-remove" id="dm-media-preview-remove" aria-label="Remove attachment">×</button>
             </div>
             <div class="dm-reply-bar" id="dm-reply-bar" hidden>
+                <div class="dm-reply-bar-accent" aria-hidden="true"></div>
+                <div class="dm-reply-bar-avatar" id="dm-reply-bar-avatar" aria-hidden="true">HX</div>
                 <div class="dm-reply-bar-copy">
-                    <span>REPLYING TO</span>
-                    <strong id="dm-reply-bar-text"></strong>
+                    <span id="dm-reply-bar-label">REPLYING TO</span>
+                    <strong id="dm-reply-bar-sender"></strong>
+                    <small id="dm-reply-bar-text"></small>
                 </div>
+                <div class="dm-reply-bar-thumb" id="dm-reply-bar-thumb" hidden></div>
                 <button type="button" id="dm-reply-cancel" aria-label="Cancel reply" title="Cancel reply">×</button>
             </div>
             <div class="message-input-shell">
