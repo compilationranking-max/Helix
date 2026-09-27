@@ -10907,9 +10907,14 @@ body.helix-reduced-motion *::after {
     overflow: visible;
 }
 
+#dm-view .message-bubble {
+    position: relative;
+    overflow: visible;
+}
+
 #dm-view .dm-message-hover-reaction-bar {
     position: absolute;
-    top: -42px;
+    top: calc(100% + 6px);
     bottom: auto;
     left: 8px;
     z-index: 40;
@@ -10928,7 +10933,7 @@ body.helix-reduced-motion *::after {
         inset 0 0 12px rgba(0,229,255,.04);
     opacity: 0;
     pointer-events: none;
-    transform: translateY(5px) scale(.97);
+    transform: translateY(-2px) scale(.97);
     transform-origin: left top;
     transition:
         opacity .28s ease .26s,
@@ -10937,12 +10942,14 @@ body.helix-reduced-motion *::after {
         box-shadow .22s ease;
     backdrop-filter: blur(12px);
 }
-#dm-view .message.sent .dm-message-hover-reaction-bar {
-    left: auto;
-    right: 8px;
-    transform-origin: right top;
+
+#dm-view .message.received .dm-message-hover-reaction-bar {
+    left: 8px;
+    right: auto;
+    transform-origin: left top;
 }
-#dm-view .message:hover .dm-message-hover-reaction-bar,
+
+#dm-view .message-bubble:hover .dm-message-hover-reaction-bar,
 #dm-view .dm-message-hover-reaction-bar:hover,
 #dm-view .dm-message-hover-reaction-bar:focus-within {
     opacity: 1;
