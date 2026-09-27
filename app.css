@@ -6935,25 +6935,6 @@ MATH & PHOTO ATTACHMENTS
     font-size: 10px;
 }
 
-.dm-emoji-picker-header input {
-    grid-column: 1 / -1;
-    width: 100%;
-    height: 34px;
-    padding: 0 9px;
-    border: 1px solid rgba(100, 132, 151, 0.16);
-    border-radius: 8px;
-    outline: 0;
-    color: #edfaff;
-    background: rgba(4, 9, 15, 0.75);
-    font-size: 10px;
-    transition: border-color 0.16s ease, box-shadow 0.16s ease;
-}
-
-.dm-emoji-picker-header input:focus {
-    border-color: rgba(0, 229, 255, 0.32);
-    box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.03);
-}
-
 .dm-emoji-grid {
     max-height: 330px;
     display: grid;
