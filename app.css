@@ -9297,3 +9297,146 @@ MATH & PHOTO ATTACHMENTS
     box-shadow: none !important;
     opacity: 1;
 }
+
+/* =========================================================
+   HELIX DM — ELECTRIC CYAN BUTTON SYSTEM
+   ========================================================= */
+#dm-view button {
+    font-family: inherit;
+    color: #00e5ff;
+    -webkit-tap-highlight-color: transparent;
+}
+
+#dm-view .dm-inbox-tab,
+#dm-view .dm-new-message-button,
+#dm-view .dm-refresh-button,
+#dm-view .dm-clear-button,
+#dm-view .dm-header-icon,
+#dm-view .dm-mobile-back,
+#dm-view .dm-composer-action,
+#dm-view .dm-send-button,
+#dm-view .dm-message-tool,
+#dm-view .dm-panel-close,
+#dm-view .dm-reply-cancel,
+#dm-view .dm-media-preview-remove,
+#dm-view .dm-info-action,
+#dm-view .dm-inline-button,
+#dm-view .dm-forward-list button {
+    color: #00e5ff;
+    border-color: transparent;
+    background: transparent;
+    box-shadow: none;
+    outline: none;
+}
+
+#dm-view .dm-inbox-tab:hover,
+#dm-view .dm-new-message-button:hover,
+#dm-view .dm-refresh-button:hover,
+#dm-view .dm-clear-button:hover,
+#dm-view .dm-header-icon:hover:not(:disabled),
+#dm-view .dm-mobile-back:hover,
+#dm-view .dm-composer-action:hover:not(:disabled),
+#dm-view .dm-send-button:hover:not(:disabled),
+#dm-view .dm-message-tool:hover,
+#dm-view .dm-panel-close:hover,
+#dm-view .dm-reply-cancel:hover,
+#dm-view .dm-media-preview-remove:hover,
+#dm-view .dm-info-action:hover,
+#dm-view .dm-inline-button:hover,
+#dm-view .dm-forward-list button:hover {
+    color: #63efff;
+    border-color: rgba(0,229,255,.22);
+    background:
+        linear-gradient(
+            135deg,
+            rgba(0,229,255,.09),
+            rgba(118,92,255,.06)
+        );
+    box-shadow:
+        0 0 18px rgba(0,229,255,.08),
+        inset 0 1px 0 rgba(255,255,255,.025);
+}
+
+#dm-view .dm-new-message-button {
+    border-color: rgba(0,229,255,.22);
+    background: rgba(0,229,255,.055);
+    box-shadow: 0 0 22px rgba(0,229,255,.08);
+}
+
+#dm-view .dm-new-message-button:hover {
+    border-color: rgba(0,229,255,.42);
+    background:
+        linear-gradient(
+            135deg,
+            rgba(0,229,255,.13),
+            rgba(118,92,255,.10)
+        );
+    transform: translateY(-1px) scale(1.03);
+    box-shadow:
+        0 10px 30px rgba(0,229,255,.11),
+        0 0 24px rgba(118,92,255,.10);
+}
+
+#dm-view .dm-inbox-tab.is-active {
+    color: #eaffff;
+    border-color: rgba(0,229,255,.30);
+    background:
+        linear-gradient(
+            135deg,
+            rgba(0,229,255,.14),
+            rgba(118,92,255,.10)
+        );
+    box-shadow:
+        0 0 22px rgba(0,229,255,.09),
+        inset 0 1px 0 rgba(255,255,255,.035);
+}
+
+#dm-view .dm-send-button,
+#dm-view .dm-composer-action {
+    color: #00e5ff;
+    border: 0 !important;
+    background: transparent !important;
+}
+
+#dm-view .dm-send-button:disabled,
+#dm-view .dm-composer-action:disabled,
+#dm-view .dm-header-icon:disabled {
+    color: rgba(0,229,255,.38);
+    border-color: transparent !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    opacity: 1;
+}
+
+#dm-view .dm-icon {
+    filter: drop-shadow(0 0 5px rgba(0,229,255,.10));
+}
+
+#dm-view .dm-button-primary {
+    color: #021014;
+    border-color: rgba(0,229,255,.45);
+    background: linear-gradient(135deg, #00e5ff, #63efff);
+    box-shadow:
+        0 0 22px rgba(0,229,255,.20),
+        0 8px 24px rgba(0,0,0,.20);
+}
+
+#dm-view .dm-button-primary:hover {
+    color: #01090c;
+    border-color: rgba(99,239,255,.80);
+    background: linear-gradient(135deg, #63efff, #00e5ff);
+    transform: translateY(-1px);
+}
+
+@media (max-width: 720px) {
+    #dm-view .dm-inbox-tab,
+    #dm-view .dm-new-message-button,
+    #dm-view .dm-refresh-button,
+    #dm-view .dm-clear-button,
+    #dm-view .dm-header-icon,
+    #dm-view .dm-mobile-back,
+    #dm-view .dm-composer-action,
+    #dm-view .dm-send-button {
+        color: #00e5ff;
+    }
+}
