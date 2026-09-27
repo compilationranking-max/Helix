@@ -15,29 +15,44 @@ function createDMRouter(options) {
     } = options;
 
     const MAX_MESSAGE_LENGTH = 4000;
-    const MAX_MESSAGES_PER_LOAD = 300;
+    const MAX_MESSAGES_PER_LOAD = 200;
+    const MAX_MEDIA_BYTES = 10 * 1024 * 1024;
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+    function fail(message, status = 400) {
+        throw Object.assign(new Error(message), { status });
+    }
 
     function errorResponse(res, error) {
-        const status = Number(error && error.status) || 500;
-        return res.status(status).json({
-            error: error && error.message ? error.message : "Direct message operation failed."
+        return res.status(Number(error?.status) || 500).json({
+            error: error?.message || "Direct message operation failed."
         });
+    }
+
+    function isUuid(value) {
+        return UUID_RE.test(String(value || "").trim());
     }
 
     async function requireDMDatabase(res) {
         if (!dbPool) {
-            res.status(503).json({ error: "Direct messages require the Helix cloud database." });
+            res.status(503).json({
+                error: "Direct messages require the Helix cloud database."
+            });
             return false;
         }
+
         await requireDatabase();
         return true;
     }
 
     async function areFriends(usernameA, usernameB) {
         const result = await dbPool.query(
-            "SELECT 1 FROM helix_friendships WHERE user_a = LEAST($1, $2) AND user_b = GREATEST($1, $2) LIMIT 1",
+            "SELECT 1 FROM helix_friendships " +
+            "WHERE user_a = LEAST($1, $2) " +
+            "AND user_b = GREATEST($1, $2) LIMIT 1",
             [usernameA, usernameB]
         );
+
         return result.rowCount > 0;
     }
 
@@ -45,7 +60,7 @@ function createDMRouter(options) {
         const normalizedPartner = normalizeUsername(partner);
 
         if (!validUsername(normalizedPartner) || normalizedPartner === username) {
-            throw Object.assign(new Error("Invalid conversation."), { status: 400 });
+            fail("Invalid conversation.");
         }
 
         const target = await dbPool.query(
@@ -54,152 +69,393 @@ function createDMRouter(options) {
         );
 
         if (!target.rowCount) {
-            throw Object.assign(new Error("That Helix account does not exist."), { status: 404 });
+            fail("That Helix account does not exist.", 404);
         }
 
         if (await isBlockedEitherWay(username, normalizedPartner)) {
-            throw Object.assign(new Error("You cannot interact with this account."), { status: 403 });
+            fail("You cannot interact with this account.", 403);
         }
 
         const friends = await areFriends(username, normalizedPartner);
 
         if (!friends) {
-            throw Object.assign(
-                new Error("You can only message people who are currently your friends."),
-                { status: 403 }
-            );
+            fail("You can only message people who are currently your friends.", 403);
         }
 
         if (options.allowSend) {
-            const privacy = await getPrivacySetting(normalizedPartner, "direct-messages");
+            const privacy = await getPrivacySetting(
+                normalizedPartner,
+                "direct-messages"
+            );
 
             if (privacy === "NOBODY") {
-                throw Object.assign(
-                    new Error("This user is not accepting direct messages right now."),
-                    { status: 403 }
-                );
-            }
-
-            if (privacy === "FRIENDS" && !friends) {
-                throw Object.assign(
-                    new Error("This user only accepts messages from friends."),
-                    { status: 403 }
-                );
+                fail("This user is not accepting direct messages right now.", 403);
             }
         }
 
         return normalizedPartner;
     }
 
-    async function getMessageRow(messageId, username) {
-        const result = await dbPool.query(
-            "SELECT m.id, m.sender_username AS sender, m.recipient_username AS recipient, m.body AS text, " +
-            "m.created_at AS \"createdAt\", m.edited_at AS \"editedAt\", " +
-            "EXISTS (SELECT 1 FROM helix_dm_message_pins p WHERE p.message_id = m.id AND p.owner_username = $2) AS \"isPinned\" " +
-            "FROM helix_dm_messages m " +
-            "WHERE m.id = $1 AND (m.sender_username = $2 OR m.recipient_username = $2)",
-            [messageId, username]
-        );
-        return result.rows[0] || null;
+    function validateText(value, allowEmpty = false) {
+        const text = typeof value === "string" ? value.trim() : "";
+
+        if (!allowEmpty && !text) {
+            fail("Message cannot be empty.");
+        }
+
+        if (text.length > MAX_MESSAGE_LENGTH) {
+            fail("Message is too long. Keep it under 4000 characters.");
+        }
+
+        if (/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/.test(text)) {
+            fail("Message contains unsupported control characters.");
+        }
+
+        return text;
+    }
+
+    function sanitizeMediaName(value) {
+        const text = typeof value === "string"
+            ? value.replace(/[\u0000-\u001F\u007F]/g, "").trim()
+            : "";
+
+        return text.slice(0, 180) || "attachment";
+    }
+
+    function validateReaction(value) {
+        const emoji = typeof value === "string" ? value.trim() : "";
+
+        if (!emoji || emoji.length > 32 || /[\u0000-\u001F\u007F]/.test(emoji)) {
+            fail("Invalid reaction.");
+        }
+
+        return emoji;
+    }
+
+    function decodeMediaDataUrl(value) {
+        const dataUrl = typeof value === "string" ? value.trim() : "";
+        const match = /^data:([^;,]+);base64,([A-Za-z0-9+/=\r\n]+)$/i.exec(dataUrl);
+
+        if (!match) {
+            fail("Choose a valid photo or video file.");
+        }
+
+        const encoded = match[2].replace(/\s+/g, "");
+
+        if (!encoded || encoded.length % 4 !== 0) {
+            fail("Attachment data is invalid.");
+        }
+
+        let buffer;
+
+        try {
+            buffer = Buffer.from(encoded, "base64");
+        } catch {
+            fail("Attachment data is invalid.");
+        }
+
+        const expectedPadding = encoded.endsWith("==")
+            ? 2
+            : encoded.endsWith("=")
+                ? 1
+                : 0;
+
+        const expectedBytes =
+            3 * (encoded.length / 4) - expectedPadding;
+
+        if (buffer.length !== expectedBytes) {
+            fail("Attachment data could not be verified.");
+        }
+
+        if (!buffer.length || buffer.length > MAX_MEDIA_BYTES) {
+            fail("Attachment must be 10 MB or smaller.");
+        }
+
+        return {
+            buffer,
+            declaredMime: String(match[1]).toLowerCase()
+        };
+    }
+
+    function verifyMedia(buffer, declaredMime) {
+        const mime = String(declaredMime || "").toLowerCase().trim();
+
+        if (!mime.startsWith("image/") && !mime.startsWith("video/")) {
+            fail("Only photos and videos can be sent in DMs.");
+        }
+
+        let actualMime = null;
+
+        if (
+            buffer.length >= 8 &&
+            buffer[0] === 0x89 &&
+            buffer.subarray(1, 8).equals(
+                Buffer.from([0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
+            )
+        ) {
+            actualMime = "image/png";
+        } else if (
+            buffer.length >= 3 &&
+            buffer[0] === 0xff &&
+            buffer[1] === 0xd8 &&
+            buffer[2] === 0xff
+        ) {
+            actualMime = "image/jpeg";
+        } else if (
+            buffer.length >= 6 &&
+            ["GIF87a", "GIF89a"].includes(
+                buffer.subarray(0, 6).toString("ascii")
+            )
+        ) {
+            actualMime = "image/gif";
+        } else if (
+            buffer.length >= 12 &&
+            buffer.subarray(0, 4).toString("ascii") === "RIFF" &&
+            buffer.subarray(8, 12).toString("ascii") === "WEBP"
+        ) {
+            actualMime = "image/webp";
+        } else if (
+            buffer.length >= 8 &&
+            buffer.subarray(0, 4).toString("ascii") === "\x1a\x45\xdf\xa3"
+        ) {
+            actualMime = "video/webm";
+        } else if (
+            buffer.length >= 12 &&
+            buffer.subarray(4, 8).toString("ascii") === "ftyp"
+        ) {
+            actualMime = mime === "video/quicktime"
+                ? "video/quicktime"
+                : "video/mp4";
+        } else if (
+            buffer.length >= 4 &&
+            buffer.subarray(0, 4).toString("ascii") === "OggS"
+        ) {
+            actualMime = "video/ogg";
+        }
+
+        if (!actualMime) {
+            fail("Helix could not verify that attachment.");
+        }
+
+        const kind = actualMime.startsWith("video/") ? "video" : "image";
+
+        if (!mime.startsWith(kind + "/")) {
+            fail("Attachment type does not match its contents.");
+        }
+
+        return {
+            mime: actualMime,
+            kind
+        };
+    }
+
+    const MESSAGE_SELECT =
+        "SELECT " +
+        "m.id, " +
+        "m.sender_username AS sender, " +
+        "m.recipient_username AS recipient, " +
+        "m.body AS text, " +
+        "m.created_at AS \"createdAt\", " +
+        "m.read_at AS \"readAt\", " +
+        "m.edited_at AS \"editedAt\", " +
+        "m.deleted_at AS \"deletedAt\", " +
+        "m.media_mime AS \"mediaMime\", " +
+        "m.media_name AS \"mediaName\", " +
+        "m.media_size AS \"mediaSize\", " +
+        "m.media_kind AS \"mediaKind\", " +
+        "CASE WHEN m.media_data IS NOT NULL THEN '/api/dm/media/' || m.id::text ELSE NULL END AS \"mediaUrl\", " +
+        "EXISTS (SELECT 1 FROM helix_dm_message_pins p WHERE p.message_id = m.id AND p.owner_username = $1) AS \"isPinned\", " +
+        "m.reply_to_id AS \"replyToId\", " +
+        "r.sender_username AS \"replySender\", " +
+        "r.body AS \"replyText\", " +
+        "r.deleted_at AS \"replyDeletedAt\", " +
+        "r.media_name AS \"replyMediaName\", " +
+        "r.media_kind AS \"replyMediaKind\", " +
+        "CASE WHEN r.media_data IS NOT NULL THEN '/api/dm/media/' || r.id::text ELSE NULL END AS \"replyMediaUrl\" " +
+        "FROM helix_dm_messages m " +
+        "LEFT JOIN helix_dm_messages r ON r.id = m.reply_to_id ";
+
+    function mapRow(row, reactions) {
+        const replyToId = row.replyToId || null;
+        const replyDeleted = Boolean(row.replyDeletedAt);
+
+        return {
+            id: row.id,
+            sender: row.sender,
+            recipient: row.recipient,
+            text: row.deletedAt ? "" : row.text,
+            createdAt: row.createdAt,
+            readAt: row.readAt || null,
+            editedAt: row.editedAt || null,
+            reactions: reactions?.get(row.id) || [],
+            isPinned: Boolean(row.isPinned),
+            isDeleted: Boolean(row.deletedAt),
+            mediaUrl: row.mediaUrl || null,
+            mediaMime: row.mediaMime || null,
+            mediaName: row.mediaName || null,
+            mediaSize: row.mediaSize ? Number(row.mediaSize) : null,
+            mediaKind: row.mediaKind || null,
+            replyToId,
+            replySender: row.replySender || null,
+            replyText: replyDeleted ? null : (row.replyText || null),
+            replyMediaUrl: row.replyMediaUrl || null,
+            replyMediaName: row.replyMediaName || null,
+            replyMediaKind: row.replyMediaKind || null,
+            replyDeleted,
+            replyPreview: replyToId
+                ? {
+                    id: replyToId,
+                    sender: row.replySender || "",
+                    text: replyDeleted ? null : (row.replyText || ""),
+                    mediaUrl: row.replyMediaUrl || null,
+                    mediaName: row.replyMediaName || null,
+                    mediaKind: row.replyMediaKind || null,
+                    deleted: replyDeleted
+                }
+                : null
+        };
     }
 
     async function loadReactionMap(messageIds, username) {
         if (!messageIds.length) return new Map();
 
         const result = await dbPool.query(
-            "SELECT r.message_id AS \"messageId\", r.emoji, COUNT(*)::int AS count, " +
-            "BOOL_OR(r.username = $2) AS reacted " +
-            "FROM helix_dm_message_reactions r " +
-            "WHERE r.message_id = ANY($1::uuid[]) " +
-            "GROUP BY r.message_id, r.emoji ORDER BY r.emoji",
+            "SELECT message_id AS \"messageId\", emoji, COUNT(*)::int AS count, " +
+            "BOOL_OR(username = $2) AS reacted " +
+            "FROM helix_dm_message_reactions " +
+            "WHERE message_id = ANY($1::uuid[]) " +
+            "GROUP BY message_id, emoji " +
+            "ORDER BY emoji",
             [messageIds, username]
         );
 
         const map = new Map();
 
-        result.rows.forEach((row) => {
-            const current = map.get(row.messageId) || [];
-            current.push({
+        for (const row of result.rows) {
+            const list = map.get(row.messageId) || [];
+            list.push({
                 emoji: row.emoji,
                 count: Number(row.count),
                 reacted: Boolean(row.reacted)
             });
-            map.set(row.messageId, current);
-        });
+            map.set(row.messageId, list);
+        }
 
         return map;
     }
 
-    function formatMessages(rows, reactionMap) {
-        return rows.map((row) => ({
-            id: row.id,
-            sender: row.sender,
-            recipient: row.recipient,
-            text: row.text,
-            createdAt: row.createdAt,
-            editedAt: row.editedAt,
-            reactions: reactionMap.get(row.id) || [],
-            isPinned: Boolean(row.isPinned)
-        }));
-    }
-
-    async function loadMessages(username, partner, limit) {
+    async function getMessageRow(messageId, username) {
         const result = await dbPool.query(
-            "SELECT m.id, m.sender_username AS sender, m.recipient_username AS recipient, m.body AS text, " +
-            "m.created_at AS \"createdAt\", m.edited_at AS \"editedAt\", " +
-            "EXISTS (SELECT 1 FROM helix_dm_message_pins p WHERE p.message_id = m.id AND p.owner_username = $1) AS \"isPinned\" " +
-            "FROM helix_dm_messages m " +
-            "WHERE (m.sender_username = $1 AND m.recipient_username = $2) " +
-            "OR (m.sender_username = $2 AND m.recipient_username = $1) " +
-            "ORDER BY m.created_at DESC LIMIT $3",
-            [username, partner, limit]
+            MESSAGE_SELECT +
+            "WHERE m.id = $2 " +
+            "AND (m.sender_username = $3 OR m.recipient_username = $3) " +
+            "LIMIT 1",
+            [username, messageId, username]
         );
 
-        const rows = result.rows.reverse();
-        const reactions = await loadReactionMap(rows.map((row) => row.id), username);
-        return formatMessages(rows, reactions);
+        return result.rows[0] || null;
     }
 
-    async function loadMessageWithReactions(messageId, username) {
+    async function getMessage(messageId, username) {
         const row = await getMessageRow(messageId, username);
         if (!row) return null;
 
         const reactions = await loadReactionMap([row.id], username);
-        return formatMessages([row], reactions)[0];
+        return mapRow(row, reactions);
     }
 
-    function validateText(value) {
-        const text = typeof value === "string" ? value.trim() : "";
+    async function loadConversation(username, partner, limit = MAX_MESSAGES_PER_LOAD) {
+        const result = await dbPool.query(
+            MESSAGE_SELECT.replace(
+                "AND m.sender_username = $3 OR m.recipient_username = $3",
+                ""
+            ) +
+            "WHERE ((m.sender_username = $4 AND m.recipient_username = $5) " +
+            "OR (m.sender_username = $5 AND m.recipient_username = $4)) " +
+            "ORDER BY m.created_at DESC " +
+            "LIMIT $6",
+            [username, username, username, username, partner, limit]
+        );
 
-        if (!text) {
-            throw Object.assign(new Error("Message cannot be empty."), { status: 400 });
-        }
+        const rows = result.rows.reverse();
+        const reactions = await loadReactionMap(
+            rows.map((row) => row.id),
+            username
+        );
 
-        if (text.length > MAX_MESSAGE_LENGTH) {
-            throw Object.assign(
-                new Error("Message is too long. Keep it under 4000 characters."),
-                { status: 400 }
-            );
-        }
-
-        if (/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/.test(text)) {
-            throw Object.assign(
-                new Error("Message contains unsupported control characters."),
-                { status: 400 }
-            );
-        }
-
-        return text;
+        return rows.map((row) => mapRow(row, reactions));
     }
 
-    function validateEmoji(value) {
-        const emoji = typeof value === "string" ? value.trim() : "";
+    async function validateReplyTarget(replyToId, username, recipient) {
+        const id = String(replyToId || "").trim();
 
-        if (!emoji || emoji.length > 24 || /[\u0000-\u001F\u007F]/.test(emoji)) {
-            throw Object.assign(new Error("Invalid reaction."), { status: 400 });
+        if (!id) return null;
+
+        if (!isUuid(id)) {
+            fail("The selected reply message is invalid.");
         }
 
-        return emoji;
+        const row = await getMessageRow(id, username);
+
+        if (!row) {
+            fail("Reply target not found.");
+        }
+
+        if (row.deletedAt) {
+            fail("That original message is no longer available.");
+        }
+
+        const sameConversation =
+            (row.sender === username && row.recipient === recipient) ||
+            (row.sender === recipient && row.recipient === username);
+
+        if (!sameConversation) {
+            fail("Reply target is outside this conversation.");
+        }
+
+        return row;
+    }
+
+    async function loadMutationMessage(messageId, username) {
+        return getMessage(messageId, username);
+    }
+
+    async function insertMessage({ sender, recipient, text, replyToId, media }) {
+        const replyTarget = await validateReplyTarget(
+            replyToId,
+            sender,
+            recipient
+        );
+
+        const result = await dbPool.query(
+            "INSERT INTO helix_dm_messages (" +
+            "id, sender_username, recipient_username, body, reply_to_id, " +
+            "media_data, media_mime, media_name, media_size, media_kind" +
+            ") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) " +
+            "RETURNING id",
+            [
+                crypto.randomUUID(),
+                sender,
+                recipient,
+                text,
+                replyToId || null,
+                media?.buffer || null,
+                media?.mime || null,
+                media?.name || null,
+                media?.size || null,
+                media?.kind || null
+            ]
+        );
+
+        const message = await loadMutationMessage(
+            result.rows[0].id,
+            sender
+        );
+
+        return {
+            message,
+            replyTarget
+        };
     }
 
     router.get("/conversations", async (req, res) => {
@@ -216,29 +472,36 @@ function createDMRouter(options) {
                 "n.nickname AS \"nickname\", " +
                 "latest.body AS \"latestText\", " +
                 "latest.created_at AS \"latestCreatedAt\", " +
-                "COALESCE(unread.unread_count, 0)::int AS \"unreadCount\" " +
+                "latest.media_kind AS \"latestMediaKind\", " +
+                "COALESCE(unread.unread_count,0)::int AS \"unreadCount\" " +
                 "FROM helix_friendships f " +
                 "JOIN helix_users u ON u.username = CASE WHEN f.user_a = $1 THEN f.user_b ELSE f.user_a END " +
-                "LEFT JOIN helix_dm_conversation_nicknames n " +
-                "ON n.owner_username = $1 AND n.friend_username = u.username " +
+                "LEFT JOIN helix_dm_conversation_nicknames n ON n.owner_username = $1 AND n.friend_username = u.username " +
                 "LEFT JOIN LATERAL (" +
-                "SELECT m.body, m.created_at FROM helix_dm_messages m " +
-                "WHERE (m.sender_username = $1 AND m.recipient_username = u.username) " +
-                "OR (m.sender_username = u.username AND m.recipient_username = $1) " +
-                "ORDER BY m.created_at DESC LIMIT 1" +
+                    "SELECT m.body, m.created_at, m.media_kind " +
+                    "FROM helix_dm_messages m " +
+                    "WHERE ((m.sender_username = $1 AND m.recipient_username = u.username) " +
+                    "OR (m.sender_username = u.username AND m.recipient_username = $1)) " +
+                    "AND m.deleted_at IS NULL " +
+                    "ORDER BY m.created_at DESC LIMIT 1" +
                 ") latest ON TRUE " +
                 "LEFT JOIN LATERAL (" +
-                "SELECT COUNT(*) AS unread_count FROM helix_dm_messages m " +
-                "WHERE m.sender_username = u.username AND m.recipient_username = $1 AND m.read_at IS NULL" +
+                    "SELECT COUNT(*) AS unread_count " +
+                    "FROM helix_dm_messages m " +
+                    "WHERE m.sender_username = u.username " +
+                    "AND m.recipient_username = $1 " +
+                    "AND m.read_at IS NULL " +
+                    "AND m.deleted_at IS NULL" +
                 ") unread ON TRUE " +
                 "WHERE (f.user_a = $1 OR f.user_b = $1) " +
                 "AND NOT EXISTS (" +
-                "SELECT 1 FROM helix_blocked_accounts b " +
-                "WHERE (b.blocker_username = $1 AND b.blocked_username = u.username) " +
-                "OR (b.blocker_username = u.username AND b.blocked_username = $1)" +
+                    "SELECT 1 FROM helix_blocked_accounts b " +
+                    "WHERE (b.blocker_username = $1 AND b.blocked_username = u.username) " +
+                    "OR (b.blocker_username = u.username AND b.blocked_username = $1)" +
                 ") " +
                 "ORDER BY CASE WHEN latest.created_at IS NULL THEN 1 ELSE 0 END, " +
-                "latest.created_at DESC NULLS LAST, LOWER(u.display_name), LOWER(u.username)",
+                "latest.created_at DESC NULLS LAST, " +
+                "LOWER(COALESCE(n.nickname,u.display_name)), LOWER(u.username)",
                 [user.username]
             );
 
@@ -251,9 +514,10 @@ function createDMRouter(options) {
                         ? publicProfilePhotoUrl(row.username)
                         : null,
                     nickname: row.nickname || null,
-                    latestMessage: row.latestText
+                    latestMessage: row.latestCreatedAt
                         ? {
-                            text: row.latestText,
+                            text: row.latestText || "",
+                            mediaKind: row.latestMediaKind || null,
                             createdAt: row.latestCreatedAt
                         }
                         : null,
@@ -277,8 +541,9 @@ function createDMRouter(options) {
             await ensureConversationAccess(user.username, partner);
 
             await dbPool.query(
-                "UPDATE helix_dm_messages SET read_at = COALESCE(read_at, NOW()) " +
-                "WHERE sender_username = $1 AND recipient_username = $2 AND read_at IS NULL",
+                "UPDATE helix_dm_messages SET read_at = COALESCE(read_at,NOW()) " +
+                "WHERE sender_username = $1 AND recipient_username = $2 " +
+                "AND read_at IS NULL AND deleted_at IS NULL",
                 [partner, user.username]
             );
 
@@ -287,7 +552,11 @@ function createDMRouter(options) {
                 ? Math.min(Math.max(Math.trunc(requestedLimit), 1), MAX_MESSAGES_PER_LOAD)
                 : MAX_MESSAGES_PER_LOAD;
 
-            const messages = await loadMessages(user.username, partner, limit);
+            const messages = await loadConversation(
+                user.username,
+                partner,
+                limit
+            );
 
             return res.json({
                 ok: true,
@@ -300,18 +569,39 @@ function createDMRouter(options) {
         }
     });
 
-    router.patch("/conversations/:username/nickname", async (req, res) => {
+    router.get("/messages/:messageId", async (req, res) => {
         const user = await requireCurrentUser(req, res);
         if (!user) return;
         if (!(await requireDMDatabase(res))) return;
 
-        const nickname = typeof req.body?.nickname === "string"
-            ? req.body.nickname.trim().replace(/s+/g, " ")
-            : "";
+        const id = String(req.params.messageId || "");
 
-        if (nickname.length > 50) {
-            return res.status(400).json({ error: "Nickname must be 50 characters or fewer." });
+        try {
+            if (!isUuid(id)) fail("Invalid message.");
+
+            const message = await getMessage(id, user.username);
+            if (!message) {
+                return res.status(404).json({ error: "Message not found." });
+            }
+
+            const partner =
+                message.sender === user.username
+                    ? message.recipient
+                    : message.sender;
+
+            await ensureConversationAccess(user.username, partner);
+
+            return res.json({ ok: true, message });
+        } catch (error) {
+            console.error("DM single-message load failed:", error);
+            return errorResponse(res, error);
         }
+    });
+
+    router.get("/conversations/:username/info", async (req, res) => {
+        const user = await requireCurrentUser(req, res);
+        if (!user) return;
+        if (!(await requireDMDatabase(res))) return;
 
         try {
             const partner = await ensureConversationAccess(
@@ -319,18 +609,80 @@ function createDMRouter(options) {
                 req.params.username
             );
 
+            const profile = await dbPool.query(
+                "SELECT username, display_name AS \"displayName\", " +
+                "(profile_photo IS NOT NULL) AS \"hasProfilePhoto\" " +
+                "FROM helix_users WHERE username = $1",
+                [partner]
+            );
+
+            const media = await dbPool.query(
+                "SELECT id, sender_username AS sender, " +
+                "media_name AS \"mediaName\", media_size AS \"mediaSize\", " +
+                "media_kind AS \"mediaKind\", created_at AS \"createdAt\", " +
+                "CASE WHEN media_data IS NOT NULL THEN '/api/dm/media/' || id::text ELSE NULL END AS \"mediaUrl\" " +
+                "FROM helix_dm_messages " +
+                "WHERE ((sender_username = $1 AND recipient_username = $2) " +
+                "OR (sender_username = $2 AND recipient_username = $1)) " +
+                "AND deleted_at IS NULL AND media_data IS NOT NULL " +
+                "ORDER BY created_at DESC LIMIT 60",
+                [user.username, partner]
+            );
+
+            return res.json({
+                ok: true,
+                conversation: {
+                    username: profile.rows[0]?.username || partner,
+                    displayName: profile.rows[0]?.displayName || partner,
+                    profilePhoto: profile.rows[0]?.hasProfilePhoto
+                        ? publicProfilePhotoUrl(partner)
+                        : null,
+                    friendship: "Friends"
+                },
+                sharedMedia: media.rows,
+                files: []
+            });
+        } catch (error) {
+            console.error("DM info failed:", error);
+            return errorResponse(res, error);
+        }
+    });
+
+    router.patch("/conversations/:username/nickname", async (req, res) => {
+        const user = await requireCurrentUser(req, res);
+        if (!user) return;
+        if (!(await requireDMDatabase(res))) return;
+
+        const nickname =
+            typeof req.body?.nickname === "string"
+                ? req.body.nickname.trim().replace(/\s+/g, " ")
+                : "";
+
+        try {
+            const partner = await ensureConversationAccess(
+                user.username,
+                req.params.username
+            );
+
+            if (nickname.length > 50 || /[\u0000-\u001F\u007F]/.test(nickname)) {
+                fail("Nickname must be 50 characters or fewer.");
+            }
+
             if (!nickname) {
                 await dbPool.query(
-                    "DELETE FROM helix_dm_conversation_nicknames WHERE owner_username = $1 AND friend_username = $2",
+                    "DELETE FROM helix_dm_conversation_nicknames " +
+                    "WHERE owner_username = $1 AND friend_username = $2",
                     [user.username, partner]
                 );
+
                 return res.json({ ok: true, nickname: null });
             }
 
             await dbPool.query(
-                "INSERT INTO helix_dm_conversation_nicknames (owner_username, friend_username, nickname) " +
-                "VALUES ($1, $2, $3) " +
-                "ON CONFLICT (owner_username, friend_username) " +
+                "INSERT INTO helix_dm_conversation_nicknames " +
+                "(owner_username, friend_username, nickname) " +
+                "VALUES ($1,$2,$3) " +
+                "ON CONFLICT (owner_username,friend_username) " +
                 "DO UPDATE SET nickname = EXCLUDED.nickname, updated_at = NOW()",
                 [user.username, partner, nickname]
             );
@@ -353,9 +705,14 @@ function createDMRouter(options) {
             await ensureConversationAccess(user.username, partner);
 
             const result = await dbPool.query(
-                "SELECT p.message_id AS \"messageId\", p.pinned_at AS \"pinnedAt\", " +
-                "m.sender_username AS sender, m.recipient_username AS recipient, m.body AS text, " +
-                "m.created_at AS \"createdAt\", m.edited_at AS \"editedAt\" " +
+                "SELECT m.id, m.sender_username AS sender, " +
+                "m.recipient_username AS recipient, " +
+                "m.body AS text, m.created_at AS \"createdAt\", " +
+                "m.edited_at AS \"editedAt\", m.deleted_at AS \"deletedAt\", " +
+                "m.media_name AS \"mediaName\", m.media_size AS \"mediaSize\", " +
+                "m.media_kind AS \"mediaKind\", " +
+                "CASE WHEN m.media_data IS NOT NULL THEN '/api/dm/media/' || m.id::text ELSE NULL END AS \"mediaUrl\", " +
+                "p.pinned_at AS \"pinnedAt\" " +
                 "FROM helix_dm_message_pins p " +
                 "JOIN helix_dm_messages m ON m.id = p.message_id " +
                 "WHERE p.owner_username = $1 " +
@@ -365,24 +722,23 @@ function createDMRouter(options) {
                 [user.username, partner]
             );
 
-            const reactions = await loadReactionMap(
-                result.rows.map((row) => row.messageId),
-                user.username
-            );
-
-            const pins = result.rows.map((row) => ({
-                id: row.messageId,
-                sender: row.sender,
-                recipient: row.recipient,
-                text: row.text,
-                createdAt: row.createdAt,
-                editedAt: row.editedAt,
-                reactions: reactions.get(row.messageId) || [],
-                isPinned: true,
-                pinnedAt: row.pinnedAt
-            }));
-
-            return res.json({ ok: true, pins });
+            return res.json({
+                ok: true,
+                pins: result.rows.map((row) => ({
+                    id: row.id,
+                    sender: row.sender,
+                    recipient: row.recipient,
+                    text: row.deletedAt ? "" : row.text,
+                    createdAt: row.createdAt,
+                    editedAt: row.editedAt,
+                    mediaUrl: row.mediaUrl || null,
+                    mediaName: row.mediaName || null,
+                    mediaSize: row.mediaSize ? Number(row.mediaSize) : null,
+                    mediaKind: row.mediaKind || null,
+                    pinnedAt: row.pinnedAt,
+                    isDeleted: Boolean(row.deletedAt)
+                }))
+            });
         } catch (error) {
             console.error("DM pin list failed:", error);
             return errorResponse(res, error);
@@ -396,36 +752,96 @@ function createDMRouter(options) {
 
         try {
             const body = req.body && typeof req.body === "object" ? req.body : {};
-            const keys = Object.keys(body);
+            const allowed = new Set(["to", "text", "replyToId"]);
 
-            if (keys.some((key) => key !== "to" && key !== "text")) {
+            if (Object.keys(body).some((key) => !allowed.has(key))) {
                 return res.status(400).json({
-                    error: "This text-only message endpoint accepts only a recipient and text."
+                    error: "This endpoint accepts recipient, text and replyToId."
                 });
             }
 
-            const partner = await ensureConversationAccess(
+            const recipient = await ensureConversationAccess(
                 user.username,
                 body.to,
                 { allowSend: true }
             );
+
             const text = validateText(body.text);
-            const id = crypto.randomUUID();
+            const replyToId = String(body.replyToId || "").trim();
 
-            await dbPool.query(
-                "INSERT INTO helix_dm_messages (id, sender_username, recipient_username, body) " +
-                "VALUES ($1, $2, $3, $4)",
-                [id, user.username, partner, text]
-            );
-
-            const message = await loadMessageWithReactions(id, user.username);
+            const { message } = await insertMessage({
+                sender: user.username,
+                recipient,
+                text,
+                replyToId,
+                media: null
+            });
 
             return res.status(201).json({
                 ok: true,
                 message
             });
         } catch (error) {
-            console.error("DM message send failed:", error);
+            console.error("DM text send failed:", error);
+            return errorResponse(res, error);
+        }
+    });
+
+    router.post("/messages/media", async (req, res) => {
+        const user = await requireCurrentUser(req, res);
+        if (!user) return;
+        if (!(await requireDMDatabase(res))) return;
+
+        try {
+            const body = req.body && typeof req.body === "object" ? req.body : {};
+
+            const recipient = await ensureConversationAccess(
+                user.username,
+                body.to,
+                { allowSend: true }
+            );
+
+            const text = validateText(body.text, true);
+            const replyToId = String(body.replyToId || "").trim();
+            const incoming = body.media;
+
+            if (!incoming || typeof incoming !== "object" || Array.isArray(incoming)) {
+                fail("Choose a photo or video to attach.");
+            }
+
+            const decoded = decodeMediaDataUrl(incoming.dataUrl);
+            const verified = verifyMedia(
+                decoded.buffer,
+                decoded.declaredMime
+            );
+
+            if (
+                incoming.size !== undefined &&
+                Number(incoming.size) !== decoded.buffer.length
+            ) {
+                fail("The attachment size could not be verified.");
+            }
+
+            const { message } = await insertMessage({
+                sender: user.username,
+                recipient,
+                text,
+                replyToId,
+                media: {
+                    buffer: decoded.buffer,
+                    mime: verified.mime,
+                    kind: verified.kind,
+                    size: decoded.buffer.length,
+                    name: sanitizeMediaName(incoming.name)
+                }
+            });
+
+            return res.status(201).json({
+                ok: true,
+                message
+            });
+        } catch (error) {
+            console.error("DM media send failed:", error);
             return errorResponse(res, error);
         }
     });
@@ -435,32 +851,47 @@ function createDMRouter(options) {
         if (!user) return;
         if (!(await requireDMDatabase(res))) return;
 
-        try {
-            const messageId = normalizeUsername(req.params.id);
-            const text = validateText(req.body && req.body.text);
+        const id = String(req.params.id || "");
 
-            const row = await getMessageRow(messageId, user.username);
-            if (!row) return res.status(404).json({ error: "Message not found." });
-            if (row.sender !== user.username) {
-                return res.status(403).json({ error: "You can only edit your own messages." });
+        try {
+            if (!isUuid(id)) fail("Invalid message.");
+
+            const text = validateText(req.body?.text);
+            const current = await getMessageRow(id, user.username);
+
+            if (!current) {
+                return res.status(404).json({ error: "Message not found." });
             }
 
-            await ensureConversationAccess(user.username, row.recipient);
+            if (
+                current.sender !== user.username ||
+                current.mediaMime ||
+                current.deletedAt
+            ) {
+                return res.status(403).json({
+                    error: "Only your active text messages can be edited."
+                });
+            }
 
-            const result = await dbPool.query(
-                "UPDATE helix_dm_messages SET body = $1, edited_at = NOW() " +
-                "WHERE id = $2 AND sender_username = $3 RETURNING id",
-                [text, messageId, user.username]
+            await ensureConversationAccess(
+                user.username,
+                current.recipient
             );
 
-            if (!result.rowCount) {
-                return res.status(404).json({ error: "Message no longer exists." });
-            }
+            await dbPool.query(
+                "UPDATE helix_dm_messages SET body = $1, edited_at = NOW() " +
+                "WHERE id = $2 AND sender_username = $3 AND deleted_at IS NULL",
+                [text, id, user.username]
+            );
 
-            const message = await loadMessageWithReactions(messageId, user.username);
+            const message = await loadMutationMessage(
+                id,
+                user.username
+            );
+
             return res.json({ ok: true, message });
         } catch (error) {
-            console.error("DM message edit failed:", error);
+            console.error("DM edit failed:", error);
             return errorResponse(res, error);
         }
     });
@@ -470,29 +901,48 @@ function createDMRouter(options) {
         if (!user) return;
         if (!(await requireDMDatabase(res))) return;
 
-        try {
-            const messageId = normalizeUsername(req.params.id);
-            const row = await getMessageRow(messageId, user.username);
+        const id = String(req.params.id || "");
 
-            if (!row) return res.status(404).json({ error: "Message not found." });
-            if (row.sender !== user.username) {
-                return res.status(403).json({ error: "You can only delete your own messages." });
+        try {
+            if (!isUuid(id)) fail("Invalid message.");
+
+            const current = await getMessageRow(id, user.username);
+
+            if (!current) {
+                return res.status(404).json({ error: "Message not found." });
             }
 
-            await ensureConversationAccess(user.username, row.recipient);
+            if (current.sender !== user.username) {
+                return res.status(403).json({
+                    error: "You can only delete your own messages."
+                });
+            }
 
-            const result = await dbPool.query(
-                "DELETE FROM helix_dm_messages WHERE id = $1 AND sender_username = $2 RETURNING id",
-                [messageId, user.username]
+            await ensureConversationAccess(
+                user.username,
+                current.recipient
             );
 
-            if (!result.rowCount) {
-                return res.status(404).json({ error: "Message no longer exists." });
-            }
+            await dbPool.query(
+                "UPDATE helix_dm_messages SET " +
+                "body = '', media_data = NULL, media_mime = NULL, " +
+                "media_name = NULL, media_size = NULL, media_kind = NULL, " +
+                "edited_at = NULL, deleted_at = NOW() " +
+                "WHERE id = $1 AND sender_username = $2 AND deleted_at IS NULL",
+                [id, user.username]
+            );
 
-            return res.json({ ok: true, deletedId: messageId });
+            await dbPool.query(
+                "DELETE FROM helix_dm_message_pins WHERE message_id = $1",
+                [id]
+            );
+
+            return res.json({
+                ok: true,
+                deletedId: id
+            });
         } catch (error) {
-            console.error("DM message delete failed:", error);
+            console.error("DM delete failed:", error);
             return errorResponse(res, error);
         }
     });
@@ -502,31 +952,49 @@ function createDMRouter(options) {
         if (!user) return;
         if (!(await requireDMDatabase(res))) return;
 
-        try {
-            const messageId = normalizeUsername(req.params.id);
-            const row = await getMessageRow(messageId, user.username);
-            if (!row) return res.status(404).json({ error: "Message not found." });
+        const id = String(req.params.id || "");
 
-            const partner = row.sender === user.username ? row.recipient : row.sender;
+        try {
+            if (!isUuid(id)) fail("Invalid message.");
+
+            const current = await getMessageRow(id, user.username);
+            if (!current) {
+                return res.status(404).json({ error: "Message not found." });
+            }
+
+            if (current.deletedAt) {
+                return res.status(400).json({
+                    error: "Deleted messages cannot receive reactions."
+                });
+            }
+
+            const partner =
+                current.sender === user.username
+                    ? current.recipient
+                    : current.sender;
+
             await ensureConversationAccess(user.username, partner);
 
-            const emoji = validateEmoji(req.body && req.body.emoji);
-            const reacted = req.body && req.body.reacted !== false;
+            const emoji = validateReaction(req.body?.emoji);
+            const reacted = req.body?.reacted !== false;
 
             if (reacted) {
                 await dbPool.query(
-                    "INSERT INTO helix_dm_message_reactions (message_id, username, emoji) " +
-                    "VALUES ($1, $2, $3) ON CONFLICT (message_id, username, emoji) DO NOTHING",
-                    [messageId, user.username, emoji]
+                    "INSERT INTO helix_dm_message_reactions " +
+                    "(message_id, username, emoji) " +
+                    "VALUES ($1,$2,$3) " +
+                    "ON CONFLICT (message_id,username,emoji) DO NOTHING",
+                    [id, user.username, emoji]
                 );
             } else {
                 await dbPool.query(
-                    "DELETE FROM helix_dm_message_reactions WHERE message_id = $1 AND username = $2 AND emoji = $3",
-                    [messageId, user.username, emoji]
+                    "DELETE FROM helix_dm_message_reactions " +
+                    "WHERE message_id = $1 AND username = $2 AND emoji = $3",
+                    [id, user.username, emoji]
                 );
             }
 
-            const message = await loadMessageWithReactions(messageId, user.username);
+            const message = await loadMutationMessage(id, user.username);
             return res.json({ ok: true, message });
         } catch (error) {
             console.error("DM reaction failed:", error);
@@ -539,30 +1007,47 @@ function createDMRouter(options) {
         if (!user) return;
         if (!(await requireDMDatabase(res))) return;
 
-        try {
-            const messageId = normalizeUsername(req.params.id);
-            const row = await getMessageRow(messageId, user.username);
-            if (!row) return res.status(404).json({ error: "Message not found." });
+        const id = String(req.params.id || "");
 
-            const partner = row.sender === user.username ? row.recipient : row.sender;
+        try {
+            if (!isUuid(id)) fail("Invalid message.");
+
+            const current = await getMessageRow(id, user.username);
+            if (!current) {
+                return res.status(404).json({ error: "Message not found." });
+            }
+
+            if (current.deletedAt) {
+                return res.status(400).json({
+                    error: "Deleted messages cannot be pinned."
+                });
+            }
+
+            const partner =
+                current.sender === user.username
+                    ? current.recipient
+                    : current.sender;
+
             await ensureConversationAccess(user.username, partner);
 
-            const pinned = req.body && req.body.pinned !== false;
+            const pinned = req.body?.pinned !== false;
 
             if (pinned) {
                 await dbPool.query(
-                    "INSERT INTO helix_dm_message_pins (message_id, owner_username) " +
-                    "VALUES ($1, $2) ON CONFLICT (message_id, owner_username) DO NOTHING",
-                    [messageId, user.username]
+                    "INSERT INTO helix_dm_message_pins " +
+                    "(message_id, owner_username) VALUES ($1,$2) " +
+                    "ON CONFLICT (message_id,owner_username) DO NOTHING",
+                    [id, user.username]
                 );
             } else {
                 await dbPool.query(
-                    "DELETE FROM helix_dm_message_pins WHERE message_id = $1 AND owner_username = $2",
-                    [messageId, user.username]
+                    "DELETE FROM helix_dm_message_pins " +
+                    "WHERE message_id = $1 AND owner_username = $2",
+                    [id, user.username]
                 );
             }
 
-            const message = await loadMessageWithReactions(messageId, user.username);
+            const message = await loadMutationMessage(id, user.username);
             return res.json({ ok: true, message });
         } catch (error) {
             console.error("DM pin update failed:", error);
@@ -575,40 +1060,69 @@ function createDMRouter(options) {
         if (!user) return;
         if (!(await requireDMDatabase(res))) return;
 
-        try {
-            const body = req.body && typeof req.body === "object" ? req.body : {};
-            const keys = Object.keys(body);
+        const sourceId = String(req.params.id || "");
 
-            if (keys.some((key) => key !== "to")) {
+        try {
+            if (!isUuid(sourceId)) fail("Invalid source message.");
+
+            const source = await getMessageRow(sourceId, user.username);
+            if (!source) {
+                return res.status(404).json({ error: "Message not found." });
+            }
+
+            if (source.deletedAt) {
                 return res.status(400).json({
-                    error: "Forwarding accepts only a destination."
+                    error: "Deleted messages cannot be forwarded."
                 });
             }
 
-            const messageId = normalizeUsername(req.params.id);
-            const source = await getMessageRow(messageId, user.username);
-            if (!source) return res.status(404).json({ error: "Message not found." });
-
             const sourcePartner =
-                source.sender === user.username ? source.recipient : source.sender;
+                source.sender === user.username
+                    ? source.recipient
+                    : source.sender;
 
-            await ensureConversationAccess(user.username, sourcePartner);
+            await ensureConversationAccess(
+                user.username,
+                sourcePartner
+            );
 
             const destination = await ensureConversationAccess(
                 user.username,
-                body.to,
+                req.body?.to,
                 { allowSend: true }
             );
 
-            const id = crypto.randomUUID();
+            let media = null;
 
-            await dbPool.query(
-                "INSERT INTO helix_dm_messages (id, sender_username, recipient_username, body) " +
-                "VALUES ($1, $2, $3, $4)",
-                [id, user.username, destination, source.text]
-            );
+            if (source.mediaMime) {
+                const raw = await dbPool.query(
+                    "SELECT media_data, media_mime AS \"mediaMime\", " +
+                    "media_name AS \"mediaName\", media_size AS \"mediaSize\", " +
+                    "media_kind AS \"mediaKind\" " +
+                    "FROM helix_dm_messages WHERE id = $1",
+                    [sourceId]
+                );
 
-            const message = await loadMessageWithReactions(id, user.username);
+                const mediaRow = raw.rows[0];
+
+                if (mediaRow?.media_data) {
+                    media = {
+                        buffer: mediaRow.media_data,
+                        mime: mediaRow.mediaMime,
+                        name: mediaRow.mediaName,
+                        size: Number(mediaRow.mediaSize),
+                        kind: mediaRow.mediaKind
+                    };
+                }
+            }
+
+            const { message } = await insertMessage({
+                sender: user.username,
+                recipient: destination,
+                text: source.text || "",
+                replyToId: null,
+                media
+            });
 
             return res.status(201).json({
                 ok: true,
@@ -616,6 +1130,91 @@ function createDMRouter(options) {
             });
         } catch (error) {
             console.error("DM forward failed:", error);
+            return errorResponse(res, error);
+        }
+    });
+
+    router.get("/notifications", async (req, res) => {
+        const user = await requireCurrentUser(req, res);
+        if (!user) return;
+        if (!(await requireDMDatabase(res))) return;
+
+        try {
+            const messages = await dbPool.query(
+                "SELECT m.id, m.sender_username AS sender, " +
+                "m.recipient_username AS recipient, m.body AS text, " +
+                "m.created_at AS \"createdAt\", m.media_kind AS \"mediaKind\", " +
+                "m.media_name AS \"mediaName\" " +
+                "FROM helix_dm_messages m " +
+                "WHERE m.recipient_username = $1 " +
+                "AND m.read_at IS NULL AND m.deleted_at IS NULL " +
+                "ORDER BY m.created_at DESC LIMIT 20",
+                [user.username]
+            );
+
+            const count = await dbPool.query(
+                "SELECT COUNT(*)::int AS count FROM helix_dm_messages " +
+                "WHERE recipient_username = $1 " +
+                "AND read_at IS NULL AND deleted_at IS NULL",
+                [user.username]
+            );
+
+            return res.json({
+                ok: true,
+                unread: Number(count.rows[0]?.count || 0),
+                messages: messages.rows
+            });
+        } catch (error) {
+            console.error("DM notifications failed:", error);
+            return errorResponse(res, error);
+        }
+    });
+
+    router.get("/media/:messageId", async (req, res) => {
+        const user = await requireCurrentUser(req, res);
+        if (!user) return;
+        if (!(await requireDMDatabase(res))) return;
+
+        const id = String(req.params.messageId || "");
+
+        try {
+            if (!isUuid(id)) fail("Invalid media.");
+
+            const result = await dbPool.query(
+                "SELECT media_data, media_mime, media_name, deleted_at " +
+                "FROM helix_dm_messages WHERE id = $1 " +
+                "AND media_data IS NOT NULL " +
+                "AND (sender_username = $2 OR recipient_username = $2)",
+                [id, user.username]
+            );
+
+            const row = result.rows[0];
+
+            if (!row || row.deleted_at) {
+                return res.status(404).json({ error: "Media not found." });
+            }
+
+            res.setHeader(
+                "Content-Type",
+                row.media_mime || "application/octet-stream"
+            );
+            res.setHeader(
+                "Content-Disposition",
+                "inline; filename*=UTF-8''" +
+                encodeURIComponent(row.media_name || "attachment")
+            );
+            res.setHeader(
+                "Cache-Control",
+                "private, max-age=3600"
+            );
+            res.setHeader(
+                "X-Content-Type-Options",
+                "nosniff"
+            );
+
+            return res.end(row.media_data);
+        } catch (error) {
+            console.error("DM media load failed:", error);
             return errorResponse(res, error);
         }
     });
