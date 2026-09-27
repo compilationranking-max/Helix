@@ -524,6 +524,9 @@
                 </div>
 
                 <button type="button" id="chat-search-button" aria-label="Search messages" aria-expanded="false" title="Search messages">⌕</button>
+                <button type="button" id="chat-pin-button" class="dm-chat-pin-button" aria-label="Pinned Messages" title="Pinned Messages" aria-expanded="false">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8M9 4l1 7-4 4v2h5v3h2v-3h5v-2l-4-4 1-7"></path></svg>
+                </button>
                 <button type="button" id="chat-info-button" aria-label="Conversation info" title="Conversation info">ⓘ</button>
             </div>
         </header>
@@ -545,10 +548,18 @@
                 </div>
                 <button type="button" class="dm-media-preview-remove" id="dm-media-preview-remove" aria-label="Remove attachment">×</button>
             </div>
+            <div class="dm-reply-bar" id="dm-reply-bar" hidden>
+                <div class="dm-reply-bar-copy">
+                    <span>REPLYING TO</span>
+                    <strong id="dm-reply-bar-text"></strong>
+                </div>
+                <button type="button" id="dm-reply-cancel" aria-label="Cancel reply" title="Cancel reply">×</button>
+            </div>
             <div class="message-input-shell">
                 <button type="button" class="dm-attach-button" id="dm-attach-button" aria-label="Attach photo or video" title="Attach photo or video">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 12.5 12 8a3.5 3.5 0 0 1 5 5l-6.2 6.2a4.8 4.8 0 0 1-6.8-6.8l7-7a3.8 3.8 0 0 1 5.4 5.4l-6.3 6.3a2 2 0 0 1-2.8-2.8l5.8-5.8"/></svg>
                 </button>
+                <button type="button" class="dm-emoji-button" id="dm-emoji-button" aria-label="Open emoji picker" title="Emoji">+</button>
                 <input id="message-input" type="text" maxlength="4000" placeholder="Message your friend..." autocomplete="off" aria-label="Message your friend...">
                 <button type="submit" class="message-send-button" aria-label="Send message" title="Send message">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h13"></path><path d="m13 6 6 6-6 6"></path></svg>
@@ -557,6 +568,33 @@
             <input id="dm-media-input" type="file" accept="image/*,video/*" hidden>
             <p class="dm-media-hint" id="dm-media-hint">Photos &amp; videos up to 10 MB</p>
         </form>
+
+        <div class="dm-emoji-picker-container" id="dm-emoji-picker-container" hidden></div>
+
+        <div class="dm-message-context-menu" id="dm-message-context-menu" hidden role="menu" aria-label="Message actions"></div>
+
+        <div class="dm-pinned-panel" id="dm-pinned-panel" hidden>
+            <div class="dm-popover-header">
+                <div>
+                    <span class="system-label">DIRECT MESSAGES / PINS</span>
+                    <h3>Pinned Messages</h3>
+                </div>
+                <button type="button" class="dm-popover-close" id="dm-pinned-close" aria-label="Close pinned messages">×</button>
+            </div>
+            <div class="dm-pinned-list" id="dm-pinned-list"></div>
+        </div>
+
+        <div class="dm-forward-panel" id="dm-forward-panel" hidden>
+            <div class="dm-popover-header">
+                <div>
+                    <span class="system-label">DIRECT MESSAGES / FORWARD</span>
+                    <h3>Forward message</h3>
+                </div>
+                <button type="button" class="dm-popover-close" id="dm-forward-close" aria-label="Close forward panel">×</button>
+            </div>
+            <p class="dm-forward-copy" id="dm-forward-copy"></p>
+            <div class="dm-forward-list" id="dm-forward-list"></div>
+        </div>
     </section>
 
 <aside class="dm-info-panel" id="dm-info-panel" hidden>
