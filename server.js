@@ -227,6 +227,16 @@ async function initializeDatabase() {
 
         CREATE INDEX IF NOT EXISTS helix_dm_pins_owner_idx
             ON helix_dm_pins (owner_username, pinned_at DESC);
+        CREATE TABLE IF NOT EXISTS helix_dm_reactions (
+            message_id UUID NOT NULL REFERENCES helix_messages(id) ON DELETE CASCADE,
+            reactor_username TEXT NOT NULL REFERENCES helix_users(username) ON DELETE CASCADE,
+            emoji TEXT NOT NULL CHECK (char_length(emoji) BETWEEN 1 AND 32),
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            PRIMARY KEY (message_id, reactor_username)
+        );
+
+        CREATE INDEX IF NOT EXISTS helix_dm_reactions_message_idx
+            ON helix_dm_reactions (message_id);
         ALTER TABLE helix_messages
             DROP CONSTRAINT IF EXISTS helix_messages_body_check;
         ALTER TABLE helix_messages
@@ -1520,7 +1530,21 @@ app.get("/api/dm/messages", async (req, res) => {
                 EXISTS (
                     SELECT 1 FROM helix_dm_pins p
                     WHERE p.owner_username = $1 AND p.message_id = m.id
-                ) AS "isPinned"
+                ) AS "isPinned",
+                COALESCE((
+                    SELECT jsonb_agg(rg.reaction ORDER BY rg.emoji)
+                    FROM (
+                        SELECT r.emoji,
+                               jsonb_build_object(
+                                   'emoji', r.emoji,
+                                   'count', COUNT(*)::int,
+                                   'reacted', BOOL_OR(r.reactor_username = $1)
+                               ) AS reaction
+                        FROM helix_dm_reactions r
+                        WHERE r.message_id = m.id
+                        GROUP BY r.emoji
+                    ) rg
+                ), '[]'::jsonb) AS "reactions"
             FROM helix_messages m
             LEFT JOIN helix_messages r ON r.id = m.reply_to_id
             WHERE (m.sender_username = $1 AND m.recipient_username = $2)
@@ -2054,6 +2078,53 @@ app.post("/api/dm/messages/:messageId/forward", async (req, res) => {
     } catch (error) {
         console.error("DM forward failed:", error);
         return res.status(500).json({ error: "Could not forward the message." });
+    }
+});
+app.post("/api/dm/messages/:messageId/reaction", async (req, res) => {
+    const user = await requireCurrentUser(req, res);
+    if (!user) return;
+
+    const messageId = String(req.params.messageId || "");
+    const emoji = typeof req.body?.emoji === "string" ? req.body.emoji.trim() : "";
+
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(messageId)) {
+        return res.status(400).json({ error: "Invalid message." });
+    }
+    if (!emoji || emoji.length > 32 || /[\u0000-\u001F\u007F]/.test(emoji)) {
+        return res.status(400).json({ error: "Invalid reaction." });
+    }
+
+    try {
+        await requireDatabase();
+        const message = await getDMMessageForUser(messageId, user.username);
+        if (!message) return res.status(404).json({ error: "Message not found." });
+
+        const otherUser = message.sender === user.username ? message.recipient : message.sender;
+        if (!(await areCloudFriends(user.username, otherUser))) {
+            return res.status(403).json({ error: "You can only react in a friend conversation." });
+        }
+
+        const existing = await dbPool.query(
+            "SELECT emoji FROM helix_dm_reactions WHERE message_id = $1 AND reactor_username = $2",
+            [messageId, user.username]
+        );
+
+        if (existing.rows[0]?.emoji === emoji) {
+            await dbPool.query(
+                "DELETE FROM helix_dm_reactions WHERE message_id = $1 AND reactor_username = $2",
+                [messageId, user.username]
+            );
+        } else {
+            await dbPool.query(
+                "INSERT INTO helix_dm_reactions (message_id, reactor_username, emoji) VALUES ($1, $2, $3) ON CONFLICT (message_id, reactor_username) DO UPDATE SET emoji = EXCLUDED.emoji, created_at = NOW()",
+                [messageId, user.username, emoji]
+            );
+        }
+
+        return res.json({ ok: true, messageId });
+    } catch (error) {
+        console.error("DM reaction failed:", error);
+        return res.status(500).json({ error: "Could not update the reaction." });
     }
 });
 app.get("/api/dm/media/:messageId", async (req, res) => {
