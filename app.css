@@ -10899,3 +10899,130 @@ body.helix-reduced-motion *::after {
     #dm-view .dm-forward-list { grid-template-columns: 1fr; }
     #dm-view .dm-pinned-panel, #dm-view .dm-forward-panel { top: 62px; right: 10px; width: calc(100% - 20px); }
 }
+/* =========================================================
+   HELIX — DM HOVER EMOJI BAR + PORTALED CONTEXT MENU
+   ========================================================= */
+#dm-view .message {
+    position: relative;
+    overflow: visible;
+}
+
+#dm-view .dm-message-hover-reaction-bar {
+    position: absolute;
+    top: -39px;
+    left: 8px;
+    z-index: 40;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    height: 36px;
+    padding: 3px 6px;
+    border: 1px solid rgba(255,255,255,.06);
+    border-radius: 999px;
+    background: rgba(38,39,44,.96);
+    box-shadow: 0 12px 28px rgba(0,0,0,.34), 0 0 18px rgba(0,229,255,.05);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(5px) scale(.97);
+    transform-origin: left bottom;
+    transition: opacity .15s ease, transform .15s ease;
+    backdrop-filter: blur(12px);
+}
+#dm-view .message.sent .dm-message-hover-reaction-bar {
+    left: auto;
+    right: 8px;
+    transform-origin: right bottom;
+}
+#dm-view .message:hover .dm-message-hover-reaction-bar,
+#dm-view .dm-message-hover-reaction-bar:hover,
+#dm-view .dm-message-hover-reaction-bar:focus-within {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0) scale(1);
+}
+#dm-view .dm-hover-reaction {
+    width: 30px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: #f7f9fb;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    transition: background .13s ease, transform .13s ease;
+}
+#dm-view .dm-hover-reaction:hover {
+    background: rgba(255,255,255,.08);
+    transform: translateY(-1px) scale(1.05);
+}
+#dm-view .dm-hover-reaction-more {
+    margin-left: 3px;
+    width: 32px;
+    height: 32px;
+    color: #dbe1e7;
+    font-size: 24px;
+    background: rgba(255,255,255,.07);
+}
+#dm-view .dm-hover-reaction-more:hover {
+    color: #00e5ff;
+    background: rgba(0,229,255,.10);
+}
+
+/* The context menu is portaled to <body>, so it cannot be clipped by the chat panel. */
+.dm-message-context-menu[hidden] { display: none !important; }
+.dm-message-context-menu {
+    position: fixed;
+    z-index: 99999;
+    width: 252px;
+    max-width: calc(100vw - 16px);
+    padding: 6px;
+    border: 1px solid rgba(126,145,170,.18);
+    border-radius: 12px;
+    background: #23252b;
+    box-shadow: 0 22px 55px rgba(0,0,0,.58), 0 0 26px rgba(0,229,255,.07);
+    backdrop-filter: blur(14px);
+}
+.dm-message-context-menu .dm-context-actions { padding-top: 0; }
+.dm-message-context-menu .dm-context-action {
+    width: 100%;
+    min-height: 41px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 10px;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    color: #00e5ff;
+    font-size: 12px;
+    font-weight: 650;
+    text-align: left;
+    cursor: pointer;
+    transition: background .14s ease, color .14s ease;
+}
+.dm-message-context-menu .dm-context-action:hover { background: rgba(255,255,255,.06); }
+.dm-message-context-menu .dm-context-action.danger { color: #ff5273; }
+.dm-message-context-menu .dm-context-action.danger:hover { background: rgba(255,82,115,.10); }
+.dm-message-context-menu .dm-context-action svg {
+    width: 20px;
+    height: 20px;
+    flex: 0 0 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+@media (max-width: 700px) {
+    #dm-view .dm-message-hover-reaction-bar {
+        top: -37px;
+        height: 34px;
+        padding: 2px 5px;
+    }
+    #dm-view .dm-hover-reaction { width: 28px; height: 28px; font-size: 19px; }
+    #dm-view .dm-hover-reaction-more { width: 30px; height: 30px; font-size: 22px; }
+}
