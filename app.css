@@ -11037,38 +11037,49 @@ body.helix-reduced-motion *::after {
     flex-wrap: wrap;
     align-items: center;
     gap: 4px;
-    margin-top: 7px;
+    margin-top: 6px;
     padding-left: 2px;
 }
 
 #dm-view .dm-message-reaction {
-    min-width: 30px;
+    width: 24px;
     height: 24px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 2px;
-    padding: 2px 7px;
-    border: 1px solid rgba(0, 229, 255, 0.15);
-    border-radius: 999px;
-    background: rgba(4, 20, 29, 0.78);
+    flex: 0 0 24px;
+    display: inline-grid;
+    place-items: center;
+    padding: 0;
+    border: 1px solid rgba(0, 229, 255, 0.22);
+    border-radius: 50%;
+    background: rgba(4, 20, 29, 0.92);
     color: #dffaff;
     font-size: 13px;
     line-height: 1;
     cursor: pointer;
-    box-shadow: 0 0 10px rgba(0, 229, 255, 0.04);
+    box-shadow: 0 0 9px rgba(0, 229, 255, 0.08);
     transition: border-color .15s ease, background .15s ease, box-shadow .15s ease, transform .15s ease;
 }
 
 #dm-view .dm-message-reaction:hover,
 #dm-view .dm-message-reaction.reacted {
-    border-color: rgba(0, 229, 255, 0.45);
-    background: rgba(0, 229, 255, 0.10);
-    box-shadow: 0 0 12px rgba(0, 229, 255, 0.12);
+    border-color: rgba(0, 229, 255, 0.62);
+    background: rgba(0, 229, 255, 0.12);
+    box-shadow: 0 0 12px rgba(0, 229, 255, 0.22);
 }
 
 #dm-view .dm-message-reaction:hover {
-    transform: translateY(-1px);
+    transform: translateY(-1px) scale(1.04);
+}
+
+#dm-view .message.received .dm-message-reactions {
+    justify-content: flex-start;
+}
+#dm-view .message.sent .dm-message-reactions {
+    justify-content: flex-end;
+}
+
+/* The Instagram-style quick reaction rail is only for incoming messages. */
+#dm-view .message.sent .dm-message-hover-reaction-bar {
+    display: none !important;
 }
 
 #dm-view .message.sent .dm-message-reactions {
