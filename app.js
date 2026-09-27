@@ -5420,43 +5420,67 @@ bootstrapHelixSession().then((authenticated) => {
     function renderReplyReference(item, bubble) {
         if (!item || !bubble) return;
 
+        // PostgreSQL is authoritative. The local store is only an immediate
+        // fallback for the exact message we just sent.
+        const persistedId = String(item.replyToId || "").trim();
+        const serverPreview = item.replyPreview || null;
         const localPreview = replyPreviewStore[String(item.id)] || null;
-        const replyId = String(item.replyToId || localPreview?.id || "").trim();
-        const replySender = String(item.replySender || localPreview?.sender || "").trim();
-        const replyText = String(item.replyText || localPreview?.text || "").trim();
-        const replyMediaUrl = item.replyMediaUrl || localPreview?.mediaUrl || null;
-        const replyMediaName = item.replyMediaName || localPreview?.mediaName || null;
-        const replyMediaKind = item.replyMediaKind || localPreview?.mediaKind || null;
 
-        // A locally captured preview is enough to render the reply even when
-        // an older API response arrives without reply expansion.
-        if (!replyId && !localPreview) return;
+        const replyId = persistedId ||
+            String(serverPreview?.id || localPreview?.id || "").trim();
+        if (!replyId) return;
 
-        const reference = document.createElement("button");
-        reference.type = "button";
+        const replySender = String(
+            item.replySender ||
+            serverPreview?.sender ||
+            localPreview?.sender ||
+            "Friend"
+        ).trim();
+
+        const replyText = String(
+            item.replyText !== undefined && item.replyText !== null
+                ? item.replyText
+                : serverPreview?.text ??
+                    localPreview?.text ??
+                    ""
+        ).trim();
+
+        const replyMediaUrl =
+            item.replyMediaUrl ||
+            serverPreview?.mediaUrl ||
+            localPreview?.mediaUrl ||
+            null;
+
+        const replyMediaName =
+            item.replyMediaName ||
+            serverPreview?.mediaName ||
+            localPreview?.mediaName ||
+            null;
+
+        const replyMediaKind =
+            item.replyMediaKind ||
+            serverPreview?.mediaKind ||
+            localPreview?.mediaKind ||
+            null;
+
+        // Plain block rather than a button: this is display content inside the
+        // message bubble, not a second form control.
+        const reference = document.createElement("div");
         reference.className = "dm-reply-reference";
-        reference.title = "Jump to replied message";
         reference.dataset.replyMessageId = replyId;
+        reference.setAttribute("role", "button");
+        reference.setAttribute("tabindex", "0");
+        reference.setAttribute("aria-label", "Reply to @" + replySender);
 
-        const senderUsername = replySender || "Friend";
+        const quoteBar = document.createElement("span");
+        quoteBar.className = "dm-reply-reference-bar";
+        quoteBar.setAttribute("aria-hidden", "true");
+
+        const copy = document.createElement("span");
+        copy.className = "dm-reply-reference-copy";
+
         const senderLabel = document.createElement("strong");
-        senderLabel.textContent = "@" + senderUsername;
-
-        const avatar = document.createElement("span");
-        avatar.className = "dm-reply-reference-avatar";
-        avatar.textContent = senderUsername.slice(0, 2).toUpperCase();
-
-        const friend = friends.find((entry) => entry.username === senderUsername);
-        const senderPhoto = senderUsername === loggedInUser
-            ? localStorage.getItem("helixProfilePhoto:" + loggedInUser)
-            : friend?.profilePhoto;
-
-        if (senderPhoto) {
-            avatar.style.backgroundImage = 'url("' + senderPhoto + '")';
-            avatar.style.backgroundSize = "cover";
-            avatar.style.backgroundPosition = "center";
-            avatar.style.color = "transparent";
-        }
+        senderLabel.textContent = "@" + replySender;
 
         const previewText = document.createElement("small");
         previewText.className = "dm-reply-reference-text";
@@ -5468,16 +5492,20 @@ bootstrapHelixSession().then((authenticated) => {
                     ? "📷 Photo"
                     : "Attachment");
 
-        const copy = document.createElement("span");
-        copy.className = "dm-reply-reference-copy";
         copy.append(senderLabel, previewText);
+        reference.append(quoteBar, copy);
 
-        reference.append(avatar, copy);
-
-        reference.addEventListener("click", (event) => {
+        const jumpToOriginal = (event) => {
             event.preventDefault();
             event.stopPropagation();
-            if (replyId) scrollToMessage(replyId);
+            scrollToMessage(replyId);
+        };
+
+        reference.addEventListener("click", jumpToOriginal);
+        reference.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" || event.key === " ") {
+                jumpToOriginal(event);
+            }
         });
 
         bubble.appendChild(reference);
