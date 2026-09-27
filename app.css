@@ -2904,9 +2904,7 @@ body::before {
 
 @media (max-width: 900px) {
 
-    #dm-view .dm-instagram-shell {
-        grid-template-columns: 280px minmax(0, 1fr);
-    }
+    
 
     #profile-view .profile-layout {
         grid-template-columns: 190px minmax(0, 1fr) !important;
@@ -2921,9 +2919,7 @@ body::before {
 @media (max-width: 700px) {
 
 
-    #dm-info-panel {
-        width: min(310px, 88vw);
-    }
+    
 
     #profile-view .profile-layout {
         grid-template-columns: 1fr !important;
