@@ -6,7 +6,7 @@ Current active tables:
 
 - \`helix_dm_messages\`
 - \`helix_dm_message_reactions\`
-- \`helix_dm_pins\`
+- \`helix_dm_message_pins\`
 
 The old DM tables/data from the pre-rebuild system are intentionally not dropped or rewritten by this implementation.
 
