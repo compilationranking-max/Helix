@@ -429,24 +429,38 @@
         <aside class="dm-inbox" aria-label="Messages conversations">
             <div class="dm-inbox-header">
                 <div>
-                    <p class="system-label">HELIX / MESSAGES</p>
-                    <h1>Conversations</h1>
+                    <p class="system-label">HELIX / DMS</p>
+                    <h1>Messages</h1>
                 </div>
 
-                <button
-                    class="dm-refresh-button"
-                    id="dm-refresh-button"
-                    type="button"
-                    aria-label="Refresh conversations"
-                    title="Refresh conversations"
-                >
-                    <svg class="dm-icon" viewBox="0 0 48 48" aria-hidden="true">
-                        <path d="M10 20a14 14 0 0 1 24-7l3 3"/>
-                        <path d="M37 9v8h-8"/>
-                        <path d="M38 28a14 14 0 0 1-24 7l-3-3"/>
-                        <path d="M11 39v-8h8"/>
-                    </svg>
-                </button>
+                <div class="dm-inbox-header-actions">
+                    <button
+                        class="dm-new-message-button"
+                        id="dm-new-message-button"
+                        type="button"
+                        aria-label="New message"
+                        title="New message"
+                    >
+                        <svg class="dm-icon" viewBox="0 0 48 48" aria-hidden="true">
+                            <path d="M24 10v28M10 24h28"/>
+                        </svg>
+                    </button>
+
+                    <button
+                        class="dm-refresh-button dm-refresh-utility"
+                        id="dm-refresh-button"
+                        type="button"
+                        aria-label="Refresh conversations"
+                        title="Refresh conversations"
+                    >
+                        <svg class="dm-icon" viewBox="0 0 48 48" aria-hidden="true">
+                            <path d="M10 20a14 14 0 0 1 24-7l3 3"/>
+                            <path d="M37 9v8h-8"/>
+                            <path d="M38 28a14 14 0 0 1-24 7l-3-3"/>
+                            <path d="M11 39v-8h8"/>
+                        </svg>
+                    </button>
+                </div>
             </div>
 
             <div class="dm-conversation-search">
