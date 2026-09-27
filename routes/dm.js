@@ -109,7 +109,7 @@ function createDMRouter(options) {
         const result = await dbPool.query(
             "SELECT r.message_id AS \"messageId\", r.emoji, COUNT(*)::int AS count, " +
             "BOOL_OR(r.username = $2) AS reacted " +
-            "FROM helix_dm_reactions r " +
+            "FROM helix_dm_message_reactions r " +
             "WHERE r.message_id = ANY($1::uuid[]) " +
             "GROUP BY r.message_id, r.emoji ORDER BY r.emoji",
             [messageIds, username]
@@ -470,13 +470,13 @@ function createDMRouter(options) {
 
             if (reacted) {
                 await dbPool.query(
-                    "INSERT INTO helix_dm_reactions (message_id, username, emoji) " +
+                    "INSERT INTO helix_dm_message_reactions (message_id, username, emoji) " +
                     "VALUES ($1, $2, $3) ON CONFLICT (message_id, username, emoji) DO NOTHING",
                     [messageId, user.username, emoji]
                 );
             } else {
                 await dbPool.query(
-                    "DELETE FROM helix_dm_reactions WHERE message_id = $1 AND username = $2 AND emoji = $3",
+                    "DELETE FROM helix_dm_message_reactions WHERE message_id = $1 AND username = $2 AND emoji = $3",
                     [messageId, user.username, emoji]
                 );
             }
