@@ -1,92 +1,99 @@
 # Helix DM module
 
-This directory contains the clean Direct Message rebuild. The previous implementation remains available only on the archived branch \`dm-archive-before-rebuild\`.
+This directory is the active Direct Message implementation. It is modular and intentionally separate from the main app.js application logic.
 
-## Frontend structure
+## Frontend modules
 
-- \`dm.js\` — module bootstrap.
-- \`dm-state.js\` — single DM state object, active conversation, loaded messages, searches, loading state and race-control state.
-- \`dm-api.js\` — API requests only.
-- \`dm-render.js\` — conversation rows, message bubbles, search results, empty/loading/error states, pinned panel, emoji picker and forwarding UI.
-- \`dm-actions.js\` — event handling and message actions.
+- dm.js — bootstrap and navigation hookup.
+- dm-state.js — single DM state object for conversations, messages, pins, replies, pending media, context menu, info panel, viewer and request-control state.
+- dm-api.js — fetch/API requests only.
+- dm-render.js — DOM rendering for conversations, messages, replies, media, actions, reactions, emoji picker, pins, forwarding, info, empty/loading/error states and composer previews.
+- dm-actions.js — interaction and mutation orchestration.
 
-The files are loaded in that order by \`app.html\` because Helix currently uses CommonJS and classic browser scripts rather than frontend ES modules.
+No old monolithic DM implementation from the archive is active.
 
-## Active message model
+## Message model
 
-The browser receives only:
+Active message objects contain server-backed text, read, edit, delete, reaction, pin, media and reply fields.
 
-\`\`\`
-{
-  id,
-  sender,
-  recipient,
-  text,
-  createdAt,
-  editedAt,
-  reactions,
-  isPinned
-}
-\`\`\`
+## Message actions
 
-There are no active message media fields or relationship fields for future features.
+Supported:
+- text send/receive
+- edit own active text messages
+- soft-delete own messages
+- copy text/link
+- quick reactions
+- full emoji picker
+- pin/unpin
+- pinned messages
+- forwarding
+- desktop context menu
+- private nicknames
+- conversation info
+- message search and media filename search
+- unread/read state
+- DM notification feed integration
+
+## Media
+
+Photos and videos are supported up to 10 MB.
+
+The flow is: file selection -> client validation -> local ObjectURL preview -> attachment state -> send -> server-side validation -> database storage -> media URL in the returned message.
+
+The active implementation supports image and video media and does not upload merely because a file was selected.
+
+## Replies
+
+Replies are first-class relationships through reply_to_id -> helix_dm_messages.id.
+
+Reply selection lives in state.reply until send. The send path snapshots the selected reply before network work. The backend validates the target before insert and returns expanded reply fields. The renderer puts the quoted preview inside .dm-message-bubble.
+
+Reply references can fetch the original single message when it is outside the current 200-message window.
+
+Deleted originals use soft deletion so the relationship remains renderable; the reply preview shows Original message deleted.
+
+One reply-selection path is shared by the dedicated Reply button, context menu and touch swipe gesture.
 
 ## Database
 
-The active schema is created by the existing database initialization in \`server.js\`:
+Active tables:
+- helix_dm_messages
+- helix_dm_message_reactions
+- helix_dm_message_pins
+- helix_dm_conversation_nicknames
 
-- \`helix_dm_messages\`
-- \`helix_dm_message_reactions\`
-- \`helix_dm_message_pins\`
-
-The message table stores sender, recipient, body, timestamps and read state. Reactions and pins are separate relationships.
+migrations/dm/001-full-features.sql is additive and non-destructive. It adds media columns, reply_to_id, deleted_at, validation constraints and the reply index without deleting existing DM data.
 
 ## API
 
-Mounted at \`/api/dm\`:
+Mounted at /api/dm:
+- GET /conversations
+- GET /messages?with=username
+- GET /messages/:messageId
+- GET /conversations/:username/info
+- PATCH /conversations/:username/nickname
+- GET /pins?with=username
+- POST /messages
+- POST /messages/media
+- PUT /messages/:id
+- DELETE /messages/:id
+- POST /messages/:id/reaction
+- POST /messages/:id/pin
+- POST /messages/:id/forward
+- GET /notifications
+- GET /media/:messageId
 
-- \`GET /conversations\`
-- \`GET /messages?with=username\`
-- \`GET /pins?with=username\`
-- \`POST /messages\`
-- \`PUT /messages/:id\`
-- \`DELETE /messages/:id\`
-- \`POST /messages/:id/reaction\`
-- \`POST /messages/:id/pin\`
-- \`POST /messages/:id/forward\`
+All mutations are authenticated and server-authorized using the active session, friendship, blocking and DM-privacy checks.
 
-Copying text is a client-side clipboard action, so it does not need a server endpoint.
+## Race safety
 
-## Security model
+Conversation loads use AbortController, request serial/version checks and active-conversation checks.
 
-The router uses the existing Helix session, friendship, blocking and privacy helpers. The sender is always taken from the authenticated session. Message ownership, conversation membership and allowed destinations are checked on the server.
+Polling does not intentionally overlap active message loads.
 
-## Current phase
+Pinned messages are loaded when the panel opens or after pin/unpin mutations, not on every poll.
 
-Built now:
+## Archived implementation
 
-- friend/conversation list
-- text send/receive
-- persistent history
-- server-backed unread counts
-- conversation switching
-- conversation search
-- message search
-- timestamps
-- edit/delete
-- reactions
-- full emoji picker
-- copy
-- forward
-- pin/unpin
-- pinned messages
-- loading/error/empty states
-- controlled polling with abort/request-serial protection
-
-Not built yet:
-
-- message replies or quoted references
-- reply relationships
-- photos, videos or attachments
-
-These features are deliberately deferred until the text foundation is stable.
+The original DM implementation remains only as a feature reference on dm-archive-before-rebuild. The active DM modules do not import it.
