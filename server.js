@@ -1527,7 +1527,7 @@ app.get("/api/dm/messages", async (req, res) => {
                OR (m.sender_username = $2 AND m.recipient_username = $1)
             ORDER BY m.created_at ASC
             LIMIT 200
-        `, [user.username, withUser]);`, [user.username, withUser]);
+        `, [user.username, withUser]);
 
         res.json({ messages: result.rows });
     } catch (error) {
