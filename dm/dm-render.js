@@ -11,6 +11,58 @@
         return element;
     }
 
+    const ICONS = {
+        messages: '<path d="M7 9.5A3.5 3.5 0 0 1 10.5 6h27A3.5 3.5 0 0 1 41 9.5v16A3.5 3.5 0 0 1 37.5 29H22l-8.5 6.5V29h-3A3.5 3.5 0 0 1 7 25.5z"/><path d="M15 15h18M15 21h12"/>',
+        back: '<path d="m29 9-15 15 15 15"/><path d="M15 24h24"/>',
+        search: '<circle cx="21" cy="21" r="11"/><path d="m30 30 8 8"/>',
+        send: '<path d="m6 8 32 16-32 16 6-16z"/><path d="M12 24h18"/>',
+        more: '<circle cx="12" cy="24" r="1.6" fill="currentColor" stroke="none"/><circle cx="24" cy="24" r="1.6" fill="currentColor" stroke="none"/><circle cx="36" cy="24" r="1.6" fill="currentColor" stroke="none"/>',
+        edit: '<path d="M9 35.5V39h3.5L34 20.5l-7-7z"/><path d="m31 10 7 7"/><path d="M9 39h30"/>',
+        delete: '<path d="M10 13h28M19 13V9h10v4M16 13l2 25h12l2-25M21 19v13M27 19v13"/>',
+        copy: '<rect x="10" y="10" width="23" height="26" rx="3"/><path d="M17 10V7h17a4 4 0 0 1 4 4v22h-5"/>',
+        reaction: '<path d="M10 12h28v20H22l-7 6v-6h-5z"/><path d="M18 22h.01M24 22h.01M30 22h.01"/>',
+        emoji: '<circle cx="24" cy="24" r="15"/><path d="M18 21h.01M30 21h.01M17 28c4 4 10 4 14 0"/>',
+        pin: '<path d="m18 8 12 12"/><path d="m28 10 7 7-5 5 3 8-4 4-8-3-5 5-7-7 5-5-3-8 4-4 8 3z"/><path d="m24 28-9 9"/>',
+        forward: '<path d="M31 10 41 20 31 30"/><path d="M41 20H19a10 10 0 0 0-10 10v8"/>',
+        close: '<path d="m13 13 22 22M35 13 13 35"/>',
+        retry: '<path d="M11 20a14 14 0 1 1 4 13"/><path d="M11 10v10h10"/>',
+        warning: '<path d="m24 7 16 29H8z"/><path d="M24 17v10M24 31h.01"/>',
+        refresh: '<path d="M10 20a14 14 0 0 1 24-7l3 3"/><path d="M37 9v8h-8"/><path d="M38 28a14 14 0 0 1-24 7l-3-3"/><path d="M11 39v-8h8"/>',
+        check: '<path d="m10 24 9 9 19-20"/>',
+        moreVertical: '<circle cx="24" cy="10" r="1.7" fill="currentColor" stroke="none"/><circle cx="24" cy="24" r="1.7" fill="currentColor" stroke="none"/><circle cx="24" cy="38" r="1.7" fill="currentColor" stroke="none"/>',
+        empty: '<rect x="9" y="11" width="30" height="26" rx="5"/><path d="M15 18h18M15 24h12M15 30h7"/>'
+    };
+
+    function makeIcon(name, label, className = "") {
+        const svg = document.createElement("svg");
+        svg.className = ("dm-icon " + className).trim();
+        svg.setAttribute("viewBox", "0 0 48 48");
+        svg.setAttribute("fill", "none");
+        svg.setAttribute("stroke", "currentColor");
+        svg.setAttribute("stroke-width", "2.4");
+        svg.setAttribute("stroke-linecap", "round");
+        svg.setAttribute("stroke-linejoin", "round");
+        svg.setAttribute("aria-hidden", "true");
+
+        if (label) {
+            svg.setAttribute("focusable", "false");
+        }
+
+        svg.innerHTML = ICONS[name] || "";
+        return svg;
+    }
+
+    function iconButton(className, name, title) {
+        const element = make("button", className);
+        element.type = "button";
+        element.appendChild(makeIcon(name, title));
+        if (title) {
+            element.title = title;
+            element.setAttribute("aria-label", title);
+        }
+        return element;
+    }
+
     function button(className, label, title) {
         const element = make("button", className, label);
         element.type = "button";
@@ -91,7 +143,18 @@
         }
 
         if (state.loadingConversations) {
-            list.appendChild(make("div", "dm-list-state", "Loading conversations…"));
+            {
+                const loadingWrap = make("div", "dm-list-skeletons");
+                for (let i = 0; i < 4; i += 1) {
+                    const skeleton = make("div", "dm-conversation-skeleton");
+                    skeleton.append(
+                        make("span", "dm-skeleton-avatar"),
+                        make("span", "dm-skeleton-copy")
+                    );
+                    loadingWrap.appendChild(skeleton);
+                }
+                list.appendChild(loadingWrap);
+            }
             return;
         }
 
@@ -99,7 +162,7 @@
             const box = make("div", "dm-list-state dm-list-state-error");
             box.appendChild(make("strong", "", "Could not load messages"));
             box.appendChild(make("small", "", state.conversationError));
-            const retry = button("dm-inline-button", "Retry", "Retry conversation loading");
+            const retry = iconButton("dm-inline-button dm-icon-button-with-label", "retry", "Retry conversation loading"); retry.appendChild(make("span", "", "Retry"));
             retry.dataset.dmAction = "refresh-conversations";
             box.appendChild(retry);
             list.appendChild(box);
@@ -108,7 +171,11 @@
 
         if (!state.conversations.length) {
             const box = make("div", "dm-list-state");
-            box.appendChild(make("span", "dm-list-state-mark", "◇"));
+            {
+                const mark = make("span", "dm-list-state-mark");
+                mark.appendChild(makeIcon("messages"));
+                box.appendChild(mark);
+            }
             box.appendChild(make("strong", "", "No friends available"));
             box.appendChild(
                 make(
@@ -324,12 +391,12 @@
             tools.appendChild(item);
         });
 
-        const emoji = button("dm-message-tool", "＋", "Open full emoji picker");
+        const emoji = iconButton("dm-message-tool", "emoji", "Open full emoji picker");
         emoji.dataset.dmEmojiPicker = "open";
         emoji.dataset.messageId = message.id;
         tools.appendChild(emoji);
 
-        const copy = button("dm-message-tool", "⧉", "Copy message");
+        const copy = iconButton("dm-message-tool", "copy", "Copy message");
         copy.dataset.dmAction = "copy-message";
         copy.dataset.messageId = message.id;
         tools.appendChild(copy);
@@ -343,20 +410,20 @@
         pin.dataset.messageId = message.id;
         tools.appendChild(pin);
 
-        const forward = button("dm-message-tool", "↗", "Forward message");
+        const forward = iconButton("dm-message-tool", "forward", "Forward message");
         forward.dataset.dmAction = "forward-message";
         forward.dataset.messageId = message.id;
         tools.appendChild(forward);
 
         if (message.sender === loggedInUser()) {
-            const edit = button("dm-message-tool", "✎", "Edit message");
+            const edit = iconButton("dm-message-tool", "edit", "Edit message");
             edit.dataset.dmAction = "edit-message";
             edit.dataset.messageId = message.id;
             tools.appendChild(edit);
 
-            const remove = button(
+            const remove = iconButton(
                 "dm-message-tool dm-danger-tool",
-                "⌫",
+                "delete",
                 "Delete message"
             );
             remove.dataset.dmAction = "delete-message";
@@ -417,9 +484,14 @@
         }
 
         if (state.loadingMessages) {
-            const box = make("div", "dm-chat-state", "Loading messages…");
-            box.setAttribute("role", "status");
-            list.appendChild(box);
+            const loading = make("div", "dm-message-skeletons");
+            loading.setAttribute("role", "status");
+            for (let i = 0; i < 5; i += 1) {
+                const row = make("div", "dm-message-skeleton " + (i % 2 ? "is-left" : "is-right"));
+                row.appendChild(make("span", "dm-skeleton-bubble"));
+                loading.appendChild(row);
+            }
+            list.appendChild(loading);
             return;
         }
 
@@ -428,7 +500,7 @@
             box.appendChild(make("strong", "", "Conversation unavailable"));
             box.appendChild(make("p", "", state.messageError));
 
-            const retry = button("dm-inline-button", "Retry", "Retry loading messages");
+            const retry = iconButton("dm-inline-button dm-icon-button-with-label", "retry", "Retry loading messages"); retry.appendChild(make("span", "", "Retry"));
             retry.dataset.dmAction = "retry-conversation";
             box.appendChild(retry);
 
@@ -438,7 +510,8 @@
 
         if (!state.messages.length) {
             const box = make("div", "dm-chat-state");
-            box.appendChild(make("span", "dm-chat-state-mark", "◇"));
+            const mark = make("span", "dm-chat-state-mark");
+            mark.appendChild(makeIcon("messages"));
             box.appendChild(make("strong", "", "No messages yet"));
             box.appendChild(
                 make("p", "", "Send a text message to start the conversation.")
@@ -450,9 +523,12 @@
         const visible = visibleMessages();
 
         if (!visible.length) {
-            list.appendChild(
-                make("div", "dm-chat-state", "No messages match your search.")
-            );
+            const box = make("div", "dm-chat-state");
+            const mark = make("span", "dm-chat-state-mark");
+            mark.appendChild(makeIcon("search"));
+            box.append(mark, make("strong", "", "No matching messages"));
+            box.appendChild(make("p", "", "Try a different search term."));
+            list.appendChild(box);
             return;
         }
 
@@ -498,7 +574,10 @@
                 );
                 item.dataset.dmAction = "jump-to-message";
                 item.dataset.messageId = message.id;
+                const pinIcon = make("span", "dm-pinned-icon");
+                pinIcon.appendChild(makeIcon("pin"));
                 item.append(
+                    pinIcon,
                     make("span", "dm-pinned-text", message.text),
                     make("small", "dm-pinned-time", time(message.pinnedAt || message.createdAt))
                 );
@@ -532,7 +611,7 @@
         const header = make("div", "dm-emoji-picker-header");
         header.appendChild(make("strong", "", "Emoji"));
 
-        const close = button("dm-panel-close", "×", "Close emoji picker");
+        const close = iconButton("dm-panel-close", "close", "Close emoji picker");
         close.dataset.dmAction = "close-emoji-picker";
         header.appendChild(close);
 
