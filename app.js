@@ -5413,6 +5413,30 @@ bootstrapHelixSession().then((authenticated) => {
         bubble.appendChild(reference);
     }
 
+    function messageDateKey(value) {
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return '';
+        return date.getFullYear() + '-' + date.getMonth() + '-' + date.getDate();
+    }
+
+    function formatMessageDate(value) {
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return '';
+
+        const today = new Date();
+        const yesterday = new Date(today);
+        yesterday.setDate(today.getDate() - 1);
+
+        if (messageDateKey(date) === messageDateKey(today)) return 'Today';
+        if (messageDateKey(date) === messageDateKey(yesterday)) return 'Yesterday';
+
+        return date.toLocaleDateString([], {
+            month: 'long',
+            day: 'numeric',
+            year: 'numeric'
+        });
+    }
+
     function renderMessages({ scrollToBottom = false } = {}) {
         const query = (messageSearchInput?.value || "").trim().toLowerCase();
         const visible = query
