@@ -6714,8 +6714,8 @@ MATH & PHOTO ATTACHMENTS
 .dm-pinned-item {
     width: 100%;
     display: grid;
-    grid-template-columns: 22px minmax(0, 1fr);
-    align-items: start;
+    grid-template-columns: 22px minmax(0, 1fr) 30px;
+    align-items: center;
     gap: 8px;
     padding: 10px 10px;
     margin-bottom: 7px;
@@ -8178,6 +8178,92 @@ MATH & PHOTO ATTACHMENTS
     border-top: 1px solid #5d7c8b;
     border-right: 1px solid #5d7c8b;
     transform: rotate(45deg);
+}
+
+.dm-info-loading {
+    min-height: 260px;
+    display: grid;
+    justify-items: center;
+    align-content: center;
+    gap: 7px;
+    padding: 30px;
+    text-align: center;
+}
+
+.dm-info-loading-icon {
+    width: 40px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    margin-bottom: 4px;
+    border: 1px solid rgba(0, 229, 255, 0.14);
+    border-radius: 12px;
+    color: #6fd8e0;
+    background: rgba(0, 229, 255, 0.035);
+}
+
+.dm-info-loading-icon .dm-icon {
+    width: 17px;
+    height: 17px;
+}
+
+.dm-info-loading strong {
+    color: #cfe6ed;
+    font-size: 10px;
+    font-weight: 650;
+}
+
+.dm-info-loading small {
+    max-width: 250px;
+    color: #5c7483;
+    font-size: 8px;
+    line-height: 1.55;
+}
+
+.dm-info-error .dm-info-loading-icon {
+    color: #e79aa9;
+    border-color: rgba(255, 95, 122, 0.16);
+    background: rgba(255, 95, 122, 0.04);
+}
+
+.dm-pinned-unpin {
+    width: 30px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    color: #65818f;
+    background: transparent;
+    cursor: pointer;
+}
+
+.dm-pinned-unpin:hover {
+    border-color: rgba(0, 229, 255, 0.18);
+    color: #79dce5;
+    background: rgba(0, 229, 255, 0.05);
+}
+
+.dm-pinned-unpin .dm-icon {
+    width: 13px;
+    height: 13px;
+}
+
+.dm-pinned-media-icon {
+    display: inline-flex;
+    margin-right: 4px;
+    vertical-align: -2px;
+    color: #64ced8;
+}
+
+.dm-pinned-media-icon .dm-icon {
+    width: 12px;
+    height: 12px;
+}
+
+.dm-form-error {
+    min-height: 12px;
 }
 
 .dm-info-panel[hidden],
