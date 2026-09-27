@@ -5694,6 +5694,27 @@ bootstrapHelixSession().then((authenticated) => {
             if (!response.ok) throw new Error(data.error || "Could not load conversation.");
             if (activeUsername !== username || requestSerial !== messageLoadSerial) return;
             const nextMessages = Array.isArray(data.messages) ? data.messages : [];
+
+            // Some older deployments may return replyToId without the expanded
+            // preview fields. Build the preview client-side from the same
+            // conversation so replies never appear as plain unquoted messages.
+            const messageById = new Map(
+                nextMessages.map((message) => [String(message.id), message])
+            );
+
+            nextMessages.forEach((message) => {
+                if (!message.replyToId || message.replyText || message.replyMediaUrl) return;
+
+                const original = messageById.get(String(message.replyToId));
+                if (!original) return;
+
+                message.replySender = original.sender;
+                message.replyText = original.text || "";
+                message.replyMediaUrl = original.mediaUrl || null;
+                message.replyMediaName = original.mediaName || null;
+                message.replyMediaKind = original.mediaKind || null;
+            });
+
             const changed = force || !sameMessages(currentMessages, nextMessages);
             currentMessages = nextMessages;
             if (changed && !editingMessageId) renderMessages({ scrollToBottom });
@@ -5786,13 +5807,20 @@ bootstrapHelixSession().then((authenticated) => {
     function setReplyBar(item) {
         activeReplyToId = item?.id ? String(item.id) : null;
         if (!replyBar || !replyBarText) return;
+
         if (!item) {
             replyBar.hidden = true;
             replyBarText.textContent = "";
+            replyBar.removeAttribute("data-reply-sender");
             return;
         }
+
         replyBar.hidden = false;
         replyBarText.textContent = shortMessagePreview(item, 100) || "Attachment";
+        replyBar.setAttribute(
+            "data-reply-sender",
+            item.sender === loggedInUser ? "You" : "Friend"
+        );
         input.focus();
     }
 
