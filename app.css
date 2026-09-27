@@ -8380,14 +8380,15 @@ MATH & PHOTO ATTACHMENTS
    HELIX DM — INSTAGRAM-STRUCTURE / HELIX-PRIME UI
    ========================================================= */
 #dm-view {
+    position: relative;
     width: 100%;
     height: 100%;
     min-height: 0;
-    padding: 18px 20px 20px !important;
+    padding: 0 !important;
     overflow: hidden;
     background:
-        radial-gradient(circle at 30% 10%, rgba(118, 92, 255, .10), transparent 30%),
-        radial-gradient(circle at 90% 90%, rgba(0, 229, 255, .08), transparent 28%);
+        radial-gradient(circle at 30% 10%, rgba(118, 92, 255, .08), transparent 30%),
+        radial-gradient(circle at 90% 90%, rgba(0, 229, 255, .06), transparent 28%);
 }
 
 #dm-view .dm-shell {
@@ -8398,15 +8399,12 @@ MATH & PHOTO ATTACHMENTS
     display: grid;
     grid-template-columns: minmax(280px, 34%) minmax(0, 1fr);
     overflow: hidden;
-    border: 1px solid rgba(123, 147, 173, .14);
-    border-radius: 22px;
+    border: 0;
+    border-radius: 0;
     background:
-        linear-gradient(180deg, rgba(9, 14, 24, .90), rgba(4, 8, 15, .96)),
-        rgba(4, 8, 15, .96);
-    box-shadow:
-        0 28px 90px rgba(0, 0, 0, .38),
-        inset 0 1px 0 rgba(255,255,255,.035),
-        0 0 60px rgba(95, 78, 255, .055);
+        linear-gradient(180deg, rgba(9, 14, 24, .72), rgba(4, 8, 15, .94)),
+        transparent;
+    box-shadow: none;
 }
 
 #dm-view .dm-inbox {
@@ -9091,12 +9089,12 @@ MATH & PHOTO ATTACHMENTS
 
 @media (max-width: 900px) {
     #dm-view {
-        padding: 10px 10px 12px !important;
+        padding: 0 !important;
     }
 
     #dm-view .dm-shell {
         grid-template-columns: minmax(250px, 36%) minmax(0,1fr);
-        border-radius: 18px;
+        border-radius: 0;
     }
 
     #dm-view .dm-message-list {
