@@ -773,6 +773,12 @@
         get("dm-emoji-picker")?.addEventListener(
             "click",
             async (event) => {
+                const closeButton = event.target.closest("[data-dm-action=\"close-emoji-picker\"]");
+                if (closeButton) {
+                    closeEmojiPicker();
+                    return;
+                }
+
                 const option = event.target.closest("[data-emoji]");
                 if (!option) return;
 
