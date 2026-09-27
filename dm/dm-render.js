@@ -745,10 +745,11 @@
     }
 
     function renderMessageActions(message) {
-        const actions = make(
-            "div",
-            "dm-message-actions"
-        );
+        const actions = make("div", "dm-message-actions");
+
+        if (message.isDeleted) {
+            return actions;
+        }
 
         const reply = iconButton(
             "dm-message-tool",
@@ -759,32 +760,24 @@
         reply.dataset.messageId = message.id;
         actions.appendChild(reply);
 
-        ["❤️", "😂", "😮", "😢", "😡", "👍"]
-            .forEach((emoji) => {
-                const existing =
-                    (message.reactions || []).find(
-                        (reaction) =>
-                            reaction.emoji === emoji
-                    );
+        ["❤️", "😂", "😮", "😢", "😡", "👍"].forEach((emoji) => {
+            const existing = (message.reactions || []).find(
+                (reaction) => reaction.emoji === emoji
+            );
 
-                const reaction = textButton(
-                    "dm-message-tool dm-message-quick-reaction" +
-                        (existing?.reacted
-                            ? " is-reacted"
-                            : ""),
-                    emoji,
-                    existing?.reacted
-                        ? "Remove your reaction"
-                        : "React with " + emoji
-                );
+            const reaction = textButton(
+                "dm-message-tool dm-message-quick-reaction" +
+                (existing?.reacted ? " is-reacted" : ""),
+                emoji,
+                existing?.reacted
+                    ? "Remove your reaction"
+                    : "React with " + emoji
+            );
 
-                reaction.dataset.dmQuickReaction =
-                    emoji;
-                reaction.dataset.messageId =
-                    message.id;
-
-                actions.appendChild(reaction);
-            });
+            reaction.dataset.dmQuickReaction = emoji;
+            reaction.dataset.messageId = message.id;
+            actions.appendChild(reaction);
+        });
 
         const emoji = iconButton(
             "dm-message-tool",
@@ -800,10 +793,8 @@
             "copy",
             "Copy message"
         );
-        copy.dataset.dmAction =
-            "copy-message";
-        copy.dataset.messageId =
-            message.id;
+        copy.dataset.dmAction = "copy-message";
+        copy.dataset.messageId = message.id;
         actions.appendChild(copy);
 
         const forward = iconButton(
@@ -811,26 +802,18 @@
             "forward",
             "Forward message"
         );
-        forward.dataset.dmAction =
-            "forward-message";
-        forward.dataset.messageId =
-            message.id;
+        forward.dataset.dmAction = "forward-message";
+        forward.dataset.messageId = message.id;
         actions.appendChild(forward);
 
         const pin = iconButton(
             "dm-message-tool" +
-                (message.isPinned
-                    ? " is-active"
-                    : ""),
+            (message.isPinned ? " is-active" : ""),
             "pin",
-            message.isPinned
-                ? "Unpin message"
-                : "Pin message"
+            message.isPinned ? "Unpin message" : "Pin message"
         );
-        pin.dataset.dmAction =
-            "toggle-pin";
-        pin.dataset.messageId =
-            message.id;
+        pin.dataset.dmAction = "toggle-pin";
+        pin.dataset.messageId = message.id;
         actions.appendChild(pin);
 
         const more = iconButton(
@@ -838,10 +821,8 @@
             "moreVertical",
             "More message actions"
         );
-        more.dataset.dmAction =
-            "context-menu";
-        more.dataset.messageId =
-            message.id;
+        more.dataset.dmAction = "context-menu";
+        more.dataset.messageId = message.id;
         actions.appendChild(more);
 
         if (message.sender === currentUsername()) {
@@ -850,10 +831,8 @@
                 "edit",
                 "Edit message"
             );
-            edit.dataset.dmAction =
-                "edit-message";
-            edit.dataset.messageId =
-                message.id;
+            edit.dataset.dmAction = "edit-message";
+            edit.dataset.messageId = message.id;
             actions.appendChild(edit);
 
             const remove = iconButton(
@@ -861,10 +840,8 @@
                 "delete",
                 "Delete message"
             );
-            remove.dataset.dmAction =
-                "delete-message";
-            remove.dataset.messageId =
-                message.id;
+            remove.dataset.dmAction = "delete-message";
+            remove.dataset.messageId = message.id;
             actions.appendChild(remove);
         }
 
@@ -1961,60 +1938,63 @@
             menu.appendChild(item);
         }
 
-        addAction(
-            "Reply",
-            "reply",
-            "reply"
-        );
-
-        if (
-            message.sender ===
-                currentUsername() &&
-            !message.isDeleted &&
-            !message.mediaUrl
-        ) {
+        if (!message.isDeleted) {
             addAction(
-                "Edit message",
-                "edit",
-                "edit-message"
+                "Reply",
+                "reply",
+                "reply"
             );
-        }
 
-        addAction(
-            "React",
-            "reaction",
-            "react"
-        );
+            if (
+                message.sender === currentUsername() &&
+                !message.mediaUrl
+            ) {
+                addAction(
+                    "Edit message",
+                    "edit",
+                    "edit-message"
+                );
+            }
 
-        addAction(
-            "Copy message",
-            "copy",
-            "copy-message"
-        );
-
-        addAction(
-            "Forward",
-            "forward",
-            "forward-message"
-        );
-
-        addAction(
-            message.isPinned
-                ? "Unpin message"
-                : "Pin message",
-            "pin",
-            "toggle-pin"
-        );
-
-        if (
-            message.sender ===
-            currentUsername()
-        ) {
             addAction(
-                "Delete message",
-                "delete",
-                "delete-message",
-                { danger: true }
+                "React",
+                "reaction",
+                "react"
+            );
+
+            addAction(
+                "Copy message",
+                "copy",
+                "copy-message"
+            );
+
+            addAction(
+                "Forward",
+                "forward",
+                "forward-message"
+            );
+
+            addAction(
+                message.isPinned
+                    ? "Unpin message"
+                    : "Pin message",
+                "pin",
+                "toggle-pin"
+            );
+
+            if (message.sender === currentUsername()) {
+                addAction(
+                    "Delete message",
+                    "delete",
+                    "delete-message",
+                    { danger: true }
+                );
+            }
+        } else {
+            addAction(
+                "Copy message",
+                "copy",
+                "copy-message"
             );
         }
 
@@ -2039,6 +2019,12 @@
             ) + "px";
 
         menu.hidden = false;
+        if (state.contextMenu.open) {
+            window.setTimeout(() => {
+                if (!state.contextMenu.open) return;
+                menu.querySelector(".dm-context-item")?.focus();
+            }, 0);
+        }
     }
 
     function renderComposerState() {
@@ -2055,11 +2041,10 @@
                 const senderName =
                     state.reply.sender === currentUsername()
                         ? "You"
-                        : (
-                            conversation?.nickname ||
-                            conversation?.displayName ||
+                        : "@" + (
                             state.reply.sender ||
-                            "User"
+                            conversation?.username ||
+                            "user"
                         );
 
                 const avatar = get("dm-reply-bar-avatar");
