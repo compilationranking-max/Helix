@@ -11843,3 +11843,68 @@ body > .dm-message-hover-reaction-bar .dm-hover-reaction:focus-visible {
         flex-basis: 40px !important;
     }
 }
+
+
+/* =========================================================
+   HELIX DM — SIDE HOVER RAIL / COMPACT MESSAGE SPACING
+   The reaction rail is portaled directly under <body>, so these
+   selectors intentionally target the portaled element instead of
+   relying on #dm-view ancestry.
+   ========================================================= */
+
+#dm-view .message {
+    margin-bottom: 0 !important;
+}
+
+body > .dm-message-hover-reaction-bar[data-placement="row-side"] {
+    position: fixed !important;
+    z-index: 100000 !important;
+    top: 0 !important;
+    bottom: auto !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    transform: translateY(0) scale(.98) !important;
+    transform-origin: right top !important;
+}
+
+body > .dm-message-hover-reaction-bar[data-placement="row-side"].is-open {
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+    transform: translateY(0) scale(1) !important;
+}
+
+body > .dm-message-hover-reaction-bar[data-placement="row-side"] .dm-hover-reaction {
+    width: 40px !important;
+    height: 40px !important;
+    flex: 0 0 40px !important;
+    font-size: 25px !important;
+}
+
+body > .dm-message-hover-reaction-bar[data-placement="row-side"] .dm-hover-reaction-more {
+    width: 42px !important;
+    height: 42px !important;
+    flex: 0 0 42px !important;
+}
+
+@media (max-width: 700px) {
+    body > .dm-message-hover-reaction-bar[data-placement="row-side"] {
+        height: 46px !important;
+        min-height: 46px !important;
+        padding: 4px 6px !important;
+    }
+
+    body > .dm-message-hover-reaction-bar[data-placement="row-side"] .dm-hover-reaction {
+        width: 36px !important;
+        height: 36px !important;
+        flex-basis: 36px !important;
+        font-size: 22px !important;
+    }
+
+    body > .dm-message-hover-reaction-bar[data-placement="row-side"] .dm-hover-reaction-more {
+        width: 38px !important;
+        height: 38px !important;
+        flex-basis: 38px !important;
+    }
+}
