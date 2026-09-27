@@ -6,6 +6,7 @@ const path = require("path");
 const crypto = require("crypto");
 const { promisify } = require("util");
 const { Pool } = require("pg");
+const createDMRouter = require("./routes/dm");
 
 const scryptAsync = promisify(crypto.scrypt);
 const DATABASE_URL = process.env.DATABASE_URL || "";
@@ -198,6 +199,54 @@ async function initializeDatabase() {
             ON helix_friend_requests (to_username, status);
         CREATE INDEX IF NOT EXISTS helix_friend_requests_from_idx
             ON helix_friend_requests (from_username, status);
+
+        CREATE TABLE IF NOT EXISTS helix_dm_messages (
+            id UUID PRIMARY KEY,
+            sender_username TEXT NOT NULL REFERENCES helix_users(username) ON DELETE CASCADE,
+            recipient_username TEXT NOT NULL REFERENCES helix_users(username) ON DELETE CASCADE,
+            body TEXT NOT NULL CHECK (length(body) BETWEEN 1 AND 4000),
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            edited_at TIMESTAMPTZ,
+            read_at TIMESTAMPTZ,
+            CHECK (sender_username <> recipient_username)
+        );
+
+        CREATE INDEX IF NOT EXISTS helix_dm_messages_sender_recipient_created_idx
+            ON helix_dm_messages (sender_username, recipient_username, created_at);
+
+        CREATE INDEX IF NOT EXISTS helix_dm_messages_recipient_sender_created_idx
+            ON helix_dm_messages (recipient_username, sender_username, created_at);
+
+        CREATE INDEX IF NOT EXISTS helix_dm_messages_created_idx
+            ON helix_dm_messages (created_at DESC);
+
+        CREATE INDEX IF NOT EXISTS helix_dm_messages_unread_idx
+            ON helix_dm_messages (recipient_username, sender_username, read_at)
+            WHERE read_at IS NULL;
+
+        CREATE TABLE IF NOT EXISTS helix_dm_reactions (
+            message_id UUID NOT NULL REFERENCES helix_dm_messages(id) ON DELETE CASCADE,
+            username TEXT NOT NULL REFERENCES helix_users(username) ON DELETE CASCADE,
+            emoji TEXT NOT NULL,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            PRIMARY KEY (message_id, username, emoji)
+        );
+
+        CREATE INDEX IF NOT EXISTS helix_dm_reactions_message_idx
+            ON helix_dm_reactions (message_id);
+
+        CREATE TABLE IF NOT EXISTS helix_dm_pins (
+            message_id UUID NOT NULL REFERENCES helix_dm_messages(id) ON DELETE CASCADE,
+            owner_username TEXT NOT NULL REFERENCES helix_users(username) ON DELETE CASCADE,
+            pinned_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            PRIMARY KEY (message_id, owner_username)
+        );
+
+        CREATE INDEX IF NOT EXISTS helix_dm_pins_owner_idx
+            ON helix_dm_pins (owner_username, pinned_at DESC);
+
+        CREATE INDEX IF NOT EXISTS helix_dm_pins_message_idx
+            ON helix_dm_pins (message_id);
 
         CREATE TABLE IF NOT EXISTS helix_ai_image_usage (
             username TEXT NOT NULL REFERENCES helix_users(username) ON DELETE CASCADE,
@@ -1094,6 +1143,23 @@ async function getPrivacySetting(username, key) {
     const settings = await getUserSettings(username);
     return settings.privacy?.[key];
 }
+
+
+// =========================================================
+// HELIX — MODULAR TEXT-ONLY DIRECT MESSAGES
+// =========================================================
+
+app.use("/api/dm", createDMRouter({
+    dbPool,
+    requireDatabase,
+    requireCurrentUser,
+    normalizeUsername,
+    validUsername,
+    isBlockedEitherWay,
+    getPrivacySetting,
+    publicProfilePhotoUrl
+}));
+
 
 app.post("/api/network/request", async (req, res) => {
     const user = await requireCurrentUser(req, res);
