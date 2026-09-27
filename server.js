@@ -6,6 +6,7 @@ const path = require("path");
 const crypto = require("crypto");
 const { promisify } = require("util");
 const { Pool } = require("pg");
+const multer = require("multer");
 
 const scryptAsync = promisify(crypto.scrypt);
 const DATABASE_URL = process.env.DATABASE_URL || "";
@@ -1578,6 +1579,35 @@ app.get("/api/dm/unread-count", async (req, res) => {
     }
 });
 
+const dmUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 10 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype && (file.mimetype.startsWith("image/") || file.mimetype.startsWith("video/"))) {
+            cb(null, true);
+        } else {
+            cb(new Error("DM_ATTACHMENTS_ONLY_MEDIA"));
+        }
+    }
+});
+
+function handleDMUpload(req, res, next) {
+    dmUpload.single("media")(req, res, (error) => {
+        if (!error) return next();
+
+        if (error instanceof multer.MulterError && error.code === "LIMIT_FILE_SIZE") {
+            return res.status(413).json({ error: "That photo or video is over the 10 MB limit." });
+        }
+
+        if (error?.message === "DM_ATTACHMENTS_ONLY_MEDIA") {
+            return res.status(400).json({ error: "Only photos and videos can be sent in DMs." });
+        }
+
+        console.error("DM upload parsing failed:", error);
+        return res.status(400).json({ error: "The attachment could not be uploaded." });
+    });
+}
+
 function parseDMMediaData(value) {
     if (typeof value !== "string") return null;
 
@@ -1592,7 +1622,7 @@ function parseDMMediaData(value) {
     return { mime, buffer };
 }
 
-app.post("/api/dm/messages", async (req, res) => {
+app.post("/api/dm/messages", handleDMUpload, async (req, res) => {
     const user = await requireCurrentUser(req, res);
     if (!user) return;
 
@@ -1623,7 +1653,21 @@ app.post("/api/dm/messages", async (req, res) => {
 
     let media = null;
 
-    if (incomingMedia) {
+    if (req.file) {
+        const mime = String(req.file.mimetype || "").toLowerCase();
+
+        if (!mime.startsWith("image/") && !mime.startsWith("video/")) {
+            return res.status(400).json({ error: "Only photos and videos can be sent in DMs." });
+        }
+
+        media = {
+            buffer: req.file.buffer,
+            mime,
+            name: String(req.file.originalname || "attachment").trim().slice(0, 180) || "attachment",
+            size: Number(req.file.size || req.file.buffer.length),
+            kind: mime.startsWith("video/") ? "video" : "image"
+        };
+    } else if (incomingMedia) {
         if (typeof incomingMedia !== "object" || Array.isArray(incomingMedia)) {
             return res.status(400).json({ error: "Invalid media attachment." });
         }
