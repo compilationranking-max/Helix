@@ -10910,7 +10910,7 @@ body.helix-reduced-motion *::after {
 #dm-view .dm-message-hover-reaction-bar {
     position: absolute;
     top: auto;
-    bottom: -39px;
+    bottom: -36px;
     left: 8px;
     z-index: 40;
     display: flex;
@@ -10918,15 +10918,23 @@ body.helix-reduced-motion *::after {
     gap: 2px;
     height: 36px;
     padding: 3px 6px;
-    border: 1px solid rgba(255,255,255,.06);
+    border: 1px solid rgba(0,229,255,.68);
     border-radius: 999px;
-    background: rgba(38,39,44,.96);
-    box-shadow: 0 12px 28px rgba(0,0,0,.34), 0 0 18px rgba(0,229,255,.05);
+    background: rgba(10,16,24,.97);
+    box-shadow:
+        0 12px 28px rgba(0,0,0,.42),
+        0 0 0 1px rgba(0,229,255,.08),
+        0 0 16px rgba(0,229,255,.18),
+        inset 0 0 12px rgba(0,229,255,.04);
     opacity: 0;
     pointer-events: none;
     transform: translateY(5px) scale(.97);
     transform-origin: left top;
-    transition: opacity .15s ease, transform .15s ease;
+    transition:
+        opacity .28s ease .26s,
+        transform .28s ease .26s,
+        border-color .22s ease,
+        box-shadow .22s ease;
     backdrop-filter: blur(12px);
 }
 #dm-view .message.sent .dm-message-hover-reaction-bar {
@@ -10940,6 +10948,13 @@ body.helix-reduced-motion *::after {
     opacity: 1;
     pointer-events: auto;
     transform: translateY(0) scale(1);
+    transition-delay: 0s;
+    border-color: rgba(0,229,255,.9);
+    box-shadow:
+        0 12px 30px rgba(0,0,0,.44),
+        0 0 0 1px rgba(0,229,255,.13),
+        0 0 20px rgba(0,229,255,.28),
+        inset 0 0 14px rgba(0,229,255,.06);
 }
 #dm-view .dm-hover-reaction {
     width: 30px;
@@ -10968,8 +10983,9 @@ body.helix-reduced-motion *::after {
     background: rgba(255,255,255,.07);
 }
 #dm-view .dm-hover-reaction-more:hover {
-    color: #00e5ff;
+    color: #6cf4ff;
     background: rgba(0,229,255,.10);
+    box-shadow: 0 0 12px rgba(0,229,255,.20);
 }
 
 /* The context menu is portaled to <body>, so it cannot be clipped by the chat panel. */
