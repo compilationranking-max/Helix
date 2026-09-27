@@ -470,6 +470,9 @@
         state.clearReply?.();
         state.clearAttachment?.();
 
+        const mediaInput = get("dm-media-input");
+        if (mediaInput) mediaInput.value = "";
+
         const search = get("dm-message-search-input");
         if (search) search.value = "";
 
@@ -690,6 +693,10 @@
             // the final message object has rendered.
             state.clearReply();
             state.clearAttachment();
+
+            const mediaInput = get("dm-media-input");
+            if (mediaInput) mediaInput.value = "";
+
             render.renderComposerState?.();
 
             if (input) {
@@ -1095,13 +1102,29 @@
         render.renderInfoPanel();
     }
 
-    function openMedia(messageId) {
-        const message = currentMessage(messageId);
+    async function openMedia(messageId) {
+        let message = currentMessage(messageId);
 
-        if (!message?.mediaUrl) return;
+        if (!message) {
+            try {
+                message = await api.getMessage(messageId);
+                if (message) {
+                    window.HelixDMState.replaceMessage(message);
+                }
+            } catch {
+                message = null;
+            }
+        }
 
-        state.mediaViewerMessageId =
-            String(messageId);
+        if (!message?.mediaUrl) {
+            showToast(
+                "That media is no longer available.",
+                "error"
+            );
+            return;
+        }
+
+        state.mediaViewerMessageId = String(messageId);
         state.mediaViewerOpen = true;
 
         closeContextMenu();
@@ -1612,11 +1635,6 @@
                     await openInfoPanel();
                 }
             }
-        );
-
-        get("dm-info-close")?.addEventListener(
-            "click",
-            closeInfoPanel
         );
 
         get("dm-nickname-button")?.addEventListener(
