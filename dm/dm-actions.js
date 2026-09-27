@@ -1617,7 +1617,7 @@
 
         get("dm-info-panel")?.addEventListener(
             "click",
-            (event) => {
+            async (event) => {
                 const action =
                     event.target.closest("[data-dm-action]");
 
