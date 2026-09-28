@@ -55,8 +55,7 @@
         const available =
             enabled &&
             Boolean(state.activeConversation) &&
-            !state.loadingMessages &&
-            !state.messageError;
+            !state.loadingMessages;
 
         if (input) {
             input.disabled = !available;
@@ -126,6 +125,7 @@
             const settings = notificationSettings();
             if (
                 !settings["dm-alerts"] ||
+                typeof Notification === "undefined" ||
                 Notification.permission !== "granted"
             ) {
                 return;
@@ -205,12 +205,7 @@
                 )
             ) {
                 stopPolling();
-                state.activeConversation = null;
-                state.messages = [];
-                state.pinnedMessages = [];
-                state.info = null;
-                state.messageError = "";
-                state.infoError = "";
+                state.clearActiveConversation();
                 get("dm-view")?.classList.remove(
                     "dm-mobile-chat-open"
                 );
@@ -368,6 +363,7 @@
         }
 
         const list = get("dm-message-list");
+        const preservedScrollTop = list?.scrollTop || 0;
         const nearBottom =
             Boolean(list) &&
             list.scrollHeight -
@@ -396,7 +392,16 @@
             render.renderMessageStatus();
             render.renderInfoPanel();
 
-            if (!options.silent || nearBottom) {
+            if (options.preserveScroll && list && !nearBottom) {
+                requestAnimationFrame(() => {
+                    if (
+                        serial === state.conversationRequestSerial &&
+                        username === state.activeConversation
+                    ) {
+                        list.scrollTop = preservedScrollTop;
+                    }
+                });
+            } else if (!options.silent || nearBottom) {
                 render.scrollToBottom(Boolean(!options.silent));
             }
         } catch (error) {
@@ -411,15 +416,21 @@
                 return;
             }
 
+            if (options.silent) {
+                console.warn(
+                    "Helix DM background refresh failed:",
+                    error?.message || error
+                );
+                return;
+            }
+
             state.loadingMessages = false;
             state.messageError =
                 error.message ||
                 "Could not load this conversation.";
 
-            if (!options.silent) {
-                render.renderMessages();
-                render.renderMessageStatus();
-            }
+            render.renderMessages();
+            render.renderMessageStatus();
         } finally {
             if (serial === state.conversationRequestSerial) {
                 state.conversationAbortController = null;
@@ -571,8 +582,7 @@
 
         if (
             sendInFlight ||
-            !state.activeConversation ||
-            state.messageError
+            !state.activeConversation
         ) {
             return;
         }
@@ -1253,7 +1263,45 @@
         render.renderMessageStatus();
     }
 
+    function startNewMessage() {
+        state.conversationFilter = "all";
+        state.conversationSearch = "";
+
+        const search = get("dm-conversation-search");
+        if (search) {
+            search.value = "";
+        }
+
+        get("dm-view")?.classList.remove("dm-mobile-chat-open");
+        render.renderConversationList();
+
+        requestAnimationFrame(() => search?.focus());
+    }
+
+    function handleConversationFilter(filter) {
+        const allowed = new Set(["all", "unread", "requests"]);
+        state.conversationFilter = allowed.has(filter)
+            ? filter
+            : "all";
+        render.renderConversationList();
+    }
+
     function bindEvents() {
+        get("dm-new-message-button")?.addEventListener(
+            "click",
+            startNewMessage
+        );
+
+        document.querySelectorAll(
+            "[data-dm-conversation-filter]"
+        ).forEach((button) => {
+            button.addEventListener("click", () => {
+                handleConversationFilter(
+                    button.dataset.dmConversationFilter
+                );
+            });
+        });
+
         get("dm-conversation-search")?.addEventListener(
             "input",
             (event) => {
