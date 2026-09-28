@@ -5634,937 +5634,6 @@ MATH & PHOTO ATTACHMENTS
 
 
 /* =========================================================
-   HELIX DMS — CLASSIC REFERENCE RESTORE
-   Exact classic proportions adapted to the current modular DM DOM.
-   Scoped exclusively to #dm-view.
-   ========================================================= */
-
-#dm-view.dm-view {
-    position: relative !important;
-    display: flex !important;
-    flex: 1 1 auto !important;
-    width: 100% !important;
-    height: 100% !important;
-    min-width: 0 !important;
-    min-height: 0 !important;
-    overflow: hidden !important;
-    padding: 0 !important;
-    border: 0 !important;
-    border-radius: 0 !important;
-    color: #eaf7ff !important;
-    background: #070b13 !important;
-}
-
-#dm-view.dm-view[hidden] {
-    display: none !important;
-}
-
-/* Classic 294px DM rail = the reference proportions at the original browser scale. */
-#dm-view .dm-stage {
-    display: flex !important;
-    flex: 1 1 auto !important;
-    width: 100% !important;
-    height: 100% !important;
-    min-width: 0 !important;
-    min-height: 0 !important;
-    overflow: hidden !important;
-    background: #050a11 !important;
-}
-
-#dm-view .dm-sidebar {
-    position: relative !important;
-    width: 294px !important;
-    min-width: 294px !important;
-    max-width: 294px !important;
-    flex: 0 0 294px !important;
-    height: 100% !important;
-    min-height: 0 !important;
-    display: flex !important;
-    flex-direction: column !important;
-    overflow: hidden !important;
-    padding: 0 !important;
-    border-right: 1px solid rgba(111,138,166,.11) !important;
-    background: linear-gradient(180deg, rgba(10,16,28,.98), rgba(7,12,21,.995)) !important;
-}
-
-#dm-view .dm-sidebar-head {
-    height: 69px !important;
-    min-height: 69px !important;
-    flex: 0 0 69px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    gap: 12px !important;
-    padding: 13px 15px 10px !important;
-    box-sizing: border-box !important;
-    border-bottom: 1px solid rgba(111,138,166,.08) !important;
-}
-
-#dm-view .dm-legacy-inbox-title h1 {
-    margin: 0 !important;
-    color: #edf7ff !important;
-    font-size: 20px !important;
-    line-height: 1 !important;
-    font-weight: 700 !important;
-    letter-spacing: -.03em !important;
-}
-
-#dm-view .dm-inbox-header-actions {
-    display: flex !important;
-    align-items: center !important;
-    gap: 4px !important;
-}
-
-#dm-view #dm-new-message-button,
-#dm-view .dm-square-action {
-    width: 35px !important;
-    height: 35px !important;
-    display: grid !important;
-    place-items: center !important;
-    flex: 0 0 35px !important;
-    padding: 0 !important;
-    border: 0 !important;
-    border-radius: 10px !important;
-    background: transparent !important;
-    color: #00e5ff !important;
-    cursor: pointer !important;
-}
-
-#dm-view #dm-new-message-button:hover {
-    background: rgba(0,229,255,.07) !important;
-    text-shadow: 0 0 14px rgba(0,229,255,.8) !important;
-}
-
-#dm-view .dm-refresh-button {
-    display: none !important;
-}
-
-#dm-view .dm-search-wrap {
-    position: relative !important;
-    height: 37px !important;
-    min-height: 37px !important;
-    margin: 10px 24px 15px !important;
-    display: flex !important;
-    align-items: center !important;
-}
-
-#dm-view .dm-search-wrap > .dm-search-icon {
-    position: absolute !important;
-    left: 11px !important;
-    top: 50% !important;
-    width: 12px !important;
-    height: 12px !important;
-    transform: translateY(-50%) !important;
-    color: #56687a !important;
-    pointer-events: none !important;
-}
-
-#dm-view #dm-conversation-search {
-    width: 100% !important;
-    height: 100% !important;
-    padding: 0 12px 0 33px !important;
-    border: 1px solid rgba(99,127,158,.14) !important;
-    border-radius: 10px !important;
-    outline: 0 !important;
-    background: rgba(4,8,15,.58) !important;
-    color: #dcecf6 !important;
-    font: 10px "SFMono-Regular",Consolas,monospace !important;
-}
-
-#dm-view #dm-conversation-search::placeholder {
-    color: #566679 !important;
-}
-
-#dm-view #dm-conversation-search:focus {
-    border-color: rgba(0,229,255,.25) !important;
-    box-shadow: 0 0 0 2px rgba(0,229,255,.04) !important;
-}
-
-#dm-view #dm-conversation-search-clear {
-    position: absolute !important;
-    right: 4px !important;
-    width: 25px !important;
-    height: 25px !important;
-    display: grid !important;
-    place-items: center !important;
-    border: 0 !important;
-    background: transparent !important;
-    color: #526c7c !important;
-}
-
-#dm-view .dm-tabs {
-    display: none !important;
-}
-
-#dm-view .dm-legacy-meta {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    padding: 0 21px 4px !important;
-    color: #dceaf2 !important;
-    font-size: 8px !important;
-    line-height: 1 !important;
-}
-
-#dm-view .dm-legacy-meta strong {
-    color: #00e5ff !important;
-    font: 700 8px "SFMono-Regular",Consolas,monospace !important;
-}
-
-#dm-view .dm-legacy-friends-meta {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    padding: 0 21px 7px !important;
-    color: #5d7282 !important;
-    font: 700 7px "SFMono-Regular",Consolas,monospace !important;
-    letter-spacing: .12em !important;
-}
-
-#dm-view .dm-legacy-friends-meta strong {
-    color: #647888 !important;
-    letter-spacing: 0 !important;
-}
-
-#dm-view .dm-conversation-list {
-    flex: 1 1 auto !important;
-    min-height: 0 !important;
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
-    padding: 0 10px 15px !important;
-    scrollbar-width: thin !important;
-}
-
-#dm-view .dm-conversation-list::-webkit-scrollbar,
-#dm-view .dm-message-area::-webkit-scrollbar {
-    width: 5px !important;
-}
-
-#dm-view .dm-conversation-list::-webkit-scrollbar-thumb,
-#dm-view .dm-message-area::-webkit-scrollbar-thumb {
-    border-radius: 999px !important;
-    background: rgba(88,111,132,.22) !important;
-}
-
-#dm-view .dm-conversation-list > .dm-conversation {
-    position: relative !important;
-    width: 100% !important;
-    min-height: 58px !important;
-    display: grid !important;
-    grid-template-columns: 34px minmax(0,1fr) auto !important;
-    align-items: center !important;
-    gap: 9px !important;
-    padding: 7px 9px !important;
-    margin: 0 0 4px !important;
-    border: 1px solid transparent !important;
-    border-radius: 10px !important;
-    background: transparent !important;
-    color: #bdd0d8 !important;
-    text-align: left !important;
-    cursor: pointer !important;
-    box-sizing: border-box !important;
-}
-
-#dm-view .dm-conversation-list > .dm-conversation:hover {
-    background: rgba(58,72,104,.12) !important;
-}
-
-#dm-view .dm-conversation-list > .dm-conversation.is-active {
-    background: linear-gradient(90deg, rgba(0,229,255,.095), rgba(16,52,64,.13)) !important;
-    border-color: rgba(0,229,255,.07) !important;
-    box-shadow: inset 2px 0 0 #00e5ff !important;
-}
-
-#dm-view .dm-conversation-avatar {
-    width: 31px !important;
-    height: 31px !important;
-    flex: 0 0 31px !important;
-    display: grid !important;
-    place-items: center !important;
-    overflow: hidden !important;
-    border-radius: 50% !important;
-    background: radial-gradient(circle at 50% 35%, #7c7a8e, #262634 70%) !important;
-    color: #d9f8ff !important;
-    font: 700 9px Inter,Arial,sans-serif !important;
-    box-shadow: 0 0 0 1px rgba(0,229,255,.07) !important;
-}
-
-#dm-view .dm-conversation-avatar img {
-    width: 100% !important;
-    height: 100% !important;
-    object-fit: cover !important;
-    border-radius: inherit !important;
-}
-
-#dm-view .dm-conversation-copy {
-    min-width: 0 !important;
-}
-
-#dm-view .dm-conversation-copy strong {
-    display: block !important;
-    overflow: hidden !important;
-    color: #eef7fc !important;
-    font-size: 10px !important;
-    font-weight: 650 !important;
-    line-height: 1.05 !important;
-    text-overflow: ellipsis !important;
-    white-space: nowrap !important;
-}
-
-#dm-view .dm-conversation-copy small {
-    display: block !important;
-    margin-top: 2px !important;
-    overflow: hidden !important;
-    color: #637b8b !important;
-    font-size: 7px !important;
-    text-overflow: ellipsis !important;
-    white-space: nowrap !important;
-}
-
-#dm-view .dm-conversation-preview {
-    display: block !important;
-    margin-top: 3px !important;
-    overflow: hidden !important;
-    color: #718190 !important;
-    font-size: 7px !important;
-    line-height: 1.1 !important;
-    text-overflow: ellipsis !important;
-    white-space: nowrap !important;
-}
-
-#dm-view .dm-conversation-meta {
-    align-self: stretch !important;
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: flex-end !important;
-    justify-content: center !important;
-    gap: 5px !important;
-    color: #7c8a98 !important;
-    font: 7px "SFMono-Regular",Consolas,monospace !important;
-}
-
-#dm-view .dm-unread-badge {
-    min-width: 12px !important;
-    height: 12px !important;
-    display: grid !important;
-    place-items: center !important;
-    padding: 0 3px !important;
-    border-radius: 999px !important;
-    background: #00dff4 !important;
-    color: #031019 !important;
-    font-size: 7px !important;
-    font-weight: 800 !important;
-}
-
-#dm-view .dm-suggestions-section {
-    flex: 0 0 auto !important;
-    margin: 0 10px 11px !important;
-    padding: 8px 10px !important;
-    min-height: 40px !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 9px !important;
-    border: 1px solid rgba(0,229,255,.12) !important;
-    border-radius: 10px !important;
-    background: rgba(0,229,255,.028) !important;
-}
-
-#dm-view .dm-suggestions-icon {
-    width: 26px !important;
-    height: 26px !important;
-    flex: 0 0 26px !important;
-    display: grid !important;
-    place-items: center !important;
-    border: 1px solid rgba(0,229,255,.16) !important;
-    border-radius: 7px !important;
-    color: var(--cyan) !important;
-    background: rgba(0,229,255,.06) !important;
-}
-
-#dm-view .dm-suggestions-section strong {
-    display: block !important;
-    color: #b9c9d2 !important;
-    font-size: 8px !important;
-}
-
-#dm-view .dm-suggestions-section small {
-    display: block !important;
-    margin-top: 2px !important;
-    color: #59707e !important;
-    font: 6px "SFMono-Regular",Consolas,monospace !important;
-    text-transform: uppercase !important;
-}
-
-/* ---------- chat ---------- */
-
-#dm-view section.dm-conversation {
-    flex: 1 1 auto !important;
-    width: auto !important;
-    min-width: 0 !important;
-    min-height: 0 !important;
-    height: 100% !important;
-    display: flex !important;
-    flex-direction: column !important;
-    position: relative !important;
-    overflow: hidden !important;
-    background:
-        radial-gradient(circle at 55% 16%, rgba(18,71,95,.08), transparent 28%),
-        radial-gradient(circle, rgba(0,229,255,.055) .6px, transparent .8px) 0 0 / 9px 9px,
-        #050a11 !important;
-    box-shadow: none !important;
-}
-
-#dm-view .dm-conversation-head {
-    min-width: 0 !important;
-    width: 100% !important;
-    flex: 0 0 55px !important;
-    height: 55px !important;
-    min-height: 55px !important;
-    max-height: 55px !important;
-    box-sizing: border-box !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    gap: 12px !important;
-    padding: 0 10px 0 13px !important;
-    border-bottom: 1px solid rgba(99,127,158,.10) !important;
-    background: rgba(5,10,17,.88) !important;
-}
-
-#dm-view .dm-person {
-    min-width: 0 !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 9px !important;
-}
-
-#dm-view .dm-avatar {
-    width: 31px !important;
-    height: 31px !important;
-    flex: 0 0 31px !important;
-    display: grid !important;
-    place-items: center !important;
-    overflow: hidden !important;
-    border-radius: 50% !important;
-    background: radial-gradient(circle at 50% 35%, #7c7a8e, #262634 70%) !important;
-    color: #d9f8ff !important;
-    font-size: 9px !important;
-    box-shadow: 0 0 0 1px rgba(0,229,255,.07) !important;
-}
-
-#dm-view .dm-avatar img {
-    width: 100% !important;
-    height: 100% !important;
-    object-fit: cover !important;
-    border-radius: inherit !important;
-}
-
-#dm-view .dm-person-copy {
-    min-width: 0 !important;
-}
-
-#dm-view .dm-person-copy strong {
-    display: block !important;
-    overflow: hidden !important;
-    color: #f0f6fb !important;
-    font-size: 11px !important;
-    line-height: 1.05 !important;
-    font-weight: 650 !important;
-    white-space: nowrap !important;
-    text-overflow: ellipsis !important;
-}
-
-#dm-view .dm-person-copy span {
-    display: block !important;
-    margin-top: 3px !important;
-    color: #687b8b !important;
-    font-size: 7px !important;
-    white-space: nowrap !important;
-}
-
-#dm-view .dm-chat-actions {
-    display: flex !important;
-    align-items: center !important;
-    gap: 5px !important;
-}
-
-#dm-view .dm-head-action {
-    width: 28px !important;
-    height: 28px !important;
-    min-width: 28px !important;
-    padding: 0 !important;
-    display: grid !important;
-    place-items: center !important;
-    border: 1px solid rgba(99,127,158,.12) !important;
-    border-radius: 50% !important;
-    background: rgba(7,13,22,.25) !important;
-    color: #6b8b9c !important;
-    cursor: pointer !important;
-}
-
-#dm-view .dm-head-action:hover:not(:disabled) {
-    border-color: rgba(0,229,255,.24) !important;
-    background: rgba(0,229,255,.05) !important;
-    color: #c8f8ff !important;
-}
-
-#dm-view .dm-head-action .dm-icon {
-    width: 14px !important;
-    height: 14px !important;
-}
-
-#dm-view .dm-reference-hidden-control,
-#dm-view .dm-head-action.dm-reference-hidden-control,
-#dm-view .dm-composer-action.dm-reference-hidden-control,
-#dm-view #dm-mic-button,
-#dm-view #dm-emoji-button {
-    display: none !important;
-}
-
-#dm-view #dm-pins-button { order: 1 !important; }
-#dm-view #dm-message-search-toggle { order: 2 !important; }
-#dm-view #dm-info-button { order: 3 !important; }
-
-#dm-view .dm-message-search {
-    position: absolute !important;
-    top: 55px !important;
-    right: 9px !important;
-    z-index: 45 !important;
-    width: min(250px, calc(100% - 18px)) !important;
-    min-height: 36px !important;
-    display: grid !important;
-    grid-template-columns: 16px minmax(0,1fr) auto !important;
-    align-items: center !important;
-    gap: 6px !important;
-    padding: 0 7px !important;
-    border: 1px solid rgba(0,229,255,.20) !important;
-    border-radius: 9px !important;
-    background: rgba(7,13,22,.98) !important;
-    box-shadow: 0 12px 36px rgba(0,0,0,.40) !important;
-}
-
-#dm-view .dm-message-search[hidden] {
-    display: none !important;
-}
-
-#dm-view .dm-message-search input {
-    min-width: 0 !important;
-    border: 0 !important;
-    outline: 0 !important;
-    color: #dff7fb !important;
-    background: transparent !important;
-    font: 9px "SFMono-Regular",Consolas,monospace !important;
-}
-
-#dm-view .dm-chat-meta {
-    flex: 0 0 20px !important;
-    min-height: 20px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: flex-end !important;
-    padding: 0 13px !important;
-    color: #5d7181 !important;
-    font: 6px "SFMono-Regular",Consolas,monospace !important;
-    letter-spacing: .12em !important;
-    text-transform: uppercase !important;
-}
-
-#dm-view .dm-chat-meta span:first-child {
-    margin-right: auto !important;
-    color: #74c6d0 !important;
-}
-
-#dm-view .dm-server-status {
-    display: none !important;
-}
-
-/* ---------- messages ---------- */
-
-#dm-view .dm-message-area {
-    position: relative !important;
-    flex: 1 1 auto !important;
-    width: 100% !important;
-    min-width: 0 !important;
-    min-height: 0 !important;
-    height: auto !important;
-    overflow: auto !important;
-    padding: 5px 13px 8px !important;
-    box-sizing: border-box !important;
-    background:
-        radial-gradient(circle, rgba(0,229,255,.05) .6px, transparent .85px) 0 0 / 9px 9px,
-        transparent !important;
-}
-
-#dm-view .dm-message-row {
-    position: relative !important;
-    width: 100% !important;
-    display: flex !important;
-    margin: 0 0 5px !important;
-}
-
-#dm-view .dm-message-row.is-received {
-    justify-content: flex-start !important;
-}
-
-#dm-view .dm-message-row.is-sent {
-    justify-content: flex-end !important;
-}
-
-#dm-view .dm-message-bubble {
-    position: relative !important;
-    max-width: min(72%, 610px) !important;
-    padding: 7px 10px !important;
-    border: 1px solid rgba(113,137,162,.10) !important;
-    border-radius: 9px !important;
-    background: linear-gradient(180deg, rgba(52,64,79,.84), rgba(43,55,70,.90)) !important;
-    color: #dcebf3 !important;
-    font-size: 9px !important;
-    line-height: 1.45 !important;
-    box-shadow: 0 3px 12px rgba(0,0,0,.12) !important;
-}
-
-#dm-view .dm-message-row.is-sent .dm-message-bubble {
-    background: rgba(0,229,255,.045) !important;
-    border-color: rgba(0,229,255,.26) !important;
-    color: #7debf4 !important;
-}
-
-#dm-view .dm-message-text,
-#dm-view .dm-message-bubble p {
-    margin: 0 !important;
-    color: #dcebf3 !important;
-    font-size: 9px !important;
-    line-height: 1.45 !important;
-    white-space: pre-wrap !important;
-    overflow-wrap: anywhere !important;
-}
-
-#dm-view .dm-message-meta {
-    display: flex !important;
-    align-items: center !important;
-    gap: 4px !important;
-    margin: 3px 7px 0 !important;
-    color: #7a8894 !important;
-    font: 7px "SFMono-Regular",Consolas,monospace !important;
-    line-height: 1 !important;
-}
-#dm-view .dm-message-row.is-sent .dm-message-meta,
-#dm-view .dm-message-row.is-sent .dm-message-status {
-    color: #22d7e8 !important;
-}
-
-#dm-view .dm-message-status {
-    color: #6b8b9b !important;
-}
-
-#dm-view .dm-reaction-strip {
-    display: flex !important;
-    gap: 3px !important;
-    margin: 2px 3px 0 !important;
-}
-
-#dm-view .dm-reaction-pill {
-    padding: 1px 5px !important;
-    border: 1px solid rgba(0,229,255,.10) !important;
-    border-radius: 999px !important;
-    background: rgba(10,16,24,.88) !important;
-    color: #b7cad4 !important;
-    font-size: 8px !important;
-}
-
-#dm-view .dm-message-actions {
-    top: 50% !important;
-    transform: translateY(-50%) !important;
-    padding: 3px !important;
-    gap: 2px !important;
-    border: 1px solid rgba(255,255,255,.08) !important;
-    border-radius: 999px !important;
-    background: rgba(7,10,17,.97) !important;
-    box-shadow: 0 10px 25px rgba(0,0,0,.26) !important;
-}
-
-#dm-view .dm-message-tool {
-    width: 22px !important;
-    height: 22px !important;
-    display: grid !important;
-    place-items: center !important;
-    border-radius: 50% !important;
-    color: #8da3ad !important;
-}
-
-#dm-view .dm-message-tool:hover {
-    color: var(--cyan) !important;
-    background: rgba(255,255,255,.07) !important;
-}
-
-/* replies/media keep working, but inherit the same compact classic language */
-#dm-view .dm-reply-reference {
-    margin-bottom: 5px !important;
-    padding: 5px 7px !important;
-    border-left: 2px solid rgba(0,229,255,.70) !important;
-    border-radius: 0 7px 7px 0 !important;
-    background: rgba(0,0,0,.12) !important;
-}
-
-#dm-view .dm-reply-reference-copy strong {
-    font-size: 7px !important;
-}
-
-#dm-view .dm-reply-reference-text {
-    font-size: 8px !important;
-}
-
-#dm-view .dm-message-media img,
-#dm-view .dm-message-image {
-    display: block !important;
-    max-width: 155px !important;
-    max-height: 155px !important;
-    border-radius: 8px !important;
-    object-fit: cover !important;
-}
-
-#dm-view .dm-message-media-meta {
-    margin-top: 4px !important;
-    color: rgba(220,238,244,.72) !important;
-    font-size: 7px !important;
-}
-
-/* ---------- composer ---------- */
-
-#dm-view .dm-composer-zone {
-    position: relative !important;
-    z-index: 4 !important;
-    flex: 0 0 82px !important;
-    width: 100% !important;
-    min-height: 82px !important;
-    max-height: 82px !important;
-    box-sizing: border-box !important;
-    padding: 9px 13px 5px 13px !important;
-    border-top: 1px solid rgba(94,123,149,.11) !important;
-    background: linear-gradient(180deg, rgba(8,14,23,.94), rgba(6,10,17,.98)) !important;
-}
-
-#dm-view .dm-composer {
-    position: relative !important;
-    width: 100% !important;
-    height: 44px !important;
-    min-height: 44px !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 5px !important;
-    padding: 3px 4px 3px 10px !important;
-    box-sizing: border-box !important;
-    border: 1px solid rgba(53,224,238,.25) !important;
-    border-radius: 13px !important;
-    background:
-        linear-gradient(100deg, rgba(18,105,118,.34), rgba(11,63,78,.48) 58%, rgba(11,44,58,.46)),
-        repeating-linear-gradient(90deg, transparent 0 16px, rgba(106,241,255,.035) 17px, transparent 18px) !important;
-    box-shadow: 0 0 24px rgba(0,229,255,.07), inset 0 0 22px rgba(0,229,255,.045) !important;
-}
-
-#dm-view .dm-composer::after {
-    content: "" !important;
-    position: absolute !important;
-    inset: 0 !important;
-    border-radius: inherit !important;
-    pointer-events: none !important;
-    background: linear-gradient(180deg, transparent 46%, rgba(95,230,241,.08) 47%, transparent 49%, transparent 70%, rgba(95,230,241,.06) 71%, transparent 73%) !important;
-    opacity: .32 !important;
-}
-
-#dm-view .dm-composer-attach-reference,
-#dm-view #dm-attach-button {
-    position: relative !important;
-    z-index: 3 !important;
-    width: 30px !important;
-    height: 30px !important;
-    flex: 0 0 30px !important;
-    display: grid !important;
-    place-items: center !important;
-    padding: 0 !important;
-    border: 0 !important;
-    border-radius: 8px !important;
-    background: transparent !important;
-    color: #7eb7c2 !important;
-    cursor: pointer !important;
-}
-
-#dm-view #dm-attach-button:hover {
-    color: #dbfdff !important;
-    background: rgba(0,229,255,.08) !important;
-}
-
-#dm-view #dm-message-input {
-    position: relative !important;
-    z-index: 3 !important;
-    flex: 1 1 auto !important;
-    width: 100% !important;
-    min-width: 0 !important;
-    height: 35px !important;
-    line-height: 35px !important;
-    padding: 0 7px !important;
-    border: 0 !important;
-    outline: 0 !important;
-    resize: none !important;
-    overflow: hidden !important;
-    background: transparent !important;
-    color: #bdebf1 !important;
-    font: 9px "Segoe UI",Inter,Arial,sans-serif !important;
-}
-
-#dm-view #dm-message-input::placeholder {
-    color: #75939e !important;
-}
-
-#dm-view .dm-composer-actions-right {
-    position: relative !important;
-    z-index: 3 !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 2px !important;
-    margin-left: auto !important;
-}
-
-#dm-view .dm-composer-actions-right::before {
-    content: "+" !important;
-    width: 27px !important;
-    height: 27px !important;
-    flex: 0 0 27px !important;
-    display: grid !important;
-    place-items: center !important;
-    color: #5de6f1 !important;
-    font-size: 18px !important;
-    line-height: 1 !important;
-}
-
-#dm-view .dm-send-control,
-#dm-view #dm-send-button {
-    position: relative !important;
-    z-index: 3 !important;
-    width: 31px !important;
-    height: 31px !important;
-    min-width: 31px !important;
-    flex: 0 0 31px !important;
-    display: grid !important;
-    place-items: center !important;
-    padding: 0 !important;
-    border: 0 !important;
-    border-radius: 8px !important;
-    background: transparent !important;
-    color: #5de6f1 !important;
-    cursor: pointer !important;
-}
-
-#dm-view #dm-send-button:hover:not(:disabled) {
-    color: #d9fcff !important;
-    background: rgba(0,229,255,.07) !important;
-    transform: translateX(1px) !important;
-}
-
-#dm-view #dm-send-button .dm-icon {
-    width: 17px !important;
-    height: 17px !important;
-}
-
-#dm-view .dm-composer-footer {
-    display: flex !important;
-    justify-content: space-between !important;
-    gap: 10px !important;
-    height: 15px !important;
-    padding: 4px 3px 0 !important;
-    box-sizing: border-box !important;
-    color: #6f808b !important;
-    font: 6px "SFMono-Regular",Consolas,monospace !important;
-}
-
-#dm-view .dm-reply-bar,
-#dm-view .dm-media-preview {
-    width: 100% !important;
-    box-sizing: border-box !important;
-}
-
-#dm-view .dm-reply-bar {
-    min-height: 36px !important;
-    margin-bottom: 4px !important;
-    padding: 5px 7px !important;
-    border: 1px solid rgba(0,229,255,.10) !important;
-    border-radius: 9px !important;
-    background: rgba(0,229,255,.028) !important;
-}
-
-#dm-view .dm-reply-bar[hidden],
-#dm-view .dm-media-preview[hidden],
-#dm-view .dm-attachment-error[hidden] {
-    display: none !important;
-}
-
-#dm-view .dm-media-preview {
-    min-height: 36px !important;
-    padding: 5px 7px !important;
-    margin-bottom: 4px !important;
-    border-radius: 9px !important;
-    background: rgba(10,14,20,.92) !important;
-}
-
-#dm-view .dm-media-preview-thumb {
-    width: 30px !important;
-    height: 30px !important;
-    flex: 0 0 30px !important;
-}
-
-#dm-view .dm-info-panel,
-#dm-view .dm-pins-panel {
-    position: absolute !important;
-    top: 0 !important;
-    right: 0 !important;
-    z-index: 30 !important;
-    width: 310px !important;
-    height: 100% !important;
-    border-left: 1px solid rgba(255,255,255,.08) !important;
-    background: #070a11 !important;
-    box-shadow: -18px 0 45px rgba(0,0,0,.20) !important;
-}
-
-#dm-view .dm-info-panel[hidden],
-#dm-view .dm-pins-panel[hidden],
-#dm-view .dm-context-menu[hidden],
-#dm-view .dm-emoji-picker[hidden],
-#dm-view .dm-forward-modal[hidden],
-#dm-view .dm-nickname-modal[hidden],
-#dm-view .dm-media-viewer[hidden] {
-    display: none !important;
-}
-
-#dm-view .dm-panel-header,
-#dm-view .dm-info-header {
-    min-height: 55px !important;
-    padding: 0 13px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    border-bottom: 1px solid rgba(255,255,255,.07) !important;
-}
-
-@media (max-width: 900px) {
-    #dm-view .dm-sidebar {
-        width: 270px !important;
-        min-width: 270px !important;
-        max-width: 270px !important;
-        flex-basis: 270px !important;
-    }
-}
-
-@media (max-width: 650px) {
-    #dm-view .dm-sidebar {
-        display: none !important;
-    }
-
-    #dm-view .dm-composer-zone {
-        padding-left: 10px !important;
-        padding-right: 10px !important;
-    }
-}
-/* =========================================================
    PROFILE — ARCHIVE VISUAL RESTORE
    ========================================================= */
 
@@ -8204,20 +7273,6 @@ body.helix-compact-mode .settings-option-row {
     background-size: cover !important;
     background-repeat: no-repeat !important;
 }
-@keyframes helixDmUnreadPulse{
-    0%, 100% {
-        box-shadow:
-            0 0 0 1px rgba(0, 229, 255, 0.16),
-            0 0 10px rgba(0, 229, 255, 0.44),
-            0 0 20px rgba(0, 229, 255, 0.18);
-    }
-    50% {
-        box-shadow:
-            0 0 0 1px rgba(0, 229, 255, 0.28),
-            0 0 13px rgba(0, 229, 255, 0.68),
-            0 0 28px rgba(0, 229, 255, 0.28);
-    }
-}
 @keyframes helixFriendAvatarGlow{
     0%, 100% {
         box-shadow:
@@ -8345,516 +7400,1019 @@ body.helix-compact-mode .settings-option-row {
 
 }
 
+
+
 /* =========================================================
-   DM LEGACY RESTORE — FINAL GUARD
+   HELIX DMs — CLEAN REFERENCE IMPLEMENTATION
+   This is the only DM layout skin.
    ========================================================= */
+
 #dm-view.dm-view {
-    flex: 1 1 auto !important;
+    position: relative;
+    display: flex;
+    flex: 1 1 auto;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    padding: 0;
+    overflow: hidden;
+    color: #edf7fb;
+    background: #050a11;
 }
+
+#dm-view.dm-view[hidden] {
+    display: none !important;
+}
+
+/* -------------------- 3-column shell -------------------- */
+
+#dm-view .dm-stage {
+    display: flex;
+    flex: 1 1 auto;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    background: #050a11;
+}
+
+#dm-view .dm-sidebar {
+    width: clamp(226px, 31.5vw, 300px);
+    min-width: 0;
+    max-width: 300px;
+    flex: 0 0 clamp(226px, 31.5vw, 300px);
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-right: 1px solid rgba(94, 122, 146, .13);
+    background:
+        linear-gradient(180deg, #08101a 0%, #060c14 55%, #050a11 100%);
+    box-sizing: border-box;
+}
+
 #dm-view section.dm-conversation {
-    min-width: 0 !important;
-    min-height: 0 !important;
+    position: relative;
+    width: auto;
+    min-width: 0;
+    min-height: 0;
+    height: 100%;
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: #050a11;
 }
 
+/* -------------------- inbox header -------------------- */
 
+#dm-view .dm-sidebar-head {
+    height: 66px;
+    min-height: 66px;
+    flex: 0 0 66px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 14px 0 16px;
+    border-bottom: 1px solid rgba(94, 122, 146, .09);
+    box-sizing: border-box;
+}
 
+#dm-view .dm-legacy-inbox-title h1 {
+    margin: 0;
+    color: #f0f7fb;
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -.03em;
+}
 
+#dm-view .dm-inbox-header-actions {
+    display: flex;
+    align-items: center;
+}
 
+#dm-view #dm-new-message-button {
+    width: 34px;
+    height: 34px;
+    flex: 0 0 34px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    color: #17d6e5;
+    background: transparent;
+    cursor: pointer;
+}
 
+#dm-view #dm-new-message-button:hover {
+    color: #c9fbff;
+    text-shadow: 0 0 14px rgba(0, 229, 255, .7);
+}
 
-/* =========================================================
-   HELIX DMS — REFERENCE PASS 3 / FINAL DESKTOP MATCH
-   Target geometry based on supplied 898px reference.
-   ========================================================= */
+/* Hidden utility remains functional in the DOM. */
+#dm-view #dm-refresh-button {
+    display: none !important;
+}
 
-@media (min-width: 651px) {
-    /* 154px global navigation / 234px DM inbox / 510px chat at 898px. */
-    .helix-app {
-        grid-template-columns: 17.15% minmax(0, 1fr) !important;
-    }
+/* -------------------- inbox search -------------------- */
 
-    #dm-view.dm-view {
-        display: flex !important;
-        flex: 1 1 auto !important;
-        width: 100% !important;
-        height: 100% !important;
-        min-width: 0 !important;
-        min-height: 0 !important;
-        padding: 0 !important;
-        overflow: hidden !important;
-        background: #050a11 !important;
-    }
+#dm-view .dm-search-wrap {
+    position: relative;
+    height: 34px;
+    min-height: 34px;
+    margin: 8px 12px 12px;
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+}
 
-    #dm-view .dm-stage {
-        display: flex !important;
-        flex-direction: row !important;
-        width: 100% !important;
-        height: 100% !important;
-        min-width: 0 !important;
-        min-height: 0 !important;
-        overflow: hidden !important;
-    }
+#dm-view .dm-search-wrap > .dm-search-icon {
+    position: absolute;
+    left: 11px;
+    top: 50%;
+    width: 12px;
+    height: 12px;
+    transform: translateY(-50%);
+    color: #63dbe6;
+    pointer-events: none;
+    z-index: 2;
+}
 
+#dm-view #dm-conversation-search {
+    width: 100%;
+    height: 34px;
+    min-width: 0;
+    box-sizing: border-box;
+    padding: 0 30px 0 30px;
+    border: 1px solid rgba(0, 229, 255, .34);
+    border-radius: 999px;
+    outline: none;
+    background: rgba(5, 12, 19, .40);
+    color: #dff7fb;
+    font: 9px "SFMono-Regular", Consolas, monospace;
+}
+
+#dm-view #dm-conversation-search::placeholder {
+    color: #6d818f;
+}
+
+#dm-view #dm-conversation-search:focus {
+    border-color: rgba(0, 229, 255, .67);
+    box-shadow: 0 0 0 2px rgba(0, 229, 255, .05), 0 0 15px rgba(0, 229, 255, .07);
+}
+
+#dm-view #dm-conversation-search-clear {
+    display: none !important;
+}
+
+#dm-view .dm-tabs {
+    display: none !important;
+}
+
+/* -------------------- inbox labels -------------------- */
+
+#dm-view .dm-legacy-meta {
+    min-height: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 13px 3px;
+    color: #d2dfe5;
+    font-size: 8px;
+    line-height: 1;
+}
+
+#dm-view .dm-legacy-meta strong {
+    color: #00e5ff;
+    font: 700 8px "SFMono-Regular", Consolas, monospace;
+}
+
+#dm-view .dm-legacy-friends-meta {
+    min-height: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 13px 6px;
+    color: #5c7180;
+    font: 700 7px "SFMono-Regular", Consolas, monospace;
+    letter-spacing: .13em;
+}
+
+#dm-view .dm-legacy-friends-meta strong {
+    color: #667b88;
+    letter-spacing: 0;
+}
+
+/* -------------------- conversation list -------------------- */
+
+#dm-view .dm-conversation-list {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0 7px;
+    scrollbar-width: thin;
+}
+
+#dm-view .dm-conversation-list::-webkit-scrollbar,
+#dm-view .dm-message-area::-webkit-scrollbar {
+    width: 5px;
+}
+
+#dm-view .dm-conversation-list::-webkit-scrollbar-thumb,
+#dm-view .dm-message-area::-webkit-scrollbar-thumb {
+    border-radius: 99px;
+    background: rgba(90, 116, 136, .22);
+}
+
+#dm-view .dm-conversation-list > .dm-conversation {
+    position: relative;
+    width: 100%;
+    min-height: 59px;
+    display: grid;
+    grid-template-columns: 32px minmax(0, 1fr) 17px;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 3px;
+    padding: 5px 7px;
+    border: 1px solid transparent;
+    border-left-color: transparent;
+    border-radius: 9px;
+    box-sizing: border-box;
+    background: transparent;
+    color: #dcebf1;
+    text-align: left;
+    cursor: pointer;
+}
+
+#dm-view .dm-conversation-list > .dm-conversation:hover {
+    background: rgba(20, 49, 61, .18);
+}
+
+#dm-view .dm-conversation-list > .dm-conversation.is-active {
+    border-top-color: rgba(0, 229, 255, .40);
+    border-bottom-color: rgba(0, 229, 255, .34);
+    border-left-color: rgba(0, 229, 255, .55);
+    border-right-color: transparent;
+    background:
+        linear-gradient(90deg, rgba(0, 229, 255, .10), rgba(8, 27, 37, .14));
+    box-shadow:
+        inset 3px 0 0 #00e5ff,
+        -2px 0 12px rgba(0, 229, 255, .17),
+        0 0 9px rgba(0, 229, 255, .045);
+}
+
+#dm-view .dm-conversation-avatar {
+    width: 31px;
+    height: 31px;
+    flex: 0 0 31px;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    border-radius: 50%;
+    border: 0;
+    background: #26313c;
+    color: #e8fbff;
+    font-size: 9px;
+    box-shadow: 0 0 0 1px rgba(0, 229, 255, .09);
+}
+
+#dm-view .dm-conversation-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: inherit;
+}
+
+#dm-view .dm-conversation-copy {
+    min-width: 0;
+    display: block;
+}
+
+#dm-view .dm-conversation-copy strong {
+    display: block;
+    overflow: hidden;
+    color: #eef7fb;
+    font-size: 10px;
+    font-weight: 650;
+    line-height: 1.05;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#dm-view .dm-conversation-copy small {
+    display: block;
+    margin-top: 2px;
+    overflow: hidden;
+    color: #667d8b;
+    font-size: 7px;
+    line-height: 1;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#dm-view .dm-conversation-preview {
+    display: block;
+    margin-top: 3px;
+    overflow: hidden;
+    color: #70828e;
+    font-size: 7px;
+    line-height: 1;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#dm-view .dm-conversation-preview-icon {
+    display: inline-flex;
+    margin-right: 3px;
+    vertical-align: -2px;
+    color: #708691;
+}
+
+#dm-view .dm-conversation-preview-icon .dm-icon {
+    width: 9px;
+    height: 9px;
+}
+
+#dm-view .dm-conversation-meta {
+    min-width: 17px;
+    display: grid;
+    justify-items: center;
+    align-content: center;
+    gap: 3px;
+    color: #42dce8;
+}
+
+#dm-view .dm-conversation-edit-mark {
+    color: #40dde8;
+    font-size: 10px;
+    line-height: 1;
+    opacity: .80;
+}
+
+#dm-view .dm-unread-badge {
+    min-width: 12px;
+    height: 12px;
+    display: grid;
+    place-items: center;
+    padding: 0 3px;
+    border-radius: 999px;
+    background: #00dff2;
+    color: #021017;
+    font: 800 7px "SFMono-Regular", Consolas, monospace;
+}
+
+/* -------------------- Suggestions -------------------- */
+
+#dm-view .dm-suggestions-section {
+    flex: 0 0 auto;
+    min-height: 39px;
+    margin: 21px 7px 100px;
+    padding: 7px 9px;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    box-sizing: border-box;
+    border: 1px solid rgba(0, 229, 255, .17);
+    border-radius: 9px;
+    background: rgba(0, 229, 255, .025);
+}
+
+#dm-view .dm-suggestions-icon {
+    width: 25px;
+    height: 25px;
+    flex: 0 0 25px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(0, 229, 255, .22);
+    border-radius: 7px;
+    color: #00dff0;
+    background: rgba(0, 229, 255, .05);
+}
+
+#dm-view .dm-suggestions-icon .dm-icon {
+    width: 14px;
+    height: 14px;
+}
+
+#dm-view .dm-suggestions-section strong {
+    display: block;
+    color: #c7d8df;
+    font-size: 8px;
+    line-height: 1;
+}
+
+#dm-view .dm-suggestions-section small {
+    display: block;
+    margin-top: 3px;
+    color: #5a727f;
+    font: 6px "SFMono-Regular", Consolas, monospace;
+    text-transform: uppercase;
+}
+
+/* -------------------- chat header -------------------- */
+
+#dm-view .dm-conversation-head {
+    height: 53px;
+    min-height: 53px;
+    max-height: 53px;
+    flex: 0 0 53px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 0 10px;
+    box-sizing: border-box;
+    border-bottom: 1px solid rgba(95, 123, 150, .12);
+    background: rgba(7, 12, 19, .88);
+}
+
+#dm-view .dm-person {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#dm-view .dm-avatar {
+    width: 32px;
+    height: 32px;
+    flex: 0 0 32px;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    border-radius: 50%;
+    border: 0;
+    background: #26313c;
+    color: #e8fbff;
+    font-size: 9px;
+    box-shadow: 0 0 0 1px rgba(0, 229, 255, .08);
+}
+
+#dm-view .dm-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: inherit;
+}
+
+#dm-view .dm-person-copy {
+    min-width: 0;
+}
+
+#dm-view .dm-person-copy strong {
+    display: block;
+    overflow: hidden;
+    color: #f0f8fc;
+    font-size: 11px;
+    font-weight: 650;
+    line-height: 1.05;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#dm-view .dm-person-copy span {
+    display: block;
+    margin-top: 2px;
+    color: #637b89;
+    font-size: 6px;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+#dm-view .dm-person-copy span::after {
+    content: "friend on Helix";
+    display: block;
+    margin-top: 2px;
+    color: #435c69;
+    font-size: 5px;
+    line-height: 1;
+}
+
+#dm-view .dm-chat-actions {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+#dm-view .dm-head-action {
+    width: 27px;
+    height: 27px;
+    min-width: 27px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 1px solid rgba(0, 229, 255, .10);
+    border-radius: 50%;
+    color: #5d8190;
+    background: transparent;
+    cursor: pointer;
+}
+
+#dm-view .dm-head-action:hover:not(:disabled) {
+    color: #d4fbff;
+    border-color: rgba(0, 229, 255, .25);
+    background: rgba(0, 229, 255, .045);
+}
+
+#dm-view .dm-head-action:disabled {
+    opacity: .36;
+    cursor: default;
+}
+
+#dm-view .dm-head-action .dm-icon {
+    width: 13px;
+    height: 13px;
+}
+
+#dm-view #dm-nickname-button {
+    display: none !important;
+}
+
+/* Message search remains a real feature but is opened by the header search button. */
+#dm-view .dm-message-search {
+    position: absolute;
+    top: 53px;
+    right: 8px;
+    z-index: 40;
+    width: min(255px, calc(100% - 16px));
+    min-height: 36px;
+    display: grid;
+    grid-template-columns: 15px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 6px;
+    padding: 0 7px;
+    box-sizing: border-box;
+    border: 1px solid rgba(0, 229, 255, .24);
+    border-radius: 9px;
+    background: rgba(6, 12, 19, .98);
+    box-shadow: 0 12px 32px rgba(0,0,0,.38);
+}
+
+#dm-view .dm-message-search[hidden] {
+    display: none !important;
+}
+
+#dm-view .dm-message-search input {
+    min-width: 0;
+    width: 100%;
+    border: 0;
+    outline: 0;
+    color: #dff7fb;
+    background: transparent;
+    font: 8px "SFMono-Regular", Consolas, monospace;
+}
+
+#dm-view .dm-message-search .dm-search-icon {
+    width: 12px;
+    height: 12px;
+    color: #5edce6;
+}
+
+#dm-view .dm-chat-meta {
+    position: absolute;
+    top: 59px;
+    right: 9px;
+    z-index: 6;
+    pointer-events: none;
+    height: 9px;
+    min-height: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    color: #415965;
+    font: 5px "SFMono-Regular", Consolas, monospace;
+    letter-spacing: .11em;
+    text-transform: uppercase;
+}
+
+#dm-view #dm-message-status {
+    display: none !important;
+}
+
+#dm-view .dm-server-status {
+    display: inline !important;
+    color: #415965;
+}
+
+/* -------------------- message canvas -------------------- */
+
+#dm-view .dm-message-area {
+    position: relative;
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 4px 10px 7px;
+    box-sizing: border-box;
+    background:
+        radial-gradient(circle, rgba(0, 229, 255, .048) .55px, transparent .82px) 0 0 / 9px 9px,
+        #050a11;
+}
+
+#dm-view .dm-message-row {
+    position: relative;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    margin: 0 0 5px;
+    box-sizing: border-box;
+}
+
+#dm-view .dm-message-row.is-received {
+    align-items: flex-start;
+}
+
+#dm-view .dm-message-row.is-sent {
+    align-items: flex-end;
+}
+
+#dm-view .dm-message-bubble {
+    position: relative;
+    max-width: min(72%, 530px);
+    padding: 7px 10px;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    box-sizing: border-box;
+    background: #20262d;
+    color: #e7f1f5;
+    font-size: 9px;
+    line-height: 1.42;
+    box-shadow: none;
+}
+
+#dm-view .dm-message-row.is-received .dm-message-bubble {
+    background: #262b31;
+    border-color: transparent;
+    color: #e8f0f4;
+}
+
+#dm-view .dm-message-row.is-sent .dm-message-bubble {
+    background: rgba(6, 16, 22, .78);
+    border-color: rgba(0, 229, 255, .60);
+    box-shadow: 0 0 7px rgba(0, 229, 255, .055);
+}
+
+#dm-view .dm-message-text,
+#dm-view .dm-message-bubble p {
+    margin: 0;
+    color: inherit;
+    font-size: 9px;
+    line-height: 1.42;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+#dm-view .dm-message-row.is-sent .dm-message-text,
+#dm-view .dm-message-row.is-sent .dm-message-bubble p {
+    color: #20dce9;
+}
+
+#dm-view .dm-message-meta {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin: 3px 6px 0;
+    color: #71828c;
+    font: 6px "SFMono-Regular", Consolas, monospace;
+    line-height: 1;
+}
+
+#dm-view .dm-message-row.is-sent .dm-message-meta,
+#dm-view .dm-message-row.is-sent .dm-message-status {
+    color: #22d9e7;
+}
+
+#dm-view .dm-message-status {
+    display: inline-flex;
+    align-items: center;
+}
+
+#dm-view .dm-message-status .dm-icon {
+    width: 15px;
+    height: 9px;
+}
+
+#dm-view .dm-message-actions {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    gap: 2px;
+    padding: 3px;
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 999px;
+    background: rgba(7,10,17,.97);
+    box-shadow: 0 9px 22px rgba(0,0,0,.26);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .16s ease;
+    z-index: 5;
+}
+
+#dm-view .dm-message-row.is-received .dm-message-actions {
+    left: calc(100% + 7px);
+}
+
+#dm-view .dm-message-row.is-sent .dm-message-actions {
+    right: calc(100% + 7px);
+}
+
+#dm-view .dm-message-bubble:hover .dm-message-actions,
+#dm-view .dm-message-actions:focus-within {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+#dm-view .dm-message-tool {
+    width: 21px;
+    height: 21px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: #93a7b1;
+    cursor: pointer;
+}
+
+#dm-view .dm-message-tool:hover {
+    color: #21dce9;
+    background: rgba(255,255,255,.07);
+}
+
+#dm-view .dm-reaction-strip {
+    display: flex;
+    gap: 3px;
+    margin: 2px 3px 0;
+}
+
+#dm-view .dm-reaction-pill {
+    padding: 1px 5px;
+    border: 1px solid rgba(0,229,255,.10);
+    border-radius: 999px;
+    background: rgba(8,14,21,.92);
+    color: #b8ccd4;
+    font-size: 8px;
+}
+
+#dm-view .dm-reply-reference {
+    margin-bottom: 5px;
+    padding: 5px 7px;
+    border: 0;
+    border-left: 2px solid rgba(0,229,255,.72);
+    border-radius: 0 7px 7px 0;
+    background: rgba(0,0,0,.13);
+}
+
+#dm-view .dm-reply-reference-copy strong {
+    font-size: 7px;
+}
+
+#dm-view .dm-reply-reference-text {
+    font-size: 8px;
+}
+
+/* -------------------- composer -------------------- */
+
+#dm-view .dm-composer-zone {
+    flex: 0 0 57px;
+    min-height: 57px;
+    max-height: 57px;
+    padding: 8px 10px 4px;
+    box-sizing: border-box;
+    border-top: 1px solid rgba(94, 123, 149, .09);
+    background: #050a11;
+}
+
+#dm-view .dm-composer {
+    width: 100%;
+    height: 36px;
+    min-height: 36px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 4px 2px 5px;
+    box-sizing: border-box;
+    border: 1px solid #00e5ff;
+    border-radius: 999px;
+    background: rgba(5, 15, 21, .86);
+    box-shadow: 0 0 10px rgba(0,229,255,.055), inset 0 0 9px rgba(0,229,255,.025);
+}
+
+#dm-view .dm-composer-attach-reference,
+#dm-view #dm-attach-button {
+    width: 25px;
+    height: 25px;
+    min-width: 25px;
+    flex: 0 0 25px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    color: #a6cfd6;
+    background: transparent;
+    cursor: pointer;
+}
+
+#dm-view .dm-composer-attach-reference:hover,
+#dm-view #dm-attach-button:hover {
+    color: #ebfdff;
+    background: rgba(0, 229, 255, .05);
+}
+
+#dm-view .dm-composer-attach-reference .dm-icon,
+#dm-view #dm-attach-button .dm-icon {
+    width: 15px;
+    height: 15px;
+}
+
+#dm-view #dm-message-input {
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+    height: 30px;
+    padding: 0 4px;
+    border: 0;
+    outline: 0;
+    resize: none;
+    overflow: hidden;
+    box-sizing: border-box;
+    color: #b5d4da;
+    background: transparent;
+    font: 8px "Segoe UI", Inter, Arial, sans-serif;
+}
+
+#dm-view #dm-message-input::placeholder {
+    color: #66828c;
+}
+
+#dm-view .dm-composer-actions-right {
+    display: flex;
+    align-items: center;
+    gap: 1px;
+    margin-left: auto;
+}
+
+#dm-view .dm-composer-actions-right::before {
+    content: "+";
+    width: 23px;
+    height: 25px;
+    flex: 0 0 23px;
+    display: grid;
+    place-items: center;
+    color: #16d9e7;
+    font-size: 17px;
+    line-height: 1;
+}
+
+#dm-view .dm-send-control,
+#dm-view #dm-send-button {
+    width: 27px;
+    height: 27px;
+    min-width: 27px;
+    flex: 0 0 27px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    color: #18d9e7;
+    background: transparent;
+    cursor: pointer;
+}
+
+#dm-view #dm-send-button:hover:not(:disabled) {
+    color: #dbfdff;
+    text-shadow: 0 0 12px rgba(0,229,255,.8);
+}
+
+#dm-view #dm-send-button .dm-icon {
+    width: 16px;
+    height: 16px;
+}
+
+#dm-view .dm-composer-footer {
+    display: block;
+    height: 10px;
+    padding: 3px 4px 0;
+    color: #4f6976;
+    font: 5.5px "SFMono-Regular", Consolas, monospace;
+}
+
+#dm-view .dm-composer-footer > span + span {
+    display: none;
+}
+
+#dm-view .dm-reply-bar,
+#dm-view .dm-media-preview,
+#dm-view .dm-attachment-error {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+#dm-view .dm-reply-bar {
+    min-height: 36px;
+    margin-bottom: 4px;
+    padding: 5px 7px;
+    border: 1px solid rgba(0,229,255,.12);
+    border-radius: 9px;
+    background: rgba(0,229,255,.025);
+}
+
+#dm-view .dm-reply-bar[hidden],
+#dm-view .dm-media-preview[hidden],
+#dm-view .dm-attachment-error[hidden] {
+    display: none !important;
+}
+
+#dm-view .dm-media-preview {
+    min-height: 36px;
+    margin-bottom: 4px;
+    padding: 5px 7px;
+    border-radius: 9px;
+    background: rgba(8,14,20,.94);
+}
+
+/* -------------------- panels / mobile -------------------- */
+
+#dm-view .dm-info-panel,
+#dm-view .dm-pins-panel {
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: 30;
+    width: 310px;
+    height: 100%;
+    border-left: 1px solid rgba(255,255,255,.08);
+    background: #070c13;
+    box-shadow: -18px 0 45px rgba(0,0,0,.22);
+}
+
+#dm-view .dm-info-panel[hidden],
+#dm-view .dm-pins-panel[hidden],
+#dm-view .dm-context-menu[hidden],
+#dm-view .dm-emoji-picker[hidden],
+#dm-view .dm-forward-modal[hidden],
+#dm-view .dm-nickname-modal[hidden],
+#dm-view .dm-media-viewer[hidden] {
+    display: none !important;
+}
+
+@media (max-width: 900px) {
     #dm-view .dm-sidebar {
-        width: 31.45% !important;
-        min-width: 0 !important;
-        max-width: none !important;
-        flex: 0 0 31.45% !important;
-        padding: 0 !important;
-        overflow: hidden !important;
-        background: linear-gradient(180deg,#070c15 0%,#050a12 100%) !important;
-        border-right: 1px solid rgba(111,138,166,.11) !important;
-    }
-
-    #dm-view .dm-sidebar-head {
-        height: 65px !important;
-        min-height: 65px !important;
-        max-height: 65px !important;
-        flex: 0 0 65px !important;
-        padding: 0 15px !important;
-        box-sizing: border-box !important;
-        border-bottom: 1px solid rgba(111,138,166,.08) !important;
-    }
-
-    #dm-view .dm-legacy-inbox-title h1 {
-        margin: 0 !important;
-        color: #eef7fd !important;
-        font-size: 20px !important;
-        line-height: 1 !important;
-        font-weight: 700 !important;
-        letter-spacing: -.03em !important;
-    }
-
-    #dm-view .dm-inbox-header-actions {
-        display: flex !important;
-        align-items: center !important;
-        gap: 0 !important;
-    }
-
-    #dm-view #dm-new-message-button {
-        width: 34px !important;
-        height: 34px !important;
-        flex-basis: 34px !important;
-        padding: 0 !important;
-        border: 0 !important;
-        border-radius: 50% !important;
-        background: transparent !important;
-        color: #28dbe8 !important;
-    }
-
-    #dm-view .dm-refresh-button {
-        display: none !important;
-    }
-
-    #dm-view .dm-search-wrap {
-        position: relative !important;
-        height: 34px !important;
-        min-height: 34px !important;
-        margin: 7px 13px 13px !important;
-    }
-
-    #dm-view #dm-conversation-search {
-        width: 100% !important;
-        height: 34px !important;
-        box-sizing: border-box !important;
-        padding: 0 9px 0 30px !important;
-        border: 1px solid rgba(98,126,157,.14) !important;
-        border-radius: 9px !important;
-        outline: 0 !important;
-        background: rgba(3,8,15,.52) !important;
-        color: #dcebf2 !important;
-        font-size: 9px !important;
-    }
-
-    #dm-view .dm-search-wrap > .dm-search-icon {
-        left: 10px !important;
-        top: 50% !important;
-        width: 11px !important;
-        height: 11px !important;
-        transform: translateY(-50%) !important;
-        color: #5b7181 !important;
-    }
-
-    #dm-view #dm-conversation-search-clear {
-        display: none !important;
-    }
-
-    #dm-view .dm-tabs {
-        display: none !important;
-    }
-
-    #dm-view .dm-legacy-meta {
-        display: flex !important;
-        align-items: center !important;
-        justify-content: space-between !important;
-        padding: 0 13px 4px !important;
-        color: #dbe7ed !important;
-        font-size: 8px !important;
-        line-height: 1 !important;
-    }
-
-    #dm-view .dm-legacy-meta strong {
-        color: #00e5ff !important;
-        font: 700 8px "SFMono-Regular",Consolas,monospace !important;
-    }
-
-    #dm-view .dm-legacy-friends-meta {
-        display: flex !important;
-        align-items: center !important;
-        justify-content: space-between !important;
-        padding: 0 13px 7px !important;
-        color: #5f7685 !important;
-        font: 700 7px "SFMono-Regular",Consolas,monospace !important;
-        letter-spacing: .12em !important;
-    }
-
-    /* Keep the conversation area flexible so Suggestions lands at the reference height. */
-    #dm-view .dm-conversation-list {
-        flex: 1 1 auto !important;
-        min-height: 0 !important;
-        max-height: none !important;
-        padding: 0 7px !important;
-        overflow-y: auto !important;
-    }
-
-    #dm-view .dm-conversation-list > .dm-conversation {
-        min-height: 58px !important;
-        grid-template-columns: 31px minmax(0,1fr) 16px !important;
-        gap: 8px !important;
-        padding: 5px 7px !important;
-        margin-bottom: 3px !important;
-        border-radius: 9px !important;
-        box-sizing: border-box !important;
-    }
-
-    #dm-view .dm-conversation-list > .dm-conversation.is-active {
-        background: linear-gradient(90deg,rgba(0,229,255,.075),rgba(14,36,46,.10)) !important;
-        border-color: rgba(0,229,255,.07) !important;
-        box-shadow: inset 2px 0 0 #00e5ff !important;
-    }
-
-    #dm-view .dm-conversation-avatar {
-        width: 31px !important;
-        height: 31px !important;
-        flex: 0 0 31px !important;
-        border: 0 !important;
-        background: radial-gradient(circle at 50% 35%,#7c7a8e,#262634 70%) !important;
-        box-shadow: 0 0 0 1px rgba(0,229,255,.06) !important;
-    }
-
-    #dm-view .dm-conversation-copy strong {
-        font-size: 10px !important;
-        line-height: 1.05 !important;
-    }
-
-    #dm-view .dm-conversation-copy small {
-        margin-top: 2px !important;
-        font-size: 7px !important;
-    }
-
-    #dm-view .dm-conversation-preview {
-        margin-top: 3px !important;
-        font-size: 7px !important;
-        line-height: 1.05 !important;
-    }
-
-    #dm-view .dm-conversation-meta {
-        display: grid !important;
-        place-items: center !important;
-        align-content: center !important;
-        min-width: 16px !important;
-        gap: 3px !important;
-    }
-
-    #dm-view .dm-conversation-edit-mark {
-        color: #31d8e6 !important;
-        font-size: 10px !important;
-        line-height: 1 !important;
-        opacity: .78 !important;
-    }
-
-    #dm-view .dm-unread-badge {
-        min-width: 12px !important;
-        height: 12px !important;
-        margin: 0 !important;
-        padding: 0 3px !important;
-        font-size: 7px !important;
-    }
-
-    #dm-view .dm-suggestions-section {
-        flex: 0 0 auto !important;
-        margin: 0 7px 101px !important;
-        min-height: 39px !important;
-        padding: 7px 9px !important;
-        border-radius: 9px !important;
-    }
-
-    #dm-view .dm-suggestions-icon {
-        width: 25px !important;
-        height: 25px !important;
-        flex-basis: 25px !important;
-    }
-
-    #dm-view .dm-suggestions-section strong {
-        font-size: 8px !important;
-    }
-
-    #dm-view .dm-suggestions-section small {
-        margin-top: 2px !important;
-        font-size: 6px !important;
-    }
-
-    /* Chat header begins exactly where the DM rail ends. */
-    #dm-view section.dm-conversation {
-        position: relative !important;
-        width: auto !important;
-        min-width: 0 !important;
-        min-height: 0 !important;
-        height: 100% !important;
-        flex: 1 1 auto !important;
-        overflow: hidden !important;
-        background:
-            radial-gradient(circle,rgba(0,229,255,.055) .55px,transparent .82px) 0 0 / 9px 9px,
-            #050a11 !important;
-    }
-
-    #dm-view .dm-conversation-head {
-        height: 53px !important;
-        min-height: 53px !important;
-        max-height: 53px !important;
-        flex: 0 0 53px !important;
-        padding: 0 10px 0 11px !important;
-        box-sizing: border-box !important;
-        background: #070b12 !important;
-        border-bottom: 1px solid rgba(99,127,158,.10) !important;
-    }
-
-    #dm-view .dm-person {
-        gap: 8px !important;
-    }
-
-    #dm-view .dm-avatar {
-        width: 31px !important;
-        height: 31px !important;
-        flex-basis: 31px !important;
-    }
-
-    #dm-view .dm-person-copy strong {
-        font-size: 11px !important;
-        line-height: 1.05 !important;
-    }
-
-    #dm-view .dm-person-copy span {
-        display: block !important;
-        margin-top: 2px !important;
-        color: #667b89 !important;
-        font-size: 6px !important;
-        line-height: 1 !important;
-    }
-
-    #dm-view .dm-person-copy span::after {
-        content: "friend on Helix" !important;
-        display: block !important;
-        margin-top: 2px !important;
-        color: #3f5867 !important;
-        font-size: 5px !important;
-    }
-
-    #dm-view .dm-chat-actions {
-        gap: 4px !important;
-    }
-
-    #dm-view .dm-head-action {
-        width: 27px !important;
-        min-width: 27px !important;
-        height: 27px !important;
-        padding: 0 !important;
-        border: 1px solid rgba(0,229,255,.095) !important;
-        border-radius: 50% !important;
-        background: transparent !important;
-        color: #5b7c8b !important;
-    }
-
-    #dm-view .dm-head-action:hover:not(:disabled) {
-        color: #c7f7fc !important;
-        border-color: rgba(0,229,255,.22) !important;
-        background: rgba(0,229,255,.05) !important;
-    }
-
-    #dm-view .dm-head-action .dm-icon {
-        width: 13px !important;
-        height: 13px !important;
-    }
-
-    #dm-view .dm-reference-hidden-control {
-        display: none !important;
-    }
-
-    #dm-view #dm-pins-button,
-    #dm-view #dm-message-search-toggle,
-    #dm-view #dm-info-button {
-        display: grid !important;
-    }
-
-    /* In the reference, SERVER SYNC overlays the top edge of the message canvas. */
-    #dm-view .dm-chat-meta {
-        position: absolute !important;
-        top: 58px !important;
-        right: 10px !important;
-        z-index: 8 !important;
-        height: 10px !important;
-        min-height: 10px !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        display: flex !important;
-        justify-content: flex-end !important;
-        align-items: center !important;
-        pointer-events: none !important;
-        color: #4a6574 !important;
-        font: 5.5px "SFMono-Regular",Consolas,monospace !important;
-        letter-spacing: .12em !important;
-        text-transform: uppercase !important;
-    }
-
-    #dm-view #dm-message-status {
-        display: none !important;
-    }
-
-    #dm-view .dm-server-status {
-        display: inline !important;
-        color: #4a6574 !important;
-    }
-
-    #dm-view .dm-message-area {
-        position: relative !important;
-        flex: 1 1 auto !important;
-        min-width: 0 !important;
-        min-height: 0 !important;
-        padding: 2px 10px 6px !important;
-        overflow-y: auto !important;
-        overflow-x: hidden !important;
-        box-sizing: border-box !important;
-        background:
-            radial-gradient(circle,rgba(0,229,255,.055) .55px,transparent .82px) 0 0 / 9px 9px,
-            transparent !important;
-    }
-
-    #dm-view .dm-message-row {
-        margin-bottom: 4px !important;
-    }
-
-    #dm-view .dm-message-bubble {
-        max-width: 72% !important;
-        padding: 7px 10px !important;
-        border-radius: 9px !important;
-        font-size: 9px !important;
-        box-shadow: none !important;
-    }
-
-    #dm-view .dm-message-text,
-    #dm-view .dm-message-bubble p {
-        font-size: 9px !important;
-        line-height: 1.4 !important;
-    }
-
-    #dm-view .dm-message-row.is-sent .dm-message-bubble {
-        background: rgba(0,229,255,.045) !important;
-        border-color: rgba(0,229,255,.24) !important;
-    }
-
-    #dm-view .dm-message-row.is-sent .dm-message-text,
-    #dm-view .dm-message-row.is-sent .dm-message-bubble p,
-    #dm-view .dm-message-row.is-sent .dm-message-meta {
-        color: #29dae8 !important;
-    }
-
-    #dm-view .dm-message-meta {
-        margin-top: 2px !important;
-        font-size: 6.5px !important;
-    }
-
-    /* Composer exact reference size: 36px pill + 10px footer. */
-    #dm-view .dm-composer-zone {
-        flex: 0 0 58px !important;
-        min-height: 58px !important;
-        max-height: 58px !important;
-        padding: 8px 9px 4px !important;
-        box-sizing: border-box !important;
-        background: #050a11 !important;
-        border-top: 1px solid rgba(94,123,149,.11) !important;
-    }
-
-    #dm-view .dm-composer {
-        height: 36px !important;
-        min-height: 36px !important;
-        flex: 0 0 36px !important;
-        padding: 2px 4px 2px 5px !important;
-        border-radius: 18px !important;
-        border-color: rgba(0,229,255,.48) !important;
-        background: rgba(4,12,19,.68) !important;
-        box-shadow: 0 0 12px rgba(0,229,255,.05), inset 0 0 12px rgba(0,229,255,.025) !important;
-    }
-
-    #dm-view .dm-composer-attach-reference,
-    #dm-view #dm-attach-button {
-        width: 25px !important;
-        height: 25px !important;
-        flex: 0 0 25px !important;
-        color: #9bcbd4 !important;
-    }
-
-    #dm-view .dm-composer-attach-reference .dm-icon,
-    #dm-view #dm-attach-button .dm-icon {
-        width: 15px !important;
-        height: 15px !important;
-    }
-
-    #dm-view #dm-message-input {
-        height: 30px !important;
-        line-height: 30px !important;
-        font-size: 8.5px !important;
-        color: #9cb8c2 !important;
-    }
-
-    #dm-view .dm-composer-actions-right::before {
-        width: 23px !important;
-        flex: 0 0 23px !important;
-        font-size: 17px !important;
-        color: #20d9e7 !important;
-    }
-
-    #dm-view .dm-send-control,
-    #dm-view #dm-send-button {
-        width: 27px !important;
-        height: 27px !important;
-        min-width: 27px !important;
-        flex: 0 0 27px !important;
-        border-radius: 50% !important;
-        color: #28dce9 !important;
-    }
-
-    #dm-view #dm-send-button .dm-icon {
-        width: 16px !important;
-        height: 16px !important;
-    }
-
-    #dm-view .dm-composer-footer {
-        height: 10px !important;
-        padding: 3px 3px 0 !important;
-        font-size: 5.5px !important;
-        color: #4d6a77 !important;
+        width: 270px;
+        min-width: 270px;
+        flex-basis: 270px;
     }
 }
 
-/* Keep the final mobile path separate from the reference desktop geometry. */
 @media (max-width: 650px) {
+    #dm-view .dm-stage {
+        display: block;
+    }
+
     #dm-view .dm-sidebar {
-        width: 100% !important;
-        min-width: 0 !important;
-        flex-basis: auto !important;
+        width: 100%;
+        min-width: 0;
+        max-width: none;
+        flex-basis: 100%;
+        height: 100%;
+        border-right: 0;
+    }
+
+    #dm-view section.dm-conversation {
+        width: 100%;
+        height: 100%;
+    }
+
+    #dm-view:not(.dm-mobile-chat-open) section.dm-conversation {
+        display: none;
+    }
+
+    #dm-view.dm-mobile-chat-open .dm-sidebar {
+        display: none;
+    }
+
+    #dm-view.dm-mobile-chat-open section.dm-conversation {
+        display: flex;
     }
 
     #dm-view .dm-mobile-back {
-        display: grid !important;
+        display: grid;
+    }
+
+    #dm-view .dm-composer-zone {
+        padding-left: 8px;
+        padding-right: 8px;
     }
 }
+
