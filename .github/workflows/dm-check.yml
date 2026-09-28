@@ -34,14 +34,117 @@ jobs:
             if (forbidden.test(fs.readFileSync(file, 'utf8'))) throw new Error(`Forbidden legacy DM reference in ${file}`);
           }
           const contracts = {
-            'routes/dm.js': ['reply_to_id','validateReplyTarget','replyPreview','media_data','media_kind','MAX_MEDIA_BYTES'],
-            'dm/dm-render.js': ['renderReplyReference','dm-reply-reference','dm-message-media','renderContextMenu','renderInfoPanel'],
-            'dm/dm-state.js': ['state.reply','pendingAttachment','contextMenu','infoPanelOpen'],
-            'dm/dm-api.js': ['sendMediaMessage','getMessage','getConversationInfo','getNotifications']
+            'routes/dm.js': [
+              'reply_to_id',
+              'validateReplyTarget',
+              'replyPreview',
+              'media_data',
+              'media_kind',
+              'MAX_MEDIA_BYTES',
+              'router.get("/media/:messageId"'
+            ],
+            'dm/dm-render.js': [
+              'renderReplyReference',
+              'dm-reply-reference',
+              'dm-message-media',
+              'renderContextMenu',
+              'renderInfoPanel',
+              'function scrollToBottom(',
+              'scrollToBottom,'
+            ],
+            'dm/dm-state.js': [
+              'state.reply',
+              'pendingAttachment',
+              'contextMenu',
+              'infoPanelOpen',
+              'conversationFilter'
+            ],
+            'dm/dm-api.js': [
+              'sendMediaMessage',
+              'getMessage',
+              'getConversationInfo',
+              'getNotifications'
+            ],
+            'dm/dm-actions.js': [
+              'dm-new-message-button',
+              'dm-conversation-filter',
+              'function startNewMessage()',
+              'function handleConversationFilter('
+            ]
           };
+
           for (const [file, tokens] of Object.entries(contracts)) {
             const text = fs.readFileSync(file, 'utf8');
-            for (const token of tokens) if (!text.includes(token)) throw new Error(`Missing contract ${token} in ${file}`);
+            for (const token of tokens) {
+              if (!text.includes(token)) {
+                throw new Error(`Missing contract ${token} in ${file}`);
+              }
+            }
           }
-          console.log('Helix DM architecture assertions passed.');
+
+          function exportedKeys(source, globalName) {
+            const marker = `window.${globalName} = {`;
+            const start = source.indexOf(marker);
+            const end = source.lastIndexOf('\n    };');
+            if (start < 0 || end < start) {
+              throw new Error(`Could not locate ${globalName} export object.`);
+            }
+
+            const objectText = source.slice(start + marker.length, end);
+            return new Set(
+              [...objectText.matchAll(/(?:^|,|\\n)\\s*([A-Za-z_$][\\w$]*)\\s*(?::|,)/g)]
+                .map((match) => match[1])
+            );
+          }
+
+          const renderSource = fs.readFileSync('dm/dm-render.js', 'utf8');
+          const actionSource = fs.readFileSync('dm/dm-actions.js', 'utf8');
+          const apiSource = fs.readFileSync('dm/dm-api.js', 'utf8');
+
+          const renderExports = exportedKeys(renderSource, 'HelixDMRender');
+          const apiExports = exportedKeys(apiSource, 'HelixDMApi');
+
+          const renderCalls = [
+            ...actionSource.matchAll(/\\brender\\.([A-Za-z_$][\\w$]*)\\s*(?:\\?\\.)?\\s*\\(/g)
+          ].map((match) => match[1]);
+
+          const apiCalls = [
+            ...actionSource.matchAll(/\\bapi\\.([A-Za-z_$][\\w$]*)\\s*(?:\\?\\.)?\\s*\\(/g)
+          ].map((match) => match[1]);
+
+          for (const name of new Set(renderCalls)) {
+            if (!renderExports.has(name)) {
+              throw new Error(`dm-actions.js calls missing HelixDMRender.${name}()`);
+            }
+          }
+
+          for (const name of new Set(apiCalls)) {
+            if (!apiExports.has(name)) {
+              throw new Error(`dm-actions.js calls missing HelixDMApi.${name}()`);
+            }
+          }
+
+          const html = fs.readFileSync('app.html', 'utf8');
+          for (const required of [
+            'id="dm-new-message-button"',
+            'data-dm-conversation-filter="all"',
+            'data-dm-conversation-filter="unread"',
+            'data-dm-conversation-filter="requests"'
+          ]) {
+            if (!html.includes(required)) {
+              throw new Error(`Missing DM UI contract: ${required}`);
+            }
+          }
+
+          const mediaRoute = fs.readFileSync('routes/dm.js', 'utf8');
+          const mediaRouteBlock = mediaRoute.slice(
+            mediaRoute.indexOf('router.get("/media/:messageId"')
+          );
+          if (
+            !mediaRouteBlock.includes('SELECT sender_username, recipient_username')
+          ) {
+            throw new Error('DM media route must select sender/recipient for authorization.');
+          }
+
+          console.log('Helix DM architecture and module API assertions passed.');
           NODE
