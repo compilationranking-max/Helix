@@ -34,7 +34,7 @@
 
     <title>Helix</title>
 
-    <link rel="stylesheet" href="app.css?v=20260928-profile-restore">
+    <link rel="stylesheet" href="app.css?v=20260928-dm-legacy">
 </head>
 
 <body>
@@ -428,20 +428,14 @@
     <div class="dm-stage">
         <aside class="dm-sidebar" aria-label="Direct message conversations">
             <div class="dm-sidebar-head">
-                <button class="dm-account-chip" type="button" aria-label="Helix account menu" title="Account menu">
-                    <span class="dm-account-avatar" aria-hidden="true">H</span>
-                    <span class="dm-account-copy">
-                        <strong>Your Helix</strong>
-                        <small>account</small>
-                    </span>
-                    <svg class="dm-account-chevron dm-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="m7 9 5 5 5-5"></path>
-                    </svg>
-                </button>
+                <div class="dm-legacy-inbox-title">
+                    <h2>Messages</h2>
+                </div>
 
                 <button class="dm-square-action" id="dm-new-message-button" type="button" aria-label="Start a new message" title="New message">
                     <svg class="dm-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M12 5v14M5 12h14"></path>
+                        <path d="M6 18.5V22h3.5L20 11.5l-3.5-3.5L6 18.5z"></path>
+                        <path d="m15.5 9.5 3.5 3.5"></path>
                     </svg>
                 </button>
             </div>
@@ -462,6 +456,15 @@
             <div class="dm-tabs" role="tablist" aria-label="Message folders">
                 <button class="dm-inbox-tab is-active" type="button" data-dm-conversation-filter="all" role="tab" aria-selected="true">Messages</button>
                 <button class="dm-inbox-tab" type="button" data-dm-conversation-filter="requests" role="tab" aria-selected="false">Requests</button>
+            </div>
+
+            <div class="dm-legacy-meta">
+                <span>Messages</span>
+                <strong id="dm-legacy-count">0</strong>
+            </div>
+            <div class="dm-legacy-friends-meta">
+                <span>FRIENDS</span>
+                <strong id="dm-legacy-friends-count">0</strong>
             </div>
 
             <div class="dm-conversation-list" id="dm-conversation-list" aria-live="polite"></div>
@@ -509,6 +512,12 @@
                             <path d="m15.2 10 5-3v10l-5-3z"></path>
                         </svg>
                     </button>
+                    <button id="dm-message-search-toggle" type="button" class="dm-head-action" title="Search messages" aria-label="Search messages" aria-expanded="false">
+                        <svg class="dm-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <circle cx="10.8" cy="10.8" r="6.2"></circle>
+                            <path d="m16 16 4 4"></path>
+                        </svg>
+                    </button>
                     <button id="dm-info-button" type="button" class="dm-head-action" title="Conversation info" aria-label="Open conversation info">
                         <svg class="dm-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <circle cx="12" cy="12" r="8.5"></circle>
@@ -531,7 +540,7 @@
                 </div>
             </header>
 
-            <div class="dm-message-search">
+            <div class="dm-message-search" id="dm-message-search" hidden>
 
                 <svg class="dm-icon dm-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <circle cx="10.8" cy="10.8" r="6.2"></circle>
@@ -600,6 +609,12 @@
                         </svg>
                     </button>
 
+                    <button id="dm-attach-button" class="dm-composer-action" type="button" title="Attach photo or video" aria-label="Attach photo or video">
+                        <svg class="dm-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="m9.2 7.5 3.9-3.9a3.3 3.3 0 0 1 4.7 4.7l-7.4 7.4a4.6 4.6 0 0 1-6.5-6.5l7-7a3.9 3.9 0 0 1 5.5 5.5l-6.3 6.3"></path>
+                        </svg>
+                    </button>
+
                     <textarea
                         id="dm-message-input"
                         maxlength="4000"
@@ -617,15 +632,7 @@
                             </svg>
                         </button>
 
-                        <button id="dm-attach-button" class="dm-composer-action" type="button" title="Attach photo or video" aria-label="Attach photo or video">
-                            <svg class="dm-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <rect x="3.5" y="4.5" width="17" height="15" rx="2.2"></rect>
-                                <circle cx="8.6" cy="9" r="1.5"></circle>
-                                <path d="m5.8 16 4.3-4.2 3.3 3 2.1-2 2.7 3.2"></path>
-                            </svg>
-                        </button>
-
-                        <button class="dm-composer-action dm-composer-disabled" type="button" title="Quick heart is not enabled" aria-label="Quick heart unavailable" disabled>
+                            <button class="dm-composer-action dm-composer-disabled" type="button" title="Quick heart is not enabled" aria-label="Quick heart unavailable" disabled>
                             <svg class="dm-icon dm-heart-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                 <path d="M20.5 8.6c0 5.6-8.5 10.4-8.5 10.4S3.5 14.2 3.5 8.6A4.6 4.6 0 0 1 12 6.4a4.6 4.6 0 0 1 8.5 2.2Z"></path>
                             </svg>
@@ -1446,7 +1453,7 @@
         };
     </script>
     <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
-    <script src="app.js?v=20260928-navfix1"></script>
+    <script src="app.js?v=20260928-dm-legacy"></script>
     <script src="dm/dm-state.js?v=20260928-1"></script>
     <script src="dm/dm-api.js?v=20260928-1"></script>
     <script src="dm/dm-render.js?v=20260928-1"></script>
