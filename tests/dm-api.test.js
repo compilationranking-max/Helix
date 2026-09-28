@@ -259,7 +259,7 @@ function makeHarness(currentUser = "alice") {
                 return { rowCount: 1, rows: [{ id }] };
             }
 
-            if (query.includes('UPDATE helix_dm_messages SET body = \\'\\'')) {
+            if (query.includes("UPDATE helix_dm_messages SET body = ''")) {
                 const id = params[0];
                 const message = messages.get(id);
                 if (!message) return { rowCount: 0, rows: [] };
