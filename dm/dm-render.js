@@ -1369,6 +1369,13 @@
                     );
                     row.dataset.messageId =
                         String(message.id);
+                    row.dataset.dmAction = "jump-to-message";
+                    row.tabIndex = 0;
+                    row.setAttribute("role", "button");
+                    row.setAttribute(
+                        "aria-label",
+                        "Jump to pinned message"
+                    );
 
                     const icon =
                         make(
@@ -1647,6 +1654,7 @@
                     );
 
                     row.type = "button";
+                    row.disabled = Boolean(state.forwardInFlight);
                     row.dataset.username =
                         conversation.username;
 
@@ -2160,27 +2168,30 @@
             );
         }
 
-        menu.style.left =
-            Math.max(
-                8,
-                Math.min(
-                    state.contextMenu.x,
-                    window.innerWidth -
-                        240
-                )
-            ) + "px";
-
-        menu.style.top =
-            Math.max(
-                8,
-                Math.min(
-                    state.contextMenu.y,
-                    window.innerHeight -
-                        360
-                )
-            ) + "px";
-
         menu.hidden = false;
+
+        const width = menu.offsetWidth || 210;
+        const height = menu.offsetHeight || 300;
+        const gap = 8;
+
+        const left = Math.max(
+            gap,
+            Math.min(
+                state.contextMenu.x,
+                window.innerWidth - width - gap
+            )
+        );
+
+        const top = Math.max(
+            gap,
+            Math.min(
+                state.contextMenu.y,
+                window.innerHeight - height - gap
+            )
+        );
+
+        menu.style.left = left + "px";
+        menu.style.top = top + "px";
         if (state.contextMenu.open) {
             window.setTimeout(() => {
                 if (!state.contextMenu.open) return;
