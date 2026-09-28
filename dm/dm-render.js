@@ -257,6 +257,8 @@
     function renderConversationList() {
         const legacyCount = get("dm-legacy-count");
         const legacyFriendsCount = get("dm-legacy-friends-count");
+        const legacyCount = get("dm-legacy-count");
+        const legacyFriendsCount = get("dm-legacy-friends-count");
         const list = get("dm-conversation-list");
         const status = get("dm-conversation-status");
 
@@ -285,7 +287,9 @@
 
         if (legacyFriendsCount) {
             legacyFriendsCount.textContent = String(state.conversations.length);
-        }
+
+        if (legacyCount) legacyCount.textContent = String(state.conversations.length);
+        if (legacyFriendsCount) legacyFriendsCount.textContent = String(state.conversations.length);        }
 
         if (state.loadingConversations) {
             const wrap = make("div", "dm-list-skeletons");
