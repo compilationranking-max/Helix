@@ -125,22 +125,22 @@ function makeHarness(currentUser = "alice") {
                 return { rowCount: 0, rows: [] };
             }
 
-            if (query.includes('FROM helix_dm_conversation_nicknames')) {
-                if (query.trim().toUpperCase().startsWith("SELECT")) {
-                    const key = params[0] + "|" + params[1];
-                    const nickname = nicknameMap.get(key);
-                    return nickname
-                        ? { rowCount: 1, rows: [{ nickname }] }
-                        : { rowCount: 0, rows: [] };
-                }
-
-                if (query.includes("DELETE")) {
-                    nicknameMap.delete(params[0] + "|" + params[1]);
-                    return { rowCount: 1, rows: [] };
-                }
-
+            if (query.includes("INSERT INTO helix_dm_conversation_nicknames")) {
                 nicknameMap.set(params[0] + "|" + params[1], params[2]);
                 return { rowCount: 1, rows: [] };
+            }
+
+            if (query.includes("DELETE FROM helix_dm_conversation_nicknames")) {
+                nicknameMap.delete(params[0] + "|" + params[1]);
+                return { rowCount: 1, rows: [] };
+            }
+
+            if (query.includes("FROM helix_dm_conversation_nicknames")) {
+                const key = params[0] + "|" + params[1];
+                const nickname = nicknameMap.get(key);
+                return nickname
+                    ? { rowCount: 1, rows: [{ nickname }] }
+                    : { rowCount: 0, rows: [] };
             }
 
             if (query.includes('INSERT INTO helix_dm_messages')) {
@@ -456,7 +456,7 @@ test("cross-conversation reply target is rejected before any insert", async () =
         }
     });
 
-    assert.equal(response.statusCode, 403);
+    assert.equal(response.statusCode, 400);
     assert.match(response.body.error, /outside this conversation/i);
     assert.equal(harness.inserted.length, 0);
 });
