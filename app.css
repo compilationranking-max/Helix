@@ -10426,3 +10426,215 @@ MATH & PHOTO ATTACHMENTS
         grid-template-rows: 54px minmax(0,1fr) 82px;
     }
 }
+
+
+/* =========================================================
+   HELIX DMS — REFERENCE LOCK / LAYOUT CORRECTION
+   This block is scoped exclusively to #dm-view.
+   ========================================================= */
+
+#dm-view.dm-view {
+    display: flex !important;
+    flex: 1 1 auto !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    background: #070b13 !important;
+}
+
+#dm-view .dm-stage {
+    display: flex !important;
+    flex: 1 1 auto !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+}
+
+#dm-view .dm-sidebar {
+    width: 294px !important;
+    min-width: 294px !important;
+    max-width: 294px !important;
+    flex: 0 0 294px !important;
+    height: 100% !important;
+}
+
+#dm-view .dm-conversation {
+    flex: 1 1 auto !important;
+    width: auto !important;
+    min-width: 0 !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    position: relative !important;
+    overflow: hidden !important;
+    background:
+        radial-gradient(circle at 58% 18%, rgba(0, 229, 255, .035), transparent 27%),
+        linear-gradient(180deg, #08101a 0%, #050a11 58%, #050a11 100%) !important;
+}
+
+#dm-view .dm-conversation-head {
+    flex: 0 0 54px !important;
+    width: 100% !important;
+    min-height: 54px !important;
+    max-height: 54px !important;
+    box-sizing: border-box !important;
+    background: rgba(5, 10, 17, .82) !important;
+}
+
+#dm-view .dm-message-area {
+    flex: 1 1 auto !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    height: auto !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    padding: 12px 16px 12px !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
+}
+
+#dm-view .dm-composer-zone {
+    flex: 0 0 76px !important;
+    width: 100% !important;
+    min-height: 76px !important;
+    max-height: 76px !important;
+    box-sizing: border-box !important;
+    padding: 8px 12px 6px 16px !important;
+    position: relative !important;
+    z-index: 4 !important;
+}
+
+#dm-view .dm-composer {
+    width: 100% !important;
+    min-height: 43px !important;
+    height: 43px !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+    flex: 0 0 43px !important;
+}
+
+#dm-view #dm-message-input {
+    resize: none !important;
+    overflow: hidden !important;
+    line-height: 34px !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    font-family: "Segoe UI", Inter, Arial, Helvetica, sans-serif !important;
+}
+
+#dm-view .dm-waveform {
+    position: absolute !important;
+    left: 43% !important;
+    right: 15% !important;
+    top: 50% !important;
+    height: 28px !important;
+    transform: translateY(-50%) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 2px !important;
+    overflow: hidden !important;
+    opacity: .42 !important;
+    pointer-events: none !important;
+    z-index: 1 !important;
+    mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent) !important;
+}
+
+#dm-view .dm-waveform i {
+    width: 2px !important;
+    min-height: 5px !important;
+    flex: 0 0 2px !important;
+    border-radius: 99px !important;
+    background: rgba(91, 230, 241, .9) !important;
+    box-shadow: 0 0 5px rgba(0, 229, 255, .18) !important;
+}
+
+#dm-view .dm-composer-icon,
+#dm-view .dm-send-control {
+    z-index: 3 !important;
+}
+
+#dm-view .dm-composer-hint {
+    height: 15px !important;
+    box-sizing: border-box !important;
+    padding: 5px 3px 0 !important;
+}
+
+#dm-view .dm-message {
+    flex: 0 0 auto !important;
+    width: fit-content !important;
+    max-width: min(74%, 620px) !important;
+}
+
+#dm-view .dm-message.is-incoming {
+    margin-right: auto !important;
+    margin-left: 0 !important;
+}
+
+#dm-view .dm-message.is-outgoing {
+    margin-left: auto !important;
+    margin-right: 0 !important;
+}
+
+#dm-view .dm-bubble {
+    max-width: 100% !important;
+}
+
+#dm-view .dm-message-avatar {
+    flex: 0 0 25px !important;
+    width: 25px !important;
+    height: 25px !important;
+}
+
+#dm-view .dm-empty-chat {
+    flex: 1 1 auto !important;
+    width: 100% !important;
+    min-height: 0 !important;
+}
+
+#dm-view .dm-inline-notice {
+    position: absolute;
+    left: 50% !important;
+    bottom: 85px !important;
+    transform: translateX(-50%) !important;
+    z-index: 30 !important;
+    max-width: min(420px, calc(100% - 30px)) !important;
+    padding: 8px 12px !important;
+    border: 1px solid rgba(0, 229, 255, .16) !important;
+    border-radius: 9px !important;
+    background: rgba(6, 18, 27, .96) !important;
+    color: #bcecf3 !important;
+    font-size: 8px !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,.28), 0 0 18px rgba(0,229,255,.06) !important;
+}
+
+@media (max-width: 900px) {
+    #dm-view .dm-sidebar {
+        width: 270px !important;
+        min-width: 270px !important;
+        max-width: 270px !important;
+        flex-basis: 270px !important;
+    }
+}
+
+@media (max-width: 650px) {
+    #dm-view .dm-sidebar {
+        display: none !important;
+    }
+
+    #dm-view .dm-composer-zone {
+        padding-left: 10px !important;
+    }
+
+    #dm-view .dm-waveform {
+        display: none !important;
+    }
+}
