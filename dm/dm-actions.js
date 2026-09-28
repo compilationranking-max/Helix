@@ -2367,6 +2367,12 @@
         setComposerEnabled(false);
 
         await refreshConversations();
+
+        // Open the first available friend on DM entry, matching the classic Helix state.
+        if (!state.activeConversation && state.conversations.length > 0) {
+            await openConversation(state.conversations[0].username);
+        }
+
         await refreshNotifications();
         startPolling();
 
