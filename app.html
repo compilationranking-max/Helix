@@ -492,10 +492,28 @@
                 </button>
             </div>
 
-            <div class="dm-inbox-tabs" aria-label="Message filters">
-                <button class="dm-inbox-tab is-active" type="button">All</button>
-                <button class="dm-inbox-tab" type="button">Unread</button>
-                <button class="dm-inbox-tab" type="button">Requests</button>
+            <div class="dm-inbox-tabs" aria-label="Message filters" role="tablist">
+                <button
+                    class="dm-inbox-tab is-active"
+                    type="button"
+                    data-dm-conversation-filter="all"
+                    role="tab"
+                    aria-selected="true"
+                >All</button>
+                <button
+                    class="dm-inbox-tab"
+                    type="button"
+                    data-dm-conversation-filter="unread"
+                    role="tab"
+                    aria-selected="false"
+                >Unread</button>
+                <button
+                    class="dm-inbox-tab"
+                    type="button"
+                    data-dm-conversation-filter="requests"
+                    role="tab"
+                    aria-selected="false"
+                >Requests</button>
             </div>
 
             <div class="dm-inbox-meta">
@@ -1784,11 +1802,11 @@
     </script>
     <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
     <script src="app.js?v=20260927-12"></script>
-    <script src="dm/dm-state.js?v=20260927-5"></script>
-    <script src="dm/dm-api.js?v=20260927-5"></script>
-    <script src="dm/dm-render.js?v=20260927-7"></script>
-    <script src="dm/dm-actions.js?v=20260927-6"></script>
-    <script src="dm/dm.js?v=20260927-5"></script>
+    <script src="dm/dm-state.js?v=20260928-1"></script>
+    <script src="dm/dm-api.js?v=20260928-1"></script>
+    <script src="dm/dm-render.js?v=20260928-1"></script>
+    <script src="dm/dm-actions.js?v=20260928-1"></script>
+    <script src="dm/dm.js?v=20260928-1"></script>
 
 </body>
 </html>
