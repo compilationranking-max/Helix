@@ -265,6 +265,10 @@
                 silent: true,
                 preserveScroll: true
             });
+
+            if (dmVisible() && state.activeConversation) {
+                await refreshConversations({ silent: true });
+            }
         }, 5000);
 
         notificationTimer = window.setInterval(
