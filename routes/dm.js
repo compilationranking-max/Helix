@@ -1209,7 +1209,8 @@ function createDMRouter(options) {
             if (!isUuid(id)) fail("Invalid media.");
 
             const result = await dbPool.query(
-                "SELECT media_data, media_mime, media_name, deleted_at " +
+                "SELECT sender_username, recipient_username, " +
+                "media_data, media_mime, media_name, deleted_at " +
                 "FROM helix_dm_messages WHERE id = $1 " +
                 "AND media_data IS NOT NULL " +
                 "AND (sender_username = $2 OR recipient_username = $2)",
