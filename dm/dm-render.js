@@ -1654,7 +1654,6 @@
                     );
 
                     row.type = "button";
-                    row.disabled = Boolean(state.forwardInFlight);
                     row.dataset.username =
                         conversation.username;
 
