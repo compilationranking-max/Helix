@@ -17,6 +17,7 @@
         infoError: "",
 
         conversationSearch: "",
+        conversationFilter: "all",
         messageSearch: "",
 
         reply: null,
