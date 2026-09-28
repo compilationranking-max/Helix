@@ -346,8 +346,29 @@
 
         const query =
             state.conversationSearch.trim().toLowerCase();
+        const filter =
+            state.conversationFilter || "all";
 
-        const visible = state.conversations.filter(
+        list.querySelectorAll(".dm-inbox-tab").forEach((button) => {
+            const active =
+                button.dataset.dmConversationFilter === filter;
+            button.classList.toggle("is-active", active);
+            button.setAttribute("aria-pressed", String(active));
+        });
+
+        let filteredConversations = state.conversations;
+
+        if (filter === "unread") {
+            filteredConversations = state.conversations.filter(
+                (conversation) => Number(conversation.unreadCount || 0) > 0
+            );
+        } else if (filter === "requests") {
+            // Helix currently only permits DMs between accepted friends,
+            // so there is no separate DM-request queue to populate.
+            filteredConversations = [];
+        }
+
+        const visible = filteredConversations.filter(
             (conversation) => {
                 if (!query) return true;
 
@@ -368,16 +389,36 @@
         if (!visible.length) {
             const box = make("div", "dm-list-state");
             const mark = make("span", "dm-list-state-mark");
-            mark.appendChild(makeIcon("search"));
+            mark.appendChild(
+                makeIcon(
+                    filter === "requests"
+                        ? "messages"
+                        : "search"
+                )
+            );
+
+            const emptyTitle =
+                filter === "requests"
+                    ? "No message requests"
+                    : filter === "unread"
+                        ? "No unread messages"
+                        : state.conversationSearch.trim()
+                            ? "No matching conversations"
+                            : "No conversations yet";
+
+            const emptyDescription =
+                filter === "requests"
+                    ? "Helix DMs are currently limited to friends, so message requests are not used."
+                    : filter === "unread"
+                        ? "Unread conversations will appear here."
+                        : state.conversationSearch.trim()
+                            ? "Try another display name or username."
+                            : "Add a friend in Friends to start a conversation.";
 
             box.append(
                 mark,
-                make("strong", "", "No matching conversations"),
-                make(
-                    "small",
-                    "",
-                    "Try another display name or username."
-                )
+                make("strong", "", emptyTitle),
+                make("small", "", emptyDescription)
             );
 
             list.appendChild(box);
@@ -1232,6 +1273,28 @@
         if (wasNearBottom) {
             list.scrollTop = list.scrollHeight;
         }
+    }
+
+    function scrollToBottom(smooth = false) {
+        const list = get("dm-message-list");
+
+        if (!list) return false;
+
+        const targetTop = Math.max(
+            0,
+            list.scrollHeight - list.clientHeight
+        );
+
+        try {
+            list.scrollTo({
+                top: targetTop,
+                behavior: smooth ? "smooth" : "auto"
+            });
+        } catch {
+            list.scrollTop = targetTop;
+        }
+
+        return true;
     }
 
     function renderPinnedPanel() {
@@ -2294,6 +2357,7 @@
         renderReplyReference,
         renderMessage,
         renderReactionStrip,
+        scrollToBottom,
         findMessage,
         previewText,
         formatFileSize,
