@@ -8355,3 +8355,136 @@ body.helix-compact-mode .settings-option-row {
     min-width: 0 !important;
     min-height: 0 !important;
 }
+
+
+
+/* =========================================================
+   HELIX DMS — REFERENCE PASS 1 / PROPORTION + CLEANUP
+   Matches the supplied classic reference at desktop widths.
+   ========================================================= */
+
+@media (min-width: 651px) {
+    .helix-app {
+        grid-template-columns: 17% minmax(0, 1fr) !important;
+    }
+
+    #dm-view .dm-stage {
+        grid-template-columns: 31.5% minmax(0, 1fr) !important;
+    }
+
+    #dm-view .dm-sidebar {
+        width: auto !important;
+        min-width: 0 !important;
+        max-width: none !important;
+        flex: 1 1 auto !important;
+    }
+
+    #dm-view .dm-search-wrap {
+        margin: 10px 12px 15px !important;
+        height: 35px !important;
+        min-height: 35px !important;
+    }
+
+    #dm-view .dm-search-wrap > .dm-search-icon {
+        width: 12px !important;
+        height: 12px !important;
+        flex: 0 0 12px !important;
+    }
+
+    #dm-view #dm-conversation-search-clear {
+        opacity: 0 !important;
+        pointer-events: none !important;
+    }
+
+    #dm-view .dm-search-wrap:has(#dm-conversation-search:not(:placeholder-shown)) #dm-conversation-search-clear {
+        opacity: 1 !important;
+        pointer-events: auto !important;
+    }
+
+    #dm-view .dm-mobile-back {
+        display: none !important;
+    }
+
+    #dm-view .dm-conversation-head {
+        flex-basis: 53px !important;
+        height: 53px !important;
+        min-height: 53px !important;
+        max-height: 53px !important;
+    }
+
+    #dm-view .dm-chat-actions {
+        gap: 5px !important;
+    }
+
+    #dm-view .dm-head-action {
+        width: 29px !important;
+        min-width: 29px !important;
+        height: 29px !important;
+        border-radius: 50% !important;
+    }
+
+    #dm-view .dm-head-action .dm-icon {
+        width: 14px !important;
+        height: 14px !important;
+    }
+
+    /* Never allow the search glyph itself to inherit an oversized SVG rule. */
+    #dm-view .dm-search-wrap svg,
+    #dm-view .dm-message-search svg {
+        width: 14px !important;
+        height: 14px !important;
+        max-width: 14px !important;
+        max-height: 14px !important;
+    }
+
+    #dm-view .dm-legacy-meta {
+        padding-left: 13px !important;
+        padding-right: 13px !important;
+    }
+
+    #dm-view .dm-legacy-friends-meta {
+        padding-left: 13px !important;
+        padding-right: 13px !important;
+    }
+
+    #dm-view .dm-conversation-list {
+        padding-left: 7px !important;
+        padding-right: 7px !important;
+    }
+
+    #dm-view .dm-conversation-list > .dm-conversation {
+        min-height: 62px !important;
+        grid-template-columns: 34px minmax(0,1fr) auto !important;
+        gap: 8px !important;
+        padding: 7px 7px !important;
+        border-radius: 10px !important;
+    }
+
+    #dm-view .dm-suggestions-section {
+        margin-left: 7px !important;
+        margin-right: 7px !important;
+    }
+
+    #dm-view .dm-chat-meta {
+        min-height: 19px !important;
+        flex-basis: 19px !important;
+        padding-left: 10px !important;
+        padding-right: 10px !important;
+    }
+
+    #dm-view .dm-message-area {
+        padding-left: 10px !important;
+        padding-right: 10px !important;
+    }
+
+    #dm-view .dm-composer-zone {
+        padding-left: 8px !important;
+        padding-right: 8px !important;
+    }
+}
+
+@media (max-width: 650px) {
+    #dm-view .dm-mobile-back {
+        display: grid !important;
+    }
+}
