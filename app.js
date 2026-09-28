@@ -1318,7 +1318,17 @@ function renderHelixReels() {
     const reelsFeed = document.getElementById("reels-feed");
     if (!reelsFeed) return;
 
-    // Reels will be rebuilt later.
+    // Keep the real empty state visible when there is no creator content.
+    if (!reelsFeed.querySelector(".helix-reel-card") &&
+        !reelsFeed.querySelector(".reels-empty-state")) {
+        reelsFeed.innerHTML = `
+            <div class="reels-empty-state">
+                <div class="reels-empty-icon" aria-hidden="true">◇</div>
+                <strong>No Reels yet</strong>
+                <p>Reels will appear here when real creators post them.</p>
+            </div>
+        `;
+    }
 }
 
 function setupReelObserver() {
@@ -1362,20 +1372,8 @@ function setNavigationSection(id) {
     );
 
     mainSections.forEach((mainSection) => {
-        const isActive =
-            mainSection.dataset.mainSection === section;
-
-        mainSection.hidden = !isActive;
-
-        if (isActive) {
-            mainSection.style.removeProperty("display");
-        } else {
-            mainSection.style.setProperty(
-                "display",
-                "none",
-                "important"
-            );
-        }
+        mainSection.hidden =
+            mainSection.dataset.mainSection !== section;
     });
 
     if (section === "helix-ai") {
@@ -1383,7 +1381,6 @@ function setNavigationSection(id) {
     }
 
     if (showReels) {
-
         const reelsSection =
             document.getElementById("reels-view");
 
@@ -1398,41 +1395,27 @@ function setNavigationSection(id) {
             reelsFeed &&
             !reelsFeed.querySelector(".helix-reel-card")
         ) {
-            if (
-                typeof renderHelixReels === "function"
-            ) {
+            if (typeof renderHelixReels === "function") {
                 renderHelixReels();
             }
         }
 
-        if (
-            typeof setupReelObserver === "function"
-        ) {
+        if (typeof setupReelObserver === "function") {
             setupReelObserver();
         }
-
     } else {
-
-        if (
-            typeof pauseAllVideos === "function"
-        ) {
+        if (typeof pauseAllVideos === "function") {
             pauseAllVideos();
         }
-
     }
 
     if (section === "profile") {
-
-        if (
-            typeof updateProfileView === "function"
-        ) {
+        if (typeof updateProfileView === "function") {
             updateProfileView();
         }
-
     }
 
-    previousNavigationSection =
-        section;
+    previousNavigationSection = section;
 }
 
 function updateProfileView() {
