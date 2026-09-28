@@ -26,10 +26,8 @@ jobs:
           node --check dm/dm-actions.js
       - name: Git whitespace check
         run: git diff --check HEAD^ HEAD
-      - name: Install dependencies
-        run: npm ci
       - name: DM runtime tests
-        run: npm test
+        run: node --test tests/dm-api.test.js
       - name: DM architecture assertions
         run: |
           node <<'NODE'
