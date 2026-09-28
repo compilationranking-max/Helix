@@ -1362,8 +1362,20 @@ function setNavigationSection(id) {
     );
 
     mainSections.forEach((mainSection) => {
-        mainSection.hidden =
-            mainSection.dataset.mainSection !== section;
+        const isActive =
+            mainSection.dataset.mainSection === section;
+
+        mainSection.hidden = !isActive;
+
+        if (isActive) {
+            mainSection.style.removeProperty("display");
+        } else {
+            mainSection.style.setProperty(
+                "display",
+                "none",
+                "important"
+            );
+        }
     });
 
     if (section === "helix-ai") {
