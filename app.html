@@ -432,11 +432,21 @@
                     <span class="dm-eyebrow">HELIX / DMS</span>
                     <h1>Messages</h1>
                 </div>
-                <button class="dm-square-action" id="dm-new-message-button" type="button" aria-label="Start a new message" title="New message">
-                    <svg class="dm-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M12 5v14M5 12h14"></path>
-                    </svg>
-                </button>
+                <div class="dm-sidebar-head-actions">
+                    <button class="dm-square-action" id="dm-new-message-button" type="button" aria-label="Start a new message" title="New message">
+                        <svg class="dm-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M12 5v14M5 12h14"></path>
+                        </svg>
+                    </button>
+                    <button class="dm-square-action" id="dm-refresh-button" type="button" aria-label="Refresh conversations" title="Refresh conversations">
+                        <svg class="dm-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M5 12a7 7 0 0 1 12-4l1.7 1.7"></path>
+                            <path d="M19 5v5h-5"></path>
+                            <path d="M19 12a7 7 0 0 1-12 4L5.3 14.3"></path>
+                            <path d="M5 19v-5h5"></path>
+                        </svg>
+                    </button>
+                </div>
             </div>
 
             <div class="dm-search-wrap">
@@ -517,7 +527,7 @@
                 </div>
             </header>
 
-            <div class="dm-message-search-wrap">
+            <div class="dm-message-search">
                 <svg class="dm-icon dm-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <circle cx="10.8" cy="10.8" r="6.2"></circle>
                     <path d="m16 16 4 4"></path>
