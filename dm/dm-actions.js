@@ -205,7 +205,7 @@
                 )
             ) {
                 stopPolling();
-                state.clearActiveConversation();
+                window.HelixDMState.clearActiveConversation();
                 get("dm-view")?.classList.remove(
                     "dm-mobile-chat-open"
                 );
@@ -492,8 +492,8 @@
         state.mediaViewerOpen = false;
         state.mediaViewerMessageId = null;
 
-        state.clearReply?.();
-        state.clearAttachment?.();
+        window.HelixDMState.clearReply();
+        window.HelixDMState.clearAttachment();
 
         const mediaInput = get("dm-media-input");
         if (mediaInput) mediaInput.value = "";
@@ -584,7 +584,7 @@
     }
 
     function cancelReply() {
-        state.clearReply();
+        window.HelixDMState.clearReply();
         render.renderComposerState?.();
 
         const input = get("dm-message-input");
@@ -715,8 +715,8 @@
 
             // Only clear transient reply/attachment state AFTER
             // the final message object has rendered.
-            state.clearReply();
-            state.clearAttachment();
+            window.HelixDMState.clearReply();
+            window.HelixDMState.clearAttachment();
 
             const mediaInput = get("dm-media-input");
             if (mediaInput) mediaInput.value = "";
@@ -1229,7 +1229,7 @@
         ) {
             state.attachmentError =
                 "Only photos and videos can be attached.";
-            state.clearAttachment();
+            window.HelixDMState.clearAttachment();
             input.value = "";
             render.renderComposerState?.();
             showToast(state.attachmentError, "error");
@@ -1239,14 +1239,14 @@
         if (file.size > 10 * 1024 * 1024) {
             state.attachmentError =
                 "That attachment is larger than 10 MB.";
-            state.clearAttachment();
+            window.HelixDMState.clearAttachment();
             input.value = "";
             render.renderComposerState?.();
             showToast(state.attachmentError, "error");
             return;
         }
 
-        state.clearAttachment();
+        window.HelixDMState.clearAttachment();
 
         state.pendingAttachment = {
             file,
@@ -1741,7 +1741,7 @@
         get("dm-media-preview-remove")?.addEventListener(
             "click",
             () => {
-                state.clearAttachment();
+                window.HelixDMState.clearAttachment();
                 const input =
                     get("dm-media-input");
                 if (input) input.value = "";
