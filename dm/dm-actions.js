@@ -323,7 +323,9 @@
     async function scrollToReferencedMessage(messageId) {
         if (!messageId) return;
 
-        if (render.scrollToMessage(messageId)) {
+        const visibleInDom = render.scrollToMessage(messageId);
+
+        if (visibleInDom) {
             return;
         }
 
@@ -335,6 +337,14 @@
                 "error"
             );
             return;
+        }
+
+        // A loaded original can still be hidden by active message search.
+        // Clear the filter so the referenced row is actually renderable.
+        if (state.messageSearch) {
+            state.messageSearch = "";
+            const search = get("dm-message-search-input");
+            if (search) search.value = "";
         }
 
         window.HelixDMState.replaceMessage(target);
@@ -1152,7 +1162,11 @@
     }
 
     function openContextMenu(messageId, x, y) {
-        if (!currentMessage(messageId)) return;
+        const message = currentMessage(messageId);
+
+        if (!message || message.isDeleted) {
+            return;
+        }
 
         closeEmojiPicker();
         closePinnedPanel();
@@ -1640,6 +1654,21 @@
         get("dm-pins-close")?.addEventListener(
             "click",
             closePinnedPanel
+        );
+
+        get("dm-pins-panel")?.addEventListener(
+            "keydown",
+            async (event) => {
+                const row = event.target.closest('[data-dm-action="jump-to-message"]');
+
+                if (
+                    row &&
+                    (event.key === "Enter" || event.key === " ")
+                ) {
+                    event.preventDefault();
+                    await scrollToReferencedMessage(row.dataset.messageId);
+                }
+            }
         );
 
         get("dm-pins-panel")?.addEventListener(
