@@ -6151,16 +6151,17 @@ MATH & PHOTO ATTACHMENTS
 #dm-view .dm-message-row {
     position: relative;
     display: flex;
-    align-items: flex-end;
+    flex-direction: column;
+    align-items: flex-start;
     width: 100%;
 }
 
 #dm-view .dm-message-row.is-received {
-    justify-content: flex-start;
+    align-items: flex-start;
 }
 
 #dm-view .dm-message-row.is-sent {
-    justify-content: flex-end;
+    align-items: flex-end;
 }
 
 #dm-view .dm-message-bubble {
@@ -6189,19 +6190,16 @@ MATH & PHOTO ATTACHMENTS
 
 #dm-view .dm-message-meta {
     flex: 0 0 auto;
-    margin-left: 7px;
-    margin-right: 7px;
+    margin: 3px 7px 0;
     color: #697985;
     font: 8px "SFMono-Regular",Consolas,monospace;
     white-space: nowrap;
+    line-height: 1;
 }
 
-#dm-view .dm-message-row.is-received .dm-message-meta {
-    order: 2;
-}
-
+#dm-view .dm-message-row.is-received .dm-message-meta,
 #dm-view .dm-message-row.is-sent .dm-message-meta {
-    order: 1;
+    order: 0;
 }
 
 #dm-view .dm-message-actions {
