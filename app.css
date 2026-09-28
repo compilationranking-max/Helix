@@ -10638,3 +10638,144 @@ MATH & PHOTO ATTACHMENTS
         display: none !important;
     }
 }
+
+
+/* =========================================================
+   HELIX DMS — REFERENCE PROPORTIONS / MESSAGE GROUPING
+   ========================================================= */
+
+#dm-view .dm-sidebar {
+    width: 35% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    flex: 0 0 35% !important;
+}
+
+#dm-view .dm-conversation {
+    flex: 1 1 65% !important;
+}
+
+#dm-view .dm-sidebar-head {
+    height: 69px !important;
+    min-height: 69px !important;
+    padding: 13px 15px 10px !important;
+}
+
+#dm-view .dm-sidebar-head h1 {
+    font-size: 20px !important;
+}
+
+#dm-view .dm-search-wrap {
+    margin: 17px 21px 14px !important;
+    height: 34px !important;
+}
+
+#dm-view .dm-tabs {
+    gap: 21px !important;
+    padding: 0 21px !important;
+    margin-bottom: 7px !important;
+}
+
+#dm-view .dm-conversation-list {
+    padding: 0 11px 15px !important;
+}
+
+#dm-view .dm-conversation-row {
+    min-height: 45px !important;
+    padding: 6px 9px !important;
+    border-radius: 10px !important;
+}
+
+#dm-view .dm-conv-avatar {
+    width: 30px !important;
+    height: 30px !important;
+}
+
+#dm-view .dm-conversation-head {
+    flex: 0 0 53px !important;
+    min-height: 53px !important;
+    max-height: 53px !important;
+    padding: 0 9px 0 13px !important;
+}
+
+#dm-view .dm-avatar {
+    width: 29px !important;
+    height: 29px !important;
+}
+
+#dm-view .dm-message-area {
+    padding: 3px 13px 8px !important;
+}
+
+#dm-view .dm-message {
+    max-width: min(68%, 620px) !important;
+    margin-bottom: 5px !important;
+}
+
+#dm-view .dm-message.is-grouped {
+    padding-left: 32px !important;
+}
+
+#dm-view .dm-message.is-incoming .dm-bubble {
+    border-radius: 9px !important;
+    background: linear-gradient(180deg, rgba(52,64,79,.84), rgba(43,55,70,.9)) !important;
+}
+
+#dm-view .dm-message.is-outgoing .dm-bubble {
+    border-radius: 9px !important;
+    background: linear-gradient(180deg, rgba(45,53,73,.87), rgba(37,44,61,.92)) !important;
+}
+
+#dm-view .dm-message-meta {
+    margin-top: 3px !important;
+}
+
+#dm-view .dm-chat-actions {
+    gap: 6px !important;
+}
+
+#dm-view .dm-head-action,
+#dm-view .dm-video-action {
+    height: 27px !important;
+}
+
+#dm-view .dm-composer-zone {
+    flex: 0 0 74px !important;
+    min-height: 74px !important;
+    max-height: 74px !important;
+    padding: 7px 12px 5px 15px !important;
+}
+
+#dm-view .dm-composer {
+    min-height: 42px !important;
+    height: 42px !important;
+    flex-basis: 42px !important;
+    border-radius: 13px !important;
+}
+
+#dm-view .dm-waveform {
+    left: 14% !important;
+    right: 53% !important;
+    height: 27px !important;
+    opacity: .48 !important;
+}
+
+#dm-view .dm-composer-hint {
+    padding-top: 4px !important;
+    font-size: 6px !important;
+}
+
+@media (max-width: 900px) {
+    #dm-view .dm-sidebar {
+        width: 35% !important;
+        min-width: 0 !important;
+        max-width: none !important;
+        flex-basis: 35% !important;
+    }
+}
+
+@media (max-width: 650px) {
+    #dm-view .dm-sidebar {
+        display: none !important;
+    }
+}
