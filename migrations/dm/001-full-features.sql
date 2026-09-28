@@ -84,3 +84,39 @@ $$;
 
 CREATE INDEX IF NOT EXISTS helix_dm_messages_reply_to_idx
     ON helix_dm_messages (reply_to_id);
+
+CREATE TABLE IF NOT EXISTS helix_dm_conversation_nicknames (
+    owner_username TEXT NOT NULL REFERENCES helix_users(username) ON DELETE CASCADE,
+    friend_username TEXT NOT NULL REFERENCES helix_users(username) ON DELETE CASCADE,
+    nickname TEXT NOT NULL CHECK (length(nickname) BETWEEN 1 AND 50),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (owner_username, friend_username),
+    CHECK (owner_username <> friend_username)
+);
+
+CREATE INDEX IF NOT EXISTS helix_dm_conversation_nicknames_friend_idx
+    ON helix_dm_conversation_nicknames (friend_username);
+
+CREATE TABLE IF NOT EXISTS helix_dm_message_reactions (
+    message_id UUID NOT NULL REFERENCES helix_dm_messages(id) ON DELETE CASCADE,
+    username TEXT NOT NULL REFERENCES helix_users(username) ON DELETE CASCADE,
+    emoji TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (message_id, username, emoji)
+);
+
+CREATE INDEX IF NOT EXISTS helix_dm_message_reactions_message_idx
+    ON helix_dm_message_reactions (message_id);
+
+CREATE TABLE IF NOT EXISTS helix_dm_message_pins (
+    message_id UUID NOT NULL REFERENCES helix_dm_messages(id) ON DELETE CASCADE,
+    owner_username TEXT NOT NULL REFERENCES helix_users(username) ON DELETE CASCADE,
+    pinned_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (message_id, owner_username)
+);
+
+CREATE INDEX IF NOT EXISTS helix_dm_message_pins_owner_idx
+    ON helix_dm_message_pins (owner_username, pinned_at DESC);
+
+CREATE INDEX IF NOT EXISTS helix_dm_message_pins_message_idx
+    ON helix_dm_message_pins (message_id);
