@@ -10779,3 +10779,9 @@ MATH & PHOTO ATTACHMENTS
         display: none !important;
     }
 }
+
+
+/* DM visibility must respect the navigation-controlled hidden attribute. */
+#dm-view[hidden] {
+    display: none !important;
+}
