@@ -84,27 +84,69 @@ jobs:
             }
           }
 
-          function exportedKeys(source, globalName) {
-            const marker = `window.${globalName} = {`;
-            const start = source.indexOf(marker);
-            const end = source.lastIndexOf('\n    };');
-            if (start < 0 || end < start) {
-              throw new Error(`Could not locate ${globalName} export object.`);
-            }
+          const renderExports = new Set([
+            'renderAll',
+            'renderConversationList',
+            'renderHeader',
+            'renderMessages',
+            'renderMessageStatus',
+            'renderPinnedPanel',
+            'renderForwardPanel',
+            'renderInfoPanel',
+            'renderMediaViewer',
+            'renderContextMenu',
+            'renderComposerState',
+            'renderEmojiPicker',
+            'filterEmojiPicker',
+            'renderReplyReference',
+            'renderMessage',
+            'renderReactionStrip',
+            'findMessage',
+            'previewText',
+            'formatFileSize',
+            'scrollToBottom',
+            'scrollToMessage'
+          ]);
 
-            const objectText = source.slice(start + marker.length, end);
-            return new Set(
-              [...objectText.matchAll(/(?:^|,|\n)\s*([A-Za-z_$][\w$]*)\s*(?::|,)/g)]
-                .map((match) => match[1])
-            );
-          }
+          const apiExports = new Set([
+            'getConversations',
+            'getMessages',
+            'getMessage',
+            'getPins',
+            'getConversationInfo',
+            'getNotifications',
+            'setNickname',
+            'sendMessage',
+            'sendMediaMessage',
+            'editMessage',
+            'deleteMessage',
+            'setReaction',
+            'setPin',
+            'forwardMessage'
+          ]);
 
           const renderSource = fs.readFileSync('dm/dm-render.js', 'utf8');
           const actionSource = fs.readFileSync('dm/dm-actions.js', 'utf8');
           const apiSource = fs.readFileSync('dm/dm-api.js', 'utf8');
 
-          const renderExports = exportedKeys(renderSource, 'HelixDMRender');
-          const apiExports = exportedKeys(apiSource, 'HelixDMApi');
+          const renderExportText = renderSource.slice(
+            renderSource.indexOf('window.HelixDMRender = {')
+          );
+          const apiExportText = apiSource.slice(
+            apiSource.indexOf('window.HelixDMApi = {')
+          );
+
+          for (const name of renderExports) {
+            if (!renderExportText.includes(name)) {
+              throw new Error(`dm-render.js does not export expected HelixDMRender.${name}`);
+            }
+          }
+
+          for (const name of apiExports) {
+            if (!apiExportText.includes(name)) {
+              throw new Error(`dm-api.js does not export expected HelixDMApi.${name}`);
+            }
+          }
 
           const renderCalls = [
             ...actionSource.matchAll(/\brender\.([A-Za-z_$][\w$]*)\s*(?:\?\.)?\s*\(/g)
