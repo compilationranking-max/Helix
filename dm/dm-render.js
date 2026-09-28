@@ -1547,7 +1547,7 @@
         });
 
         picker.append(header, grid);
-        picker.hidden = true;
+        picker.hidden = !state.emojiPickerOpen;
     }
 
     function filterEmojiPicker(value) {
