@@ -5870,9 +5870,9 @@ MATH & PHOTO ATTACHMENTS
 }
 
 #dm-view .dm-conversation-list > .dm-conversation.is-active {
-    background: linear-gradient(100deg, rgba(114,74,196,.22), rgba(28,50,91,.18)) !important;
-    border-color: rgba(104,92,195,.17) !important;
-    box-shadow: inset 2px 0 0 rgba(0,229,255,.62) !important;
+    background: linear-gradient(90deg, rgba(0,229,255,.095), rgba(16,52,64,.13)) !important;
+    border-color: rgba(0,229,255,.07) !important;
+    box-shadow: inset 2px 0 0 #00e5ff !important;
 }
 
 #dm-view .dm-conversation-avatar {
@@ -6224,7 +6224,9 @@ MATH & PHOTO ATTACHMENTS
 }
 
 #dm-view .dm-message-row.is-sent .dm-message-bubble {
-    background: linear-gradient(180deg, rgba(45,53,73,.87), rgba(37,44,61,.92)) !important;
+    background: rgba(0,229,255,.045) !important;
+    border-color: rgba(0,229,255,.26) !important;
+    color: #7debf4 !important;
 }
 
 #dm-view .dm-message-text,
@@ -6245,6 +6247,10 @@ MATH & PHOTO ATTACHMENTS
     color: #7a8894 !important;
     font: 7px "SFMono-Regular",Consolas,monospace !important;
     line-height: 1 !important;
+}
+#dm-view .dm-message-row.is-sent .dm-message-meta,
+#dm-view .dm-message-row.is-sent .dm-message-status {
+    color: #22d7e8 !important;
 }
 
 #dm-view .dm-message-status {
