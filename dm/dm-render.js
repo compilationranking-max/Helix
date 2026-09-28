@@ -280,11 +280,18 @@
         }
 
         if (legacyCount) {
-            legacyCount.textContent = String(state.conversations.length);
+            const unreadTotal = state.conversations.reduce(
+                (sum, conversation) =>
+                    sum + Number(conversation.unreadCount || 0),
+                0
+            );
+            legacyCount.textContent = String(unreadTotal);
         }
 
         if (legacyFriendsCount) {
-            legacyFriendsCount.textContent = String(state.conversations.length);
+            legacyFriendsCount.textContent = String(
+                state.conversations.length
+            );
         }
 
         if (state.loadingConversations) {
