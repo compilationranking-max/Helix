@@ -9440,3 +9440,129 @@ MATH & PHOTO ATTACHMENTS
         color: #00e5ff;
     }
 }
+
+/* =========================================================
+   HELIX DM — ELECTRIC CYAN FINAL BUTTON PASS
+   ========================================================= */
+
+/* Every DM control uses the Helix electric-cyan language. */
+#dm-view button,
+#dm-view button .dm-icon,
+#dm-view button svg {
+    color: #00e5ff !important;
+}
+
+#dm-view button {
+    -webkit-appearance: none;
+    appearance: none;
+    text-shadow: 0 0 10px rgba(0,229,255,.10);
+}
+
+/* Icon/action controls — no black fills. */
+#dm-view .dm-composer-action,
+#dm-view .dm-send-button,
+#dm-view .dm-refresh-button,
+#dm-view .dm-header-icon,
+#dm-view .dm-panel-close,
+#dm-view .dm-mobile-back,
+#dm-view .dm-reply-cancel,
+#dm-view .dm-media-preview-remove,
+#dm-view .dm-pinned-unpin,
+#dm-view .dm-inline-button,
+#dm-view .dm-info-action,
+#dm-view .dm-clear-button {
+    border-color: transparent !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: #00e5ff !important;
+}
+
+#dm-view .dm-composer-action:hover:not(:disabled),
+#dm-view .dm-refresh-button:hover:not(:disabled),
+#dm-view .dm-header-icon:hover:not(:disabled),
+#dm-view .dm-panel-close:hover:not(:disabled),
+#dm-view .dm-mobile-back:hover:not(:disabled),
+#dm-view .dm-reply-cancel:hover:not(:disabled),
+#dm-view .dm-media-preview-remove:hover:not(:disabled),
+#dm-view .dm-pinned-unpin:hover:not(:disabled),
+#dm-view .dm-inline-button:hover:not(:disabled),
+#dm-view .dm-info-action:hover:not(:disabled),
+#dm-view .dm-clear-button:hover:not(:disabled) {
+    color: #63efff !important;
+    background: rgba(0,229,255,.065) !important;
+    border-color: rgba(0,229,255,.20) !important;
+    box-shadow: 0 0 18px rgba(0,229,255,.10) !important;
+}
+
+/* Send stays completely borderless, per Helix composer design. */
+#dm-view .dm-send-button {
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    filter: drop-shadow(0 0 6px rgba(0,229,255,.18));
+}
+
+#dm-view .dm-send-button:hover:not(:disabled) {
+    background: transparent !important;
+    border: 0 !important;
+    color: #7df4ff !important;
+    filter: drop-shadow(0 0 12px rgba(0,229,255,.55));
+}
+
+/* New-message and filter controls get a stronger cyan surface. */
+#dm-view .dm-new-message-button,
+#dm-view .dm-inbox-tab {
+    color: #00e5ff !important;
+    border-color: rgba(0,229,255,.22) !important;
+    background: rgba(0,229,255,.055) !important;
+    box-shadow: 0 0 18px rgba(0,229,255,.055) !important;
+}
+
+#dm-view .dm-new-message-button:hover:not(:disabled),
+#dm-view .dm-inbox-tab:hover:not(:disabled),
+#dm-view .dm-inbox-tab.is-active {
+    color: #dfffff !important;
+    border-color: rgba(0,229,255,.42) !important;
+    background:
+        linear-gradient(135deg, rgba(0,229,255,.14), rgba(118,92,255,.09)) !important;
+    box-shadow:
+        0 0 24px rgba(0,229,255,.12),
+        inset 0 1px 0 rgba(255,255,255,.035) !important;
+}
+
+/* Message action/context controls. */
+#dm-view .dm-context-item,
+#dm-view .dm-message-tool,
+#dm-view .dm-forward-target {
+    color: #00e5ff !important;
+    border-color: rgba(0,229,255,.12) !important;
+    background: rgba(0,229,255,.025) !important;
+}
+
+#dm-view .dm-context-item:hover,
+#dm-view .dm-context-item:focus-visible,
+#dm-view .dm-message-tool:hover,
+#dm-view .dm-message-tool:focus-visible,
+#dm-view .dm-forward-target:hover,
+#dm-view .dm-forward-target:focus-visible {
+    color: #7df4ff !important;
+    border-color: rgba(0,229,255,.30) !important;
+    background: rgba(0,229,255,.085) !important;
+    box-shadow: 0 0 20px rgba(0,229,255,.08) !important;
+}
+
+/* Any disabled DM control stays cyan, just muted, never black. */
+#dm-view button:disabled,
+#dm-view button:disabled .dm-icon {
+    color: rgba(0,229,255,.38) !important;
+    background: transparent !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+    opacity: 1 !important;
+}
+
+/* Keyboard focus uses the same electric-cyan signal. */
+#dm-view button:focus-visible {
+    outline: 2px solid rgba(0,229,255,.48) !important;
+    outline-offset: 2px;
+}
