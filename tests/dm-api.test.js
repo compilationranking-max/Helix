@@ -1,7 +1,34 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
+const Module = require("node:module");
+
+const originalModuleLoad = Module._load;
+Module._load = function(request, parent, isMain) {
+    if (request === "express") {
+        return {
+            Router() {
+                const router = { stack: [] };
+                for (const method of ["get", "post", "put", "patch", "delete"]) {
+                    router[method] = (path, ...handlers) => {
+                        router.stack.push({
+                            route: {
+                                path,
+                                methods: { [method]: true },
+                                stack: handlers.map((handle) => ({ handle }))
+                            }
+                        });
+                    };
+                }
+                return router;
+            }
+        };
+    }
+
+    return originalModuleLoad.call(this, request, parent, isMain);
+};
 
 const createDMRouter = require("../routes/dm");
+Module._load = originalModuleLoad;
 
 const USERS = new Set(["alice", "bob", "carol", "dave"]);
 const friendships = new Set([
