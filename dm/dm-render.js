@@ -491,7 +491,7 @@
             const latest = conversation.latestMessage;
             const latestValue = latest
                 ? previewText(latest)
-                : "No messages yet";
+                : "Start a conversation";
 
             const preview = make(
                 "span",
@@ -525,27 +525,24 @@
                 "dm-conversation-meta"
             );
 
-            if (latest?.createdAt) {
-                meta.appendChild(
-                    make(
-                        "time",
-                        "",
-                        formatTime(latest.createdAt)
-                    )
+            if (Number(conversation.unreadCount || 0) > 0) {
+                const unread = make(
+                    "span",
+                    "dm-unread-badge",
+                    conversation.unreadCount > 99
+                        ? "99+"
+                        : String(conversation.unreadCount)
                 );
+                meta.appendChild(unread);
             }
 
-            if (Number(conversation.unreadCount || 0) > 0) {
-                meta.appendChild(
-                    make(
-                        "span",
-                        "dm-unread-badge",
-                        conversation.unreadCount > 99
-                            ? "99+"
-                            : String(conversation.unreadCount)
-                    )
-                );
-            }
+            const editMark = make(
+                "span",
+                "dm-conversation-edit-mark",
+                "✎"
+            );
+            editMark.setAttribute("aria-hidden", "true");
+            meta.appendChild(editMark);
 
             row.append(avatar, copy, meta);
             list.appendChild(row);
