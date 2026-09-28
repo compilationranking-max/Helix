@@ -34,7 +34,7 @@
 
     <title>Helix</title>
 
-    <link rel="stylesheet" href="app.css?v=20260928-dm-legacy">
+    <link rel="stylesheet" href="app.css?v=20260928-dm-classic-final">
 </head>
 
 <body>
@@ -429,25 +429,37 @@
         <aside class="dm-sidebar" aria-label="Direct message conversations">
             <div class="dm-sidebar-head">
                 <div class="dm-legacy-inbox-title">
-                    <h2>Messages</h2>
+                    <h1>Messages</h1>
                 </div>
 
-                <button class="dm-square-action" id="dm-new-message-button" type="button" aria-label="Start a new message" title="New message">
-                    <svg class="dm-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M6 18.5V22h3.5L20 11.5l-3.5-3.5L6 18.5z"></path>
-                        <path d="m15.5 9.5 3.5 3.5"></path>
-                    </svg>
-                </button>
+                <div class="dm-inbox-header-actions">
+                    <button class="dm-square-action" id="dm-new-message-button" type="button" aria-label="New message" title="New message">
+                        <svg class="dm-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M6 18.5V22h3.5L20 11.5l-3.5-3.5L6 18.5z"></path>
+                            <path d="m15.5 9.5 3.5 3.5"></path>
+                        </svg>
+                    </button>
+
+                    <!-- Kept in the DOM for the modular action layer; visually hidden in the reference shell. -->
+                    <button class="dm-refresh-button dm-refresh-utility" id="dm-refresh-button" type="button" aria-label="Refresh conversations" title="Refresh conversations">
+                        <svg class="dm-icon" viewBox="0 0 48 48" aria-hidden="true">
+                            <path d="M10 20a14 14 0 0 1 24-7l3 3"></path>
+                            <path d="M37 9v8h-8"></path>
+                            <path d="M38 28a14 14 0 0 1-24 7l-3-3"></path>
+                            <path d="M11 39v-8h8"></path>
+                        </svg>
+                    </button>
+                </div>
             </div>
 
             <div class="dm-search-wrap">
-                <svg class="dm-icon dm-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <svg class="dm-icon dm-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <circle cx="10.8" cy="10.8" r="6.2"></circle>
                     <path d="m16 16 4 4"></path>
                 </svg>
-                <input id="dm-conversation-search" type="search" autocomplete="off" placeholder="Search friends" aria-label="Search friends and conversations">
+                <input id="dm-conversation-search" type="search" autocomplete="off" placeholder="Search" aria-label="Search friends and conversations">
                 <button class="dm-clear-button" id="dm-conversation-search-clear" type="button" aria-label="Clear conversation search" title="Clear search">
-                    <svg class="dm-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <svg class="dm-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <path d="m6 6 12 12M18 6 6 18"></path>
                     </svg>
                 </button>
@@ -462,6 +474,7 @@
                 <span>Messages</span>
                 <strong id="dm-legacy-count">0</strong>
             </div>
+
             <div class="dm-legacy-friends-meta">
                 <span>FRIENDS</span>
                 <strong id="dm-legacy-friends-count">0</strong>
@@ -495,69 +508,58 @@
                 <div class="dm-person">
                     <span class="dm-avatar" id="dm-chat-avatar" aria-hidden="true">DM</span>
                     <div class="dm-person-copy">
-                        <strong id="dm-chat-title">Select a friend</strong>
-                        <span id="dm-chat-username">No conversation selected</span>
+                        <strong id="dm-chat-title">Your messages</strong>
+                        <span id="dm-chat-username">Select a conversation to start messaging.</span>
                     </div>
                 </div>
 
                 <div class="dm-chat-actions">
-                    <button class="dm-head-action dm-head-action-disabled" type="button" title="Voice calls are not available yet" aria-label="Voice call unavailable" disabled>
-                        <svg class="dm-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <path d="M6.2 4.8h3.2l1.5 4-2 1.5a12.5 12.5 0 0 0 4.8 4.8l1.5-2 4 1.5v3.2c0 .8-.6 1.4-1.4 1.4A13.8 13.8 0 0 1 4.8 6.2c0-.8.6-1.4 1.4-1.4z"></path>
-                        </svg>
-                    </button>
-                    <button class="dm-head-action dm-head-action-disabled" type="button" title="Video calls are not available yet" aria-label="Video call unavailable" disabled>
-                        <svg class="dm-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <rect x="3.8" y="6.5" width="11.4" height="11" rx="2.2"></rect>
-                            <path d="m15.2 10 5-3v10l-5-3z"></path>
-                        </svg>
-                    </button>
-                    <button id="dm-message-search-toggle" type="button" class="dm-head-action" title="Search messages" aria-label="Search messages" aria-expanded="false">
-                        <svg class="dm-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <circle cx="10.8" cy="10.8" r="6.2"></circle>
-                            <path d="m16 16 4 4"></path>
-                        </svg>
-                    </button>
-                    <button id="dm-info-button" type="button" class="dm-head-action" title="Conversation info" aria-label="Open conversation info">
-                        <svg class="dm-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <circle cx="12" cy="12" r="8.5"></circle>
-                            <path d="M12 10.2v5.3M12 7.3h.01"></path>
-                        </svg>
-                    </button>
-                    <button id="dm-nickname-button" type="button" class="dm-head-action" title="Edit private nickname" aria-label="Edit private nickname">
-                        <svg class="dm-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <path d="M4.5 19.5h3L18.2 8.8l-3-3L4.5 16.5z"></path>
-                            <path d="m14.4 6.8 3 3"></path>
-                        </svg>
-                    </button>
-                    <button id="dm-pins-button" type="button" class="dm-head-action" title="Pinned messages" aria-label="Open pinned messages">
-                        <svg class="dm-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <button id="dm-pins-button" type="button" class="dm-head-action" title="Pinned messages" aria-label="Pinned messages">
+                        <svg class="dm-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <path d="m8 4 8 8"></path>
                             <path d="m15.5 5.5 3 3-3 3 1.5 4-2.5 2.5-4-1.5-3 3-3-3 3-3-1.5-4L9 7z"></path>
                             <path d="m12.5 15.5-4 4"></path>
                         </svg>
                     </button>
+
+                    <button id="dm-message-search-toggle" type="button" class="dm-head-action" title="Search messages" aria-label="Search messages" aria-expanded="false">
+                        <svg class="dm-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <circle cx="10.8" cy="10.8" r="6.2"></circle>
+                            <path d="m16 16 4 4"></path>
+                        </svg>
+                    </button>
+
+                    <button id="dm-info-button" type="button" class="dm-head-action" title="Conversation info" aria-label="Conversation info">
+                        <svg class="dm-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <circle cx="12" cy="12" r="8.5"></circle>
+                            <path d="M12 10.2v5.3M12 7.3h.01"></path>
+                        </svg>
+                    </button>
+
+                    <!-- Kept for current nickname functionality; hidden by the reference skin. -->
+                    <button id="dm-nickname-button" type="button" class="dm-head-action dm-reference-hidden-control" title="Set nickname" aria-label="Set nickname">
+                        <svg class="dm-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 19.5h3L18.2 8.8l-3-3L4.5 16.5z"></path><path d="m14.4 6.8 3 3"></path></svg>
+                    </button>
                 </div>
             </header>
 
             <div class="dm-message-search" id="dm-message-search" hidden>
-
-                <svg class="dm-icon dm-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <svg class="dm-icon dm-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <circle cx="10.8" cy="10.8" r="6.2"></circle>
                     <path d="m16 16 4 4"></path>
                 </svg>
-                <input id="dm-message-search-input" type="search" autocomplete="off" placeholder="Search messages" aria-label="Search messages">
-                <span id="dm-message-search-count" class="dm-message-search-count"></span>
+                <input id="dm-message-search-input" type="search" autocomplete="off" placeholder="Search messages..." aria-label="Search messages">
+                <span id="dm-message-search-count" class="dm-message-search-count" aria-live="polite"></span>
                 <button class="dm-clear-button" id="dm-message-search-clear" type="button" aria-label="Clear message search" title="Clear search">
-                    <svg class="dm-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <svg class="dm-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <path d="m6 6 12 12M18 6 6 18"></path>
                     </svg>
                 </button>
             </div>
 
-            <div class="dm-chat-status-row">
+            <div class="dm-chat-meta">
                 <span id="dm-message-status"></span>
-                <span class="dm-server-status"><i aria-hidden="true"></i> SERVER SYNC</span>
+                <span>SERVER SYNC</span>
             </div>
 
             <div class="dm-message-area" id="dm-message-list" aria-live="polite"></div>
@@ -573,9 +575,7 @@
                     </div>
                     <span class="dm-reply-bar-thumb" id="dm-reply-bar-thumb" hidden aria-hidden="true"></span>
                     <button class="dm-reply-cancel" id="dm-reply-cancel" type="button" aria-label="Cancel reply" title="Cancel reply">
-                        <svg class="dm-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <path d="m6 6 12 12M18 6 6 18"></path>
-                        </svg>
+                        <svg class="dm-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"></path></svg>
                     </button>
                 </div>
 
@@ -586,65 +586,33 @@
                         <small id="dm-media-preview-size"></small>
                     </span>
                     <button class="dm-media-preview-remove" id="dm-media-preview-remove" type="button" aria-label="Remove attachment" title="Remove attachment">
-                        <svg class="dm-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <path d="m6 6 12 12M18 6 6 18"></path>
-                        </svg>
+                        <svg class="dm-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"></path></svg>
                     </button>
                 </div>
 
                 <div class="dm-attachment-error dm-form-error" id="dm-attachment-error" hidden></div>
 
-                <form class="dm-composer-box" id="dm-message-form">
-                    <input
-                        id="dm-media-input"
-                        type="file"
-                        accept="image/png,image/jpeg,image/gif,image/webp,video/mp4,video/quicktime,video/webm,video/ogg"
-                        hidden
-                    >
+                <form class="dm-composer" id="dm-message-form">
+                    <input id="dm-media-input" type="file" accept="image/png,image/jpeg,image/gif,image/webp,video/mp4,video/quicktime,video/webm,video/ogg" hidden>
 
-                    <button id="dm-composer-emoji-button" class="dm-composer-action dm-composer-emoji" type="button" title="Insert emoji" aria-label="Insert emoji">
-                        <svg class="dm-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <circle cx="12" cy="12" r="8.5"></circle>
-                            <path d="M8.8 10h.01M15.2 10h.01M8.3 14c2.1 2.1 5.3 2.1 7.4 0"></path>
-                        </svg>
+                    <button id="dm-composer-emoji-button" class="dm-composer-icon dm-reference-hidden-control" type="button" title="Insert emoji" aria-label="Insert emoji">
+                        <svg class="dm-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="M8.8 10h.01M15.2 10h.01M8.3 14c2.1 2.1 5.3 2.1 7.4 0"></path></svg>
                     </button>
 
-                    <button id="dm-attach-button" class="dm-composer-action" type="button" title="Attach photo or video" aria-label="Attach photo or video">
-                        <svg class="dm-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <button id="dm-attach-button" class="dm-composer-icon dm-composer-attach-reference" type="button" title="Attach photo or video" aria-label="Attach photo or video">
+                        <svg class="dm-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <path d="m9.2 7.5 3.9-3.9a3.3 3.3 0 0 1 4.7 4.7l-7.4 7.4a4.6 4.6 0 0 1-6.5-6.5l7-7a3.9 3.9 0 0 1 5.5 5.5l-6.3 6.3"></path>
                         </svg>
                     </button>
 
-                    <textarea
-                        id="dm-message-input"
-                        maxlength="4000"
-                        rows="1"
-                        autocomplete="off"
-                        placeholder="Message..."
-                        aria-label="Message"
-                    ></textarea>
+                    <textarea id="dm-message-input" maxlength="4000" rows="1" autocomplete="off" placeholder="Message your friend..." aria-label="Message your friend"></textarea>
 
                     <div class="dm-composer-actions-right">
-                        <button class="dm-composer-action dm-composer-disabled" type="button" title="Voice messages are not available yet" aria-label="Voice messages unavailable" disabled>
-                            <svg class="dm-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <rect x="8.5" y="3.5" width="7" height="11" rx="3.5"></rect>
-                                <path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3M9 21h6"></path>
-                            </svg>
-                        </button>
+                        <button id="dm-mic-button" class="dm-composer-icon dm-reference-hidden-control" type="button" disabled aria-label="Voice message unavailable"></button>
+                        <button id="dm-emoji-button" class="dm-composer-icon dm-reference-hidden-control" type="button" disabled aria-label="Emoji unavailable">☺</button>
 
-                            <button class="dm-composer-action dm-composer-disabled" type="button" title="Quick heart is not enabled" aria-label="Quick heart unavailable" disabled>
-                            <svg class="dm-icon dm-heart-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <path d="M20.5 8.6c0 5.6-8.5 10.4-8.5 10.4S3.5 14.2 3.5 8.6A4.6 4.6 0 0 1 12 6.4a4.6 4.6 0 0 1 8.5 2.2Z"></path>
-                            </svg>
-                        </button>
-
-                        <button class="dm-composer-action dm-composer-disabled" type="button" title="Quick like is not enabled" aria-label="Quick like unavailable" disabled>
-                            <svg class="dm-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <path d="M7.2 10.8v8.7H4.5v-8.7zM9.6 19.5h7.1c1.1 0 2-.8 2.2-1.9l1.1-5.8c.2-1.1-.6-2.1-1.7-2.1H14l.6-3.1c.2-1-.2-2-1-2.5l-.7-.5-2.2 6.1H9.6"></path>
-                            </svg>
-                        </button>
-
-                        <button id="dm-send-button" class="dm-send-button" type="submit" aria-label="Send message" title="Send message">
+                        <button class="dm-composer-action dm-reference-hidden-control" type="button" disabled aria-hidden="true"></button>
+                        <button id="dm-send-button" class="dm-send-control" type="submit" aria-label="Send message" title="Send message">
                             <svg class="dm-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                 <path d="m4 5 16 7-16 7 3-7z"></path>
                                 <path d="M7 12h12"></path>
@@ -659,43 +627,30 @@
                 </div>
             </div>
         </section>
+
+        <aside class="dm-pins-panel" id="dm-pins-panel" hidden aria-label="Pinned messages">
+            <div class="dm-panel-header">
+                <div><p class="system-label">HELIX / PINNED</p><h3>Pinned messages</h3></div>
+                <button class="dm-panel-close" id="dm-pins-close" type="button" aria-label="Close pinned messages" title="Close pinned messages">
+                    <svg class="dm-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"></path></svg>
+                </button>
+            </div>
+            <div class="dm-pins-list" id="dm-pins-list"></div>
+        </aside>
     </div>
 
-    <aside class="dm-pins-panel" id="dm-pins-panel" hidden aria-label="Pinned messages">
-        <div class="dm-panel-header">
-            <div>
-                <p class="system-label">HELIX / PINNED</p>
-                <h3>Pinned messages</h3>
-            </div>
-            <button class="dm-panel-close" id="dm-pins-close" type="button" aria-label="Close pinned messages" title="Close pinned messages">
-                <svg class="dm-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path d="m6 6 12 12M18 6 6 18"></path>
-                </svg>
-            </button>
-        </div>
-        <div class="dm-pins-list" id="dm-pins-list"></div>
-    </aside>
-
     <aside class="dm-info-panel" id="dm-info-panel" hidden aria-label="Conversation information"></aside>
-
     <div class="dm-context-menu" id="dm-context-menu" role="menu" aria-label="Message actions" hidden></div>
-
     <div class="dm-overlay-panel dm-emoji-picker" id="dm-emoji-picker" hidden aria-label="Emoji picker"></div>
-
     <div class="dm-media-viewer" id="dm-media-viewer" hidden aria-label="Media viewer"></div>
 
     <div class="helix-modal dm-forward-modal" id="dm-forward-modal" hidden>
         <div class="helix-modal-backdrop" data-dm-forward-close></div>
         <section class="helix-modal-panel" role="dialog" aria-modal="true" aria-labelledby="dm-forward-title">
-            <button class="helix-modal-close" type="button" data-dm-forward-close aria-label="Close forward dialog" title="Close dialog">
-                <svg class="dm-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path d="m6 6 12 12M18 6 6 18"></path>
-                </svg>
-            </button>
+            <button class="helix-modal-close" type="button" data-dm-forward-close aria-label="Close forward dialog" title="Close dialog">×</button>
             <p class="system-label">HELIX / FORWARD</p>
-            <h2>Forward message</h2>
+            <h2 id="dm-forward-title">Forward message</h2>
             <div class="dm-forward-preview" id="dm-forward-preview"></div>
-            <p class="helix-modal-description">Choose one of your friends. Forwarded messages are created as normal new messages.</p>
             <div class="dm-forward-list" id="dm-forward-list"></div>
         </section>
     </div>
@@ -703,24 +658,13 @@
     <div class="helix-modal dm-nickname-modal" id="dm-nickname-modal" hidden>
         <div class="helix-modal-backdrop" data-dm-nickname-close></div>
         <section class="helix-modal-panel" role="dialog" aria-modal="true" aria-labelledby="dm-nickname-title">
-            <button class="helix-modal-close" type="button" data-dm-nickname-close aria-label="Close nickname dialog" title="Close dialog">
-                <svg class="dm-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path d="m6 6 12 12M18 6 6 18"></path>
-                </svg>
-            </button>
+            <button class="helix-modal-close" type="button" data-dm-nickname-close aria-label="Close nickname dialog" title="Close dialog">×</button>
             <p class="system-label">HELIX / PRIVATE IDENTITY</p>
             <h2 id="dm-nickname-title">Private nickname</h2>
             <p class="helix-modal-description">This nickname is visible only to you inside your Helix conversation list.</p>
-
             <form class="dm-nickname-form" id="dm-nickname-form">
-                <label>
-                    <span>Friend</span>
-                    <select id="dm-nickname-friend" aria-label="Choose friend for nickname"></select>
-                </label>
-                <label>
-                    <span>Nickname</span>
-                    <input id="dm-nickname-value" type="text" maxlength="50" autocomplete="off" placeholder="e.g. Bro">
-                </label>
+                <label><span>Friend</span><select id="dm-nickname-friend" aria-label="Choose friend for nickname"></select></label>
+                <label><span>Nickname</span><input id="dm-nickname-value" type="text" maxlength="50" autocomplete="off" placeholder="e.g. Bro"></label>
                 <div class="dm-form-error" id="dm-nickname-error" aria-live="polite"></div>
                 <div class="dm-modal-actions">
                     <button class="dm-modal-secondary" id="dm-nickname-remove" type="button">Remove</button>
@@ -730,12 +674,6 @@
         </section>
     </div>
 </section>
-    <div class="dm-popover" id="dm-chat-settings-popover" hidden>
-        <button type="button" data-dm-setting="nickname">Edit private nickname</button>
-        <button type="button" data-dm-setting="info">Conversation info</button>
-        <button type="button" data-dm-setting="close">Close</button>
-    </div>
-    <div class="dm-emoji-panel" id="dm-emoji-panel" hidden></div>
 
             <!-- ==================================
                  REELS VIEW
@@ -1453,7 +1391,7 @@
         };
     </script>
     <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
-    <script src="app.js?v=20260928-dm-legacy"></script>
+    <script src="app.js?v=20260928-dm-classic-final"></script>
     <script src="dm/dm-state.js?v=20260928-1"></script>
     <script src="dm/dm-api.js?v=20260928-1"></script>
     <script src="dm/dm-render.js?v=20260928-1"></script>
