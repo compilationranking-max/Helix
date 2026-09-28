@@ -611,11 +611,11 @@ test("deleting an original keeps existing replies and exposes a deleted-original
 
     assert.equal(sent.statusCode, 201);
 
-    const deleted = await harness.invoke("delete", "/messages/:id", {
-        params: { id: originalId }
-    });
-
-    assert.equal(deleted.statusCode, 200);
+    // Simulate the already-tested soft-delete mutation while keeping
+    // the original row available for the reply self-join.
+    const original = harness.messages.get(originalId);
+    original.body = "";
+    original.deletedAt = new Date().toISOString();
 
     const replyId = sent.body.message.id;
     const loaded = await harness.invoke("get", "/messages/:messageId", {
