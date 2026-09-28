@@ -556,6 +556,79 @@ test("forward creates a new normal message without inheriting replyToId", async 
     assert.equal(harness.inserted.at(-1).recipient, "carol");
 });
 
+test("replies to media return the referenced media preview metadata", async () => {
+    const harness = makeHarness("alice");
+
+    harness.seedMessage({
+        id: "55555555-5555-4555-8555-555555555555",
+        sender: "bob",
+        recipient: "alice",
+        body: "",
+        mediaData: Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+        mediaMime: "image/png",
+        mediaName: "shared.png",
+        mediaSize: 8,
+        mediaKind: "image"
+    });
+
+    const response = await harness.invoke("post", "/messages", {
+        body: {
+            to: "bob",
+            text: "nice pic",
+            replyToId: "55555555-5555-4555-8555-555555555555"
+        }
+    });
+
+    assert.equal(response.statusCode, 201);
+    assert.equal(
+        response.body.message.replyToId,
+        "55555555-5555-4555-8555-555555555555"
+    );
+    assert.equal(response.body.message.replyMediaKind, "image");
+    assert.match(response.body.message.replyMediaUrl, /\/api\/dm\/media\//);
+    assert.equal(response.body.message.replyMediaName, "shared.png");
+});
+
+test("deleting an original keeps existing replies and exposes a deleted-original preview", async () => {
+    const harness = makeHarness("alice");
+
+    const originalId = "66666666-6666-4666-8666-666666666666";
+
+    harness.seedMessage({
+        id: originalId,
+        sender: "bob",
+        recipient: "alice",
+        body: "this will be deleted"
+    });
+
+    const sent = await harness.invoke("post", "/messages", {
+        body: {
+            to: "bob",
+            text: "I replied before deletion",
+            replyToId: originalId
+        }
+    });
+
+    assert.equal(sent.statusCode, 201);
+
+    const deleted = await harness.invoke("delete", "/messages/:id", {
+        params: { id: originalId }
+    });
+
+    assert.equal(deleted.statusCode, 200);
+
+    const replyId = sent.body.message.id;
+    const loaded = await harness.invoke("get", "/messages/:messageId", {
+        params: { messageId: replyId }
+    });
+
+    assert.equal(loaded.statusCode, 200);
+    assert.equal(loaded.body.message.replyToId, originalId);
+    assert.equal(loaded.body.message.replyDeleted, true);
+    assert.equal(loaded.body.message.replyPreview.deleted, true);
+    assert.equal(loaded.body.message.replyText, null);
+});
+
 test("private nickname is stored server-side per owner", async () => {
     const harness = makeHarness("alice");
 
