@@ -1311,6 +1311,24 @@ closeAISidebarButton?.addEventListener("click", () => setAISidebarOpen(false));
 openAISidebarButton?.addEventListener("click", () => setAISidebarOpen(true));
 
 // =========================================================
+// LEGACY DM VISUAL SEARCH TOGGLE
+// =========================================================
+const dmMessageSearchToggle = document.getElementById("dm-message-search-toggle");
+const dmMessageSearch = document.getElementById("dm-message-search");
+const dmMessageSearchInput = document.getElementById("dm-message-search-input");
+
+if (dmMessageSearchToggle && dmMessageSearch) {
+    dmMessageSearchToggle.addEventListener("click", () => {
+        const open = dmMessageSearch.hidden;
+        dmMessageSearch.hidden = !open;
+        dmMessageSearchToggle.setAttribute("aria-expanded", String(open));
+        if (open) {
+            requestAnimationFrame(() => dmMessageSearchInput?.focus());
+        }
+    });
+}
+
+// =========================================================
 // NAVIGATION
 // =========================================================
 let previousNavigationSection = null;
