@@ -1311,22 +1311,19 @@ closeAISidebarButton?.addEventListener("click", () => setAISidebarOpen(false));
 openAISidebarButton?.addEventListener("click", () => setAISidebarOpen(true));
 
 // =========================================================
-// LEGACY DM VISUAL SEARCH TOGGLE
+// CLASSIC DM MESSAGE SEARCH BUTTON
 // =========================================================
-const dmMessageSearchToggle = document.getElementById("dm-message-search-toggle");
-const dmMessageSearch = document.getElementById("dm-message-search");
-const dmMessageSearchInput = document.getElementById("dm-message-search-input");
+const classicDmSearchToggle = document.getElementById("dm-message-search-toggle");
+const classicDmSearchPanel = document.getElementById("dm-message-search");
+const classicDmSearchInput = document.getElementById("dm-message-search-input");
 
-if (dmMessageSearchToggle && dmMessageSearch) {
-    dmMessageSearchToggle.addEventListener("click", () => {
-        const open = dmMessageSearch.hidden;
-        dmMessageSearch.hidden = !open;
-        dmMessageSearchToggle.setAttribute("aria-expanded", String(open));
-        if (open) {
-            requestAnimationFrame(() => dmMessageSearchInput?.focus());
-        }
-    });
-}
+classicDmSearchToggle?.addEventListener("click", () => {
+    if (!classicDmSearchPanel) return;
+    const open = classicDmSearchPanel.hidden;
+    classicDmSearchPanel.hidden = !open;
+    classicDmSearchToggle.setAttribute("aria-expanded", String(open));
+    if (open) requestAnimationFrame(() => classicDmSearchInput?.focus());
+});
 
 // =========================================================
 // NAVIGATION
