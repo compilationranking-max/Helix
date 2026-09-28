@@ -9566,3 +9566,32 @@ MATH & PHOTO ATTACHMENTS
     outline: 2px solid rgba(0,229,255,.48) !important;
     outline-offset: 2px;
 }
+
+
+/* HELIX DM — BLANK REBUILD STAGE
+   Keep the DM DOM/modules intact underneath, but remove the current UI
+   so the new DM design can be rebuilt cleanly from the target reference.
+*/
+.dm-blank-stage-view {
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+}
+
+.dm-blank-stage-view .dm-shell,
+.dm-blank-stage-view .dm-shell > * {
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+}
+
+.dm-blank-stage-view .dm-shell > * {
+    display: none !important;
+}
+
+.dm-blank-stage-view .dm-shell {
+    min-height: 100%;
+    height: 100%;
+    width: 100%;
+    display: block !important;
+}
