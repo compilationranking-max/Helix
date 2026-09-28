@@ -98,12 +98,18 @@
         if (!state.activeConversation) { list.innerHTML = '<div class="dm-empty-chat">Select a conversation to start messaging.</div>'; return; }
         if (!messages.length) { list.innerHTML = '<div class="dm-empty-chat">No messages yet. Start the conversation.</div>'; return; }
         const conversation = (state.conversations || []).find((item) => item.username === state.activeConversation);
-        list.innerHTML = messages.map((message) => {
+        list.innerHTML = messages.map((message, index) => {
             const incoming = String(message.sender) !== String(currentUser());
+            const previous = messages[index - 1];
+            const startsGroup = !previous || String(previous.sender) !== String(message.sender);
             const body = message.isDeleted ? '<p class="dm-deleted-text">Message deleted</p>' : textMarkup(message.text);
             const media = message.isDeleted ? "" : messageMediaMarkup(message);
-            const avatar = incoming ? avatarMarkup(conversation?.profilePhoto, conversation?.displayName || message.sender, "dm-message-avatar") : "";
-            return '<article class="dm-message ' + (incoming ? "is-incoming" : "is-outgoing") + '" data-message-id="' + escapeHTML(message.id) + '">' + avatar + '<div class="dm-bubble-wrap"><div class="dm-bubble' + (message.mediaUrl && !message.text ? " dm-bubble-media-only" : "") + '">' + body + media + '</div><div class="dm-message-meta">' + escapeHTML(formatTime(message.createdAt)) + (message.editedAt && !message.isDeleted ? " · edited" : "") + "</div></div></article>";
+            const showAvatar = incoming && startsGroup;
+            const classes = "dm-message " + (incoming ? "is-incoming" : "is-outgoing") + (!showAvatar && incoming ? " is-grouped" : "");
+            const avatar = showAvatar
+                ? avatarMarkup(conversation?.profilePhoto, conversation?.displayName || message.sender, "dm-message-avatar")
+                : "";
+            return '<article class="' + classes + '" data-message-id="' + escapeHTML(message.id) + '">' + avatar + '<div class="dm-bubble-wrap"><div class="dm-bubble' + (message.mediaUrl && !message.text ? " dm-bubble-media-only" : "") + '">' + body + media + '</div><div class="dm-message-meta">' + escapeHTML(formatTime(message.createdAt)) + (message.editedAt && !message.isDeleted ? " · edited" : "") + "</div></div></article>";
         }).join("");
         requestAnimationFrame(() => { list.scrollTop = list.scrollHeight; });
     }
