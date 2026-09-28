@@ -1343,6 +1343,23 @@ function pauseAllVideos(exceptVideo = null) {
     });
 }
 
+function ensureProfileViewMount() {
+    const mainPanel = document.querySelector(".main-panel");
+    const profileView = document.getElementById("profile-view");
+
+    if (!mainPanel || !profileView) {
+        return;
+    }
+
+    // The Profile UI must always be a direct child of the main workspace.
+    // This repairs malformed/legacy DOM nesting without rebuilding the
+    // Profile markup or touching the DM/Reels implementations.
+    if (profileView.parentElement !== mainPanel) {
+        const accountModal = document.getElementById("account-modal");
+        mainPanel.insertBefore(profileView, accountModal || null);
+    }
+}
+
 function setNavigationSection(id) {
     const section =
         id === "nav-home"
@@ -1357,30 +1374,43 @@ function setNavigationSection(id) {
                         ? "reels"
                         : "profile";
 
-    const mainSections =
-        document.querySelectorAll("[data-main-section]");
+    ensureProfileViewMount();
+
+    const mainSections = [
+        document.getElementById("home-view"),
+        document.getElementById("friends-view"),
+        document.getElementById("ai-view"),
+        document.getElementById("dm-view"),
+        document.getElementById("reels-view"),
+        document.getElementById("profile-view")
+    ].filter(Boolean);
 
     const appShell =
         document.querySelector(".helix-app");
 
-    const showReels =
-        section === "reels";
+    const targetSection =
+        mainSections.find(
+            (mainSection) =>
+                mainSection.dataset.mainSection === section
+        );
 
     appShell?.classList.toggle(
         "home-active",
         section === "home"
     );
 
+    // Toggle only the known top-level workspaces. This avoids relying on
+    // selector traversal through any legacy DM markup that may have been
+    // left behind by an older DOM structure.
     mainSections.forEach((mainSection) => {
-        mainSection.hidden =
-            mainSection.dataset.mainSection !== section;
+        mainSection.hidden = mainSection !== targetSection;
     });
 
     if (section === "helix-ai") {
         setAISidebarOpen(true);
     }
 
-    if (showReels) {
+    if (section === "reels") {
         const reelsSection =
             document.getElementById("reels-view");
 
@@ -1410,6 +1440,14 @@ function setNavigationSection(id) {
     }
 
     if (section === "profile") {
+        const profileView =
+            document.getElementById("profile-view");
+
+        if (profileView) {
+            // Explicitly clear the native hidden state as a final guard.
+            profileView.hidden = false;
+        }
+
         if (typeof updateProfileView === "function") {
             updateProfileView();
         }
