@@ -9122,11 +9122,11 @@ MATH & PHOTO ATTACHMENTS
         display: none;
     }
 
-    #dm-view.has-active-conversation .dm-inbox {
+    #dm-view.dm-mobile-chat-open .dm-inbox {
         display: none;
     }
 
-    #dm-view.has-active-conversation .dm-chat-shell {
+    #dm-view.dm-mobile-chat-open .dm-chat-shell {
         display: flex;
     }
 
