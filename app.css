@@ -8360,20 +8360,26 @@ body.helix-compact-mode .settings-option-row {
 
 
 
+
+
 /* =========================================================
-   HELIX DMS — REFERENCE PASS 2 / EXACT VISUAL ALIGNMENT
+   HELIX DMS — REFERENCE PASS 3 / FINAL DESKTOP MATCH
+   Target geometry based on supplied 898px reference.
    ========================================================= */
 
 @media (min-width: 651px) {
-    /* Global Helix chrome matches the supplied 898px reference. */
+    /* 154px global navigation / 234px DM inbox / 510px chat at 898px. */
     .helix-app {
-        grid-template-columns: 17.04% minmax(0, 1fr) !important;
+        grid-template-columns: 17.15% minmax(0, 1fr) !important;
     }
 
     #dm-view.dm-view {
+        display: flex !important;
         flex: 1 1 auto !important;
         width: 100% !important;
         height: 100% !important;
+        min-width: 0 !important;
+        min-height: 0 !important;
         padding: 0 !important;
         overflow: hidden !important;
         background: #050a11 !important;
@@ -8382,22 +8388,22 @@ body.helix-compact-mode .settings-option-row {
     #dm-view .dm-stage {
         display: flex !important;
         flex-direction: row !important;
-        align-items: stretch !important;
         width: 100% !important;
         height: 100% !important;
+        min-width: 0 !important;
+        min-height: 0 !important;
         overflow: hidden !important;
     }
 
-    /* Reference: inbox occupies about 31.7% of the content pane. */
     #dm-view .dm-sidebar {
-        width: 31.68% !important;
+        width: 31.45% !important;
         min-width: 0 !important;
         max-width: none !important;
-        flex: 0 0 31.68% !important;
+        flex: 0 0 31.45% !important;
         padding: 0 !important;
         overflow: hidden !important;
-        border-right: 1px solid rgba(111,138,166,.11) !important;
         background: linear-gradient(180deg,#070c15 0%,#050a12 100%) !important;
+        border-right: 1px solid rgba(111,138,166,.11) !important;
     }
 
     #dm-view .dm-sidebar-head {
@@ -8412,10 +8418,10 @@ body.helix-compact-mode .settings-option-row {
 
     #dm-view .dm-legacy-inbox-title h1 {
         margin: 0 !important;
-        color: #edf7ff !important;
+        color: #eef7fd !important;
         font-size: 20px !important;
-        font-weight: 700 !important;
         line-height: 1 !important;
+        font-weight: 700 !important;
         letter-spacing: -.03em !important;
     }
 
@@ -8428,18 +8434,18 @@ body.helix-compact-mode .settings-option-row {
     #dm-view #dm-new-message-button {
         width: 34px !important;
         height: 34px !important;
-        flex: 0 0 34px !important;
+        flex-basis: 34px !important;
+        padding: 0 !important;
         border: 0 !important;
         border-radius: 50% !important;
         background: transparent !important;
-        color: #25dae8 !important;
+        color: #28dbe8 !important;
     }
 
     #dm-view .dm-refresh-button {
         display: none !important;
     }
 
-    /* Search exactly as in the reference: no visible X until text is entered. */
     #dm-view .dm-search-wrap {
         position: relative !important;
         height: 34px !important;
@@ -8447,26 +8453,26 @@ body.helix-compact-mode .settings-option-row {
         margin: 7px 13px 13px !important;
     }
 
+    #dm-view #dm-conversation-search {
+        width: 100% !important;
+        height: 34px !important;
+        box-sizing: border-box !important;
+        padding: 0 9px 0 30px !important;
+        border: 1px solid rgba(98,126,157,.14) !important;
+        border-radius: 9px !important;
+        outline: 0 !important;
+        background: rgba(3,8,15,.52) !important;
+        color: #dcebf2 !important;
+        font-size: 9px !important;
+    }
+
     #dm-view .dm-search-wrap > .dm-search-icon {
-        position: absolute !important;
         left: 10px !important;
         top: 50% !important;
         width: 11px !important;
         height: 11px !important;
         transform: translateY(-50%) !important;
-        color: #5a7180 !important;
-        pointer-events: none !important;
-    }
-
-    #dm-view #dm-conversation-search {
-        width: 100% !important;
-        height: 34px !important;
-        padding: 0 10px 0 30px !important;
-        border: 1px solid rgba(0,229,255,.11) !important;
-        border-radius: 9px !important;
-        background: rgba(4,9,16,.52) !important;
-        color: #cfe3eb !important;
-        font-size: 9px !important;
+        color: #5b7181 !important;
     }
 
     #dm-view #dm-conversation-search-clear {
@@ -8479,10 +8485,10 @@ body.helix-compact-mode .settings-option-row {
 
     #dm-view .dm-legacy-meta {
         display: flex !important;
-        justify-content: space-between !important;
         align-items: center !important;
+        justify-content: space-between !important;
         padding: 0 13px 4px !important;
-        color: #d8e5eb !important;
+        color: #dbe7ed !important;
         font-size: 8px !important;
         line-height: 1 !important;
     }
@@ -8494,17 +8500,19 @@ body.helix-compact-mode .settings-option-row {
 
     #dm-view .dm-legacy-friends-meta {
         display: flex !important;
-        justify-content: space-between !important;
         align-items: center !important;
+        justify-content: space-between !important;
         padding: 0 13px 7px !important;
-        color: #617584 !important;
+        color: #5f7685 !important;
         font: 700 7px "SFMono-Regular",Consolas,monospace !important;
         letter-spacing: .12em !important;
     }
 
+    /* Keep the conversation area flexible so Suggestions lands at the reference height. */
     #dm-view .dm-conversation-list {
-        flex: 0 1 auto !important;
-        max-height: 300px !important;
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        max-height: none !important;
         padding: 0 7px !important;
         overflow-y: auto !important;
     }
@@ -8520,8 +8528,8 @@ body.helix-compact-mode .settings-option-row {
     }
 
     #dm-view .dm-conversation-list > .dm-conversation.is-active {
-        background: rgba(0,229,255,.07) !important;
-        border-color: rgba(0,229,255,.08) !important;
+        background: linear-gradient(90deg,rgba(0,229,255,.075),rgba(14,36,46,.10)) !important;
+        border-color: rgba(0,229,255,.07) !important;
         box-shadow: inset 2px 0 0 #00e5ff !important;
     }
 
@@ -8531,54 +8539,51 @@ body.helix-compact-mode .settings-option-row {
         flex: 0 0 31px !important;
         border: 0 !important;
         background: radial-gradient(circle at 50% 35%,#7c7a8e,#262634 70%) !important;
-        box-shadow: 0 0 0 1px rgba(0,229,255,.07) !important;
+        box-shadow: 0 0 0 1px rgba(0,229,255,.06) !important;
     }
 
     #dm-view .dm-conversation-copy strong {
         font-size: 10px !important;
         line-height: 1.05 !important;
-        color: #eef7fc !important;
     }
 
     #dm-view .dm-conversation-copy small {
         margin-top: 2px !important;
         font-size: 7px !important;
-        color: #637b8b !important;
     }
 
     #dm-view .dm-conversation-preview {
         margin-top: 3px !important;
         font-size: 7px !important;
-        color: #718190 !important;
-        line-height: 1 !important;
+        line-height: 1.05 !important;
     }
 
     #dm-view .dm-conversation-meta {
-        min-width: 16px !important;
         display: grid !important;
         place-items: center !important;
         align-content: center !important;
+        min-width: 16px !important;
         gap: 3px !important;
     }
 
     #dm-view .dm-conversation-edit-mark {
-        color: #36dce8 !important;
+        color: #31d8e6 !important;
         font-size: 10px !important;
         line-height: 1 !important;
-        opacity: .80 !important;
+        opacity: .78 !important;
     }
 
     #dm-view .dm-unread-badge {
         min-width: 12px !important;
         height: 12px !important;
         margin: 0 !important;
+        padding: 0 3px !important;
         font-size: 7px !important;
     }
 
-    /* Suggestions sits under the short friend list, not at the bottom of the screen. */
     #dm-view .dm-suggestions-section {
         flex: 0 0 auto !important;
-        margin: 29px 7px 0 !important;
+        margin: 0 7px 101px !important;
         min-height: 39px !important;
         padding: 7px 9px !important;
         border-radius: 9px !important;
@@ -8587,16 +8592,30 @@ body.helix-compact-mode .settings-option-row {
     #dm-view .dm-suggestions-icon {
         width: 25px !important;
         height: 25px !important;
-        flex: 0 0 25px !important;
+        flex-basis: 25px !important;
     }
 
-    /* Chat header reference geometry. */
+    #dm-view .dm-suggestions-section strong {
+        font-size: 8px !important;
+    }
+
+    #dm-view .dm-suggestions-section small {
+        margin-top: 2px !important;
+        font-size: 6px !important;
+    }
+
+    /* Chat header begins exactly where the DM rail ends. */
     #dm-view section.dm-conversation {
+        position: relative !important;
+        width: auto !important;
         min-width: 0 !important;
         min-height: 0 !important;
         height: 100% !important;
         flex: 1 1 auto !important;
-        background: #050a11 !important;
+        overflow: hidden !important;
+        background:
+            radial-gradient(circle,rgba(0,229,255,.055) .55px,transparent .82px) 0 0 / 9px 9px,
+            #050a11 !important;
     }
 
     #dm-view .dm-conversation-head {
@@ -8605,6 +8624,7 @@ body.helix-compact-mode .settings-option-row {
         max-height: 53px !important;
         flex: 0 0 53px !important;
         padding: 0 10px 0 11px !important;
+        box-sizing: border-box !important;
         background: #070b12 !important;
         border-bottom: 1px solid rgba(99,127,158,.10) !important;
     }
@@ -8616,7 +8636,7 @@ body.helix-compact-mode .settings-option-row {
     #dm-view .dm-avatar {
         width: 31px !important;
         height: 31px !important;
-        flex: 0 0 31px !important;
+        flex-basis: 31px !important;
     }
 
     #dm-view .dm-person-copy strong {
@@ -8625,6 +8645,7 @@ body.helix-compact-mode .settings-option-row {
     }
 
     #dm-view .dm-person-copy span {
+        display: block !important;
         margin-top: 2px !important;
         color: #667b89 !important;
         font-size: 6px !important;
@@ -8635,7 +8656,7 @@ body.helix-compact-mode .settings-option-row {
         content: "friend on Helix" !important;
         display: block !important;
         margin-top: 2px !important;
-        color: #405967 !important;
+        color: #3f5867 !important;
         font-size: 5px !important;
     }
 
@@ -8648,14 +8669,16 @@ body.helix-compact-mode .settings-option-row {
         min-width: 27px !important;
         height: 27px !important;
         padding: 0 !important;
-        border: 1px solid rgba(0,229,255,.10) !important;
+        border: 1px solid rgba(0,229,255,.095) !important;
         border-radius: 50% !important;
         background: transparent !important;
-        color: #55798a !important;
+        color: #5b7c8b !important;
     }
 
-    #dm-view .dm-head-action:disabled {
-        opacity: .35 !important;
+    #dm-view .dm-head-action:hover:not(:disabled) {
+        color: #c7f7fc !important;
+        border-color: rgba(0,229,255,.22) !important;
+        background: rgba(0,229,255,.05) !important;
     }
 
     #dm-view .dm-head-action .dm-icon {
@@ -8667,36 +8690,53 @@ body.helix-compact-mode .settings-option-row {
         display: none !important;
     }
 
-    #dm-view #dm-message-search-toggle {
+    #dm-view #dm-pins-button,
+    #dm-view #dm-message-search-toggle,
+    #dm-view #dm-info-button {
         display: grid !important;
     }
 
-    /* Message canvas. */
+    /* In the reference, SERVER SYNC overlays the top edge of the message canvas. */
     #dm-view .dm-chat-meta {
-        height: 19px !important;
-        min-height: 19px !important;
-        flex: 0 0 19px !important;
-        padding: 0 10px !important;
-        color: #45606d !important;
-        font-size: 5.5px !important;
+        position: absolute !important;
+        top: 58px !important;
+        right: 10px !important;
+        z-index: 8 !important;
+        height: 10px !important;
+        min-height: 10px !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        display: flex !important;
+        justify-content: flex-end !important;
+        align-items: center !important;
+        pointer-events: none !important;
+        color: #4a6574 !important;
+        font: 5.5px "SFMono-Regular",Consolas,monospace !important;
+        letter-spacing: .12em !important;
+        text-transform: uppercase !important;
     }
 
-    #dm-view .dm-chat-meta span:first-child {
-        color: #5b7a86 !important;
-    }
-
-    #dm-view .dm-server-status {
+    #dm-view #dm-message-status {
         display: none !important;
     }
 
+    #dm-view .dm-server-status {
+        display: inline !important;
+        color: #4a6574 !important;
+    }
+
     #dm-view .dm-message-area {
+        position: relative !important;
         flex: 1 1 auto !important;
+        min-width: 0 !important;
         min-height: 0 !important;
         padding: 2px 10px 6px !important;
         overflow-y: auto !important;
+        overflow-x: hidden !important;
+        box-sizing: border-box !important;
         background:
             radial-gradient(circle,rgba(0,229,255,.055) .55px,transparent .82px) 0 0 / 9px 9px,
-            #050a11 !important;
+            transparent !important;
     }
 
     #dm-view .dm-message-row {
@@ -8725,15 +8765,21 @@ body.helix-compact-mode .settings-option-row {
     #dm-view .dm-message-row.is-sent .dm-message-text,
     #dm-view .dm-message-row.is-sent .dm-message-bubble p,
     #dm-view .dm-message-row.is-sent .dm-message-meta {
-        color: #26dce9 !important;
+        color: #29dae8 !important;
     }
 
-    /* Reference composer: short cyan outlined pill. */
+    #dm-view .dm-message-meta {
+        margin-top: 2px !important;
+        font-size: 6.5px !important;
+    }
+
+    /* Composer exact reference size: 36px pill + 10px footer. */
     #dm-view .dm-composer-zone {
         flex: 0 0 58px !important;
         min-height: 58px !important;
         max-height: 58px !important;
-        padding: 8px 8px 4px !important;
+        padding: 8px 9px 4px !important;
+        box-sizing: border-box !important;
         background: #050a11 !important;
         border-top: 1px solid rgba(94,123,149,.11) !important;
     }
@@ -8744,8 +8790,8 @@ body.helix-compact-mode .settings-option-row {
         flex: 0 0 36px !important;
         padding: 2px 4px 2px 5px !important;
         border-radius: 18px !important;
-        border-color: rgba(0,229,255,.45) !important;
-        background: rgba(4,12,19,.70) !important;
+        border-color: rgba(0,229,255,.48) !important;
+        background: rgba(4,12,19,.68) !important;
         box-shadow: 0 0 12px rgba(0,229,255,.05), inset 0 0 12px rgba(0,229,255,.025) !important;
     }
 
@@ -8770,15 +8816,11 @@ body.helix-compact-mode .settings-option-row {
         color: #9cb8c2 !important;
     }
 
-    #dm-view #dm-message-input::placeholder {
-        color: #64818d !important;
-    }
-
     #dm-view .dm-composer-actions-right::before {
         width: 23px !important;
         flex: 0 0 23px !important;
         font-size: 17px !important;
-        color: #1cd9e7 !important;
+        color: #20d9e7 !important;
     }
 
     #dm-view .dm-send-control,
@@ -8788,7 +8830,7 @@ body.helix-compact-mode .settings-option-row {
         min-width: 27px !important;
         flex: 0 0 27px !important;
         border-radius: 50% !important;
-        color: #27dce9 !important;
+        color: #28dce9 !important;
     }
 
     #dm-view #dm-send-button .dm-icon {
@@ -8804,6 +8846,7 @@ body.helix-compact-mode .settings-option-row {
     }
 }
 
+/* Keep the final mobile path separate from the reference desktop geometry. */
 @media (max-width: 650px) {
     #dm-view .dm-sidebar {
         width: 100% !important;
