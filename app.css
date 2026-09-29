@@ -9433,3 +9433,82 @@ body.helix-compact-mode .settings-option-row {
 #dm-view .dm-composer-actions-right #dm-send-button {
     margin-left: 0 !important;
 }
+
+
+/* =========================================================
+   HELIX DMS — FINAL COMPOSER CLEANUP
+   ========================================================= */
+
+/* Remove any legacy hidden composer controls that could create a stray line. */
+#dm-view .dm-reference-hidden-control,
+#dm-view #dm-mic-button,
+#dm-view #dm-emoji-button {
+    display: none !important;
+}
+
+/* The visible emoji sits immediately beside the send control. */
+#dm-view .dm-composer-actions-right {
+    display: flex !important;
+    align-items: center !important;
+    gap: 2px !important;
+    margin-left: auto !important;
+}
+
+#dm-view .dm-composer-plus,
+#dm-view .dm-composer-actions-right::before {
+    display: none !important;
+    content: none !important;
+}
+
+#dm-view .dm-composer-emoji-visible {
+    width: 31px !important;
+    height: 31px !important;
+    min-width: 31px !important;
+    flex: 0 0 31px !important;
+    display: grid !important;
+    place-items: center !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: 0 !important;
+    outline: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    color: #23d8ec !important;
+    box-shadow: none !important;
+    cursor: pointer !important;
+}
+
+#dm-view .dm-composer-emoji-visible .dm-icon {
+    width: 18px !important;
+    height: 18px !important;
+    stroke: currentColor !important;
+    filter: drop-shadow(0 0 6px rgba(0,205,255,.48)) !important;
+}
+
+#dm-view .dm-composer-emoji-visible:hover:not(:disabled) {
+    color: #7cefff !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    transform: translateY(-1px) !important;
+}
+
+#dm-view .dm-composer-emoji-visible:hover:not(:disabled) .dm-icon {
+    filter: drop-shadow(0 0 9px rgba(0,220,255,.75)) !important;
+}
+
+/* Absolutely no vertical rule at the left edge of the message composer. */
+#dm-view .dm-composer,
+#dm-view .dm-composer-zone,
+#dm-view .dm-message-input,
+#dm-view #dm-attach-button {
+    border-left: 0 !important;
+    outline-left: 0 !important;
+}
+
+/* Keep the outer pill border only; no internal separator is allowed. */
+#dm-view .dm-composer > *,
+#dm-view .dm-composer > button,
+#dm-view .dm-composer > textarea,
+#dm-view .dm-composer > div {
+    border-left: 0 !important;
+}
