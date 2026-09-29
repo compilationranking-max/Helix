@@ -1654,21 +1654,13 @@
                         categoryButton.dataset.dmEmojiCategory ||
                         "All";
 
-                    state.emojiCategory = category;
-                    state.emojiSearch = "";
-
-                    const search =
-                        get("dm-emoji-search");
-
-                    if (search) {
-                        search.value = "";
+                    if (typeof render.setEmojiPickerCategory === "function") {
+                        render.setEmojiPickerCategory(category);
+                    } else {
+                        state.emojiCategory = category;
+                        state.emojiSearch = "";
+                        render.renderEmojiPicker();
                     }
-
-                    render.renderEmojiPicker();
-
-                    requestAnimationFrame(() => {
-                        get("dm-emoji-search")?.focus();
-                    });
 
                     return;
                 }
