@@ -79,6 +79,7 @@ jobs:
               'form?.requestSubmit',
               '#dm-composer-emoji-button',
               'event.target.closest('
+              'render.setEmojiPickerCategory'
             ],
             'dm/emoji-meta.js': [
               'window.HELIX_EMOJI_CATEGORIES',
