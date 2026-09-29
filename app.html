@@ -34,7 +34,7 @@
 
     <title>Helix</title>
 
-    <link rel="stylesheet" href="app.css?v=20260929-dm-header-nickname-polish">
+    <link rel="stylesheet" href="app.css?v=20260929-dm-header-fix">
 </head>
 
 <body>
@@ -511,7 +511,7 @@
                         <strong id="dm-chat-title">Your messages</strong>
                         <span class="dm-chat-identity-line">
                             <span class="dm-chat-username" id="dm-chat-username">Select a conversation to start messaging.</span>
-                            <span class="dm-chat-friend-status">Friend on Helix</span>
+                            <span class="dm-chat-friend-status" id="dm-chat-friend-status" hidden>Friend on Helix</span>
                         </span>
                     </div>
                 </div>
@@ -1399,7 +1399,7 @@
         };
     </script>
     <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
-    <script src="app.js?v=20260929-dm-nickname-manager"></script>
+    <script src="app.js?v=20260929-dm-header-fix"></script>
     <script src="dm/dm-state.js?v=20260928-1"></script>
     <script src="dm/dm-api.js?v=20260928-1"></script>
     <script src="dm/dm-render.js?v=20260928-1"></script>
