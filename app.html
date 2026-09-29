@@ -34,7 +34,7 @@
 
     <title>Helix</title>
 
-    <link rel="stylesheet" href="app.css?v=20260929-dm-cleanup-2">
+    <link rel="stylesheet" href="app.css?v=20260929-dm-emoji-clean">
 </head>
 
 <body>
@@ -611,8 +611,15 @@
                     <textarea id="dm-message-input" maxlength="4000" rows="1" autocomplete="off" placeholder="Message your friend..." aria-label="Message your friend"></textarea>
 
                     <div class="dm-composer-actions-right">
-                        <button id="dm-mic-button" class="dm-composer-icon dm-reference-hidden-control" type="button" disabled aria-label="Voice message unavailable"></button>
-                        <button id="dm-emoji-button" class="dm-composer-icon dm-reference-hidden-control" type="button" disabled aria-label="Emoji unavailable">☺</button>
+                        <button id="dm-composer-emoji-button" class="dm-composer-icon dm-composer-emoji-visible" type="button" title="Insert emoji" aria-label="Insert emoji">
+                            <svg class="dm-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <circle cx="12" cy="12" r="8.5"></circle>
+                                <path d="M8.7 14.2c1.9 1.9 4.7 1.9 6.6 0"></path>
+                                <path d="M8.8 10.1h.01M15.2 10.1h.01"></path>
+                            </svg>
+                        </button>
+
+                        <span class="dm-composer-plus" aria-hidden="true">+</span>
 
                         <button id="dm-send-button" class="dm-send-control" type="submit" aria-label="Send message" title="Send message">
                             <svg class="dm-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
