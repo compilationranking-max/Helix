@@ -1307,7 +1307,7 @@
     function bindEvents() {
         get("dm-new-message-button")?.addEventListener(
             "click",
-            startNewMessage
+            openNicknameModal
         );
 
         document.querySelectorAll(
