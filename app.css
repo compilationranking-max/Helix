@@ -8862,3 +8862,69 @@ body.helix-compact-mode .settings-option-row {
         font-size: 7.5px !important;
     }
 }
+
+
+/* =========================================================
+   HELIX DMS — HEADER VISIBILITY FINAL FIX
+   ========================================================= */
+
+#dm-view .dm-conversation-head .dm-mobile-back {
+    display: none !important;
+}
+
+#dm-view .dm-conversation-head .dm-avatar {
+    border: 0 !important;
+    border-left: 0 !important;
+    outline: 0 !important;
+}
+
+#dm-view .dm-sidebar {
+    border-right-color: rgba(94,122,146,.075) !important;
+}
+
+#dm-view section.dm-conversation {
+    border-left: 0 !important;
+}
+
+#dm-view .dm-person-copy {
+    position: relative !important;
+    z-index: 2 !important;
+}
+
+#dm-view .dm-person-copy strong {
+    font-size: 13px !important;
+}
+
+#dm-view .dm-chat-identity-line {
+    margin-top: 5px !important;
+    gap: 10px !important;
+}
+
+#dm-view .dm-chat-username,
+#dm-view .dm-chat-friend-status {
+    font-size: 9.5px !important;
+    line-height: 1.05 !important;
+}
+
+#dm-view .dm-chat-username {
+    color: #8dbbc7 !important;
+}
+
+#dm-view .dm-chat-friend-status {
+    color: #73bcc6 !important;
+}
+
+@media (max-width: 650px) {
+    #dm-view .dm-conversation-head .dm-mobile-back {
+        display: grid !important;
+    }
+
+    #dm-view .dm-person-copy strong {
+        font-size: 11px !important;
+    }
+
+    #dm-view .dm-chat-username,
+    #dm-view .dm-chat-friend-status {
+        font-size: 8px !important;
+    }
+}
