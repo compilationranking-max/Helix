@@ -9963,3 +9963,60 @@ body.helix-compact-mode .settings-option-row {
         font-size: 23px !important;
     }
 }
+
+/* =========================================================
+   HELIX DMS — FINAL EMOJI PICKER SEARCH / POPULAR PASS
+   ========================================================= */
+
+#dm-view .dm-emoji-search-wrap input,
+#dm-view #dm-emoji-search {
+    padding: 0 12px 0 40px !important;
+    text-indent: 0 !important;
+}
+
+#dm-view .dm-emoji-search-icon {
+    position: absolute !important;
+    left: 12px !important;
+    top: 50% !important;
+    width: 18px !important;
+    height: 18px !important;
+    display: grid !important;
+    place-items: center !important;
+    transform: translateY(-50%) !important;
+    color: #6aa5b2 !important;
+    pointer-events: none !important;
+}
+
+#dm-view .dm-emoji-search-icon .dm-icon {
+    width: 15px !important;
+    height: 15px !important;
+    display: block !important;
+    stroke: currentColor !important;
+}
+
+#dm-view .dm-emoji-category-tabs {
+    scroll-behavior: smooth !important;
+}
+
+#dm-view .dm-emoji-grid {
+    grid-template-columns: repeat(9, minmax(0, 1fr)) !important;
+}
+
+#dm-view .dm-emoji-option {
+    font-size: 24px !important;
+}
+
+#dm-view .dm-emoji-section[data-emoji-section="Popular"] .dm-emoji-section-heading h4 {
+    color: #a9eef5 !important;
+}
+
+@media (max-width: 650px) {
+    #dm-view .dm-emoji-grid {
+        grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+    }
+
+    #dm-view .dm-emoji-search-wrap input,
+    #dm-view #dm-emoji-search {
+        padding-left: 38px !important;
+    }
+}
