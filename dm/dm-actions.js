@@ -1000,7 +1000,7 @@
                 : null;
         state.emojiSearch = "";
         state.emojiCategory =
-            "Smileys & People";
+            "Popular";
 
         render.renderEmojiPicker();
         render.renderComposerState?.();
