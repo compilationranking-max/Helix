@@ -10020,3 +10020,293 @@ body.helix-compact-mode .settings-option-row {
         padding-left: 38px !important;
     }
 }
+
+/* =========================================================
+   HELIX DMS — HEADER / PANEL / SEARCH FINAL POLISH
+   ========================================================= */
+
+/* Composer: strengthen the left arc so the outer pill reads as one
+   continuous border, without restoring any internal divider. */
+#dm-view .dm-composer {
+    border: 1px solid rgba(0, 229, 255, .82) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.04),
+        inset 0 0 18px rgba(0,229,255,.035),
+        0 0 0 1px rgba(0,229,255,.10),
+        0 0 24px rgba(0,229,255,.07) !important;
+}
+
+/* Search messages: anchor the utility card to the header action cluster.
+   Its right edge sits just to the left of the pinned-message control. */
+#dm-view .dm-message-search {
+    top: 12px !important;
+    right: 110px !important;
+    width: min(220px, calc(100% - 125px)) !important;
+    min-height: 40px !important;
+    height: 40px !important;
+    grid-template-columns: 20px minmax(0,1fr) 30px !important;
+    gap: 7px !important;
+    padding: 0 6px 0 10px !important;
+    border: 1px solid rgba(0,229,255,.48) !important;
+    border-radius: 12px !important;
+    background:
+        linear-gradient(180deg, rgba(11,26,35,.995), rgba(5,12,19,.995)) !important;
+    box-shadow:
+        0 16px 38px rgba(0,0,0,.44),
+        0 0 22px rgba(0,229,255,.075),
+        inset 0 1px 0 rgba(255,255,255,.035) !important;
+    backdrop-filter: blur(16px) !important;
+}
+
+#dm-view .dm-message-search::before {
+    content: "" !important;
+    position: absolute !important;
+    right: -7px !important;
+    top: 50% !important;
+    width: 12px !important;
+    height: 12px !important;
+    transform: translateY(-50%) rotate(45deg) !important;
+    border-top: 1px solid rgba(0,229,255,.30) !important;
+    border-right: 1px solid rgba(0,229,255,.30) !important;
+    background: #091923 !important;
+    pointer-events: none !important;
+}
+
+#dm-view .dm-message-search input {
+    min-width: 0 !important;
+    height: 30px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    outline: 0 !important;
+    color: #eaffff !important;
+    background: transparent !important;
+    font: 600 10px/1 "SFMono-Regular", Consolas, monospace !important;
+}
+
+#dm-view .dm-message-search input::placeholder {
+    color: #668995 !important;
+}
+
+#dm-view .dm-message-search .dm-search-icon {
+    width: 16px !important;
+    height: 16px !important;
+    color: #53e2ee !important;
+    filter: drop-shadow(0 0 6px rgba(0,229,255,.36)) !important;
+}
+
+#dm-view #dm-message-search-count {
+    min-width: 0 !important;
+    overflow: hidden !important;
+    color: #5f8995 !important;
+    font: 700 7px/1 "SFMono-Regular", Consolas, monospace !important;
+    text-align: right !important;
+    white-space: nowrap !important;
+}
+
+#dm-view #dm-message-search-clear {
+    position: relative !important;
+    z-index: 2 !important;
+    width: 30px !important;
+    height: 30px !important;
+    min-width: 30px !important;
+    display: grid !important;
+    place-items: center !important;
+    padding: 0 !important;
+    border: 1px solid rgba(91,132,146,.25) !important;
+    border-radius: 50% !important;
+    color: #7ca1aa !important;
+    background: rgba(255,255,255,.022) !important;
+}
+
+#dm-view #dm-message-search-clear .dm-icon {
+    width: 13px !important;
+    height: 13px !important;
+    stroke: currentColor !important;
+}
+
+#dm-view #dm-message-search-clear:hover,
+#dm-view #dm-message-search-clear:focus-visible {
+    color: #e6fdff !important;
+    border-color: rgba(0,229,255,.55) !important;
+    background: rgba(0,229,255,.07) !important;
+    box-shadow: 0 0 14px rgba(0,229,255,.10) !important;
+    outline: none !important;
+}
+
+/* Side-sheet headers: proper two-column geometry so the close control
+   cannot disappear or collide with the title. */
+#dm-view .dm-panel-header,
+#dm-view .dm-info-header {
+    position: relative !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 14px !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+}
+
+#dm-view .dm-panel-header > div:first-child,
+#dm-view .dm-info-header > div:first-child,
+#dm-view .dm-info-header > div {
+    min-width: 0 !important;
+}
+
+#dm-view .dm-panel-header h3,
+#dm-view .dm-info-header h3 {
+    margin: 0 !important;
+    overflow: hidden !important;
+    color: #ebfaff !important;
+    line-height: 1.05 !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+}
+
+#dm-view .dm-panel-header .system-label,
+#dm-view .dm-info-header .system-label {
+    margin: 0 0 5px !important;
+}
+
+/* Make every panel close button visually explicit. */
+#dm-view .dm-panel-close {
+    position: relative !important;
+    z-index: 5 !important;
+    flex: 0 0 36px !important;
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    display: grid !important;
+    place-items: center !important;
+    margin-left: auto !important;
+    padding: 0 !important;
+    border: 1px solid rgba(92,145,159,.38) !important;
+    border-radius: 50% !important;
+    color: #9bc6cf !important;
+    background:
+        radial-gradient(circle at 50% 45%, rgba(0,229,255,.055), transparent 62%),
+        rgba(255,255,255,.022) !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    cursor: pointer !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.04),
+        0 4px 14px rgba(0,0,0,.20) !important;
+}
+
+#dm-view .dm-panel-close .dm-icon,
+#dm-view .dm-panel-close svg {
+    width: 16px !important;
+    height: 16px !important;
+    color: currentColor !important;
+    stroke: currentColor !important;
+    stroke-width: 2.2 !important;
+    fill: none !important;
+    opacity: 1 !important;
+}
+
+#dm-view .dm-panel-close:hover,
+#dm-view .dm-panel-close:focus-visible {
+    color: #ecfeff !important;
+    border-color: rgba(0,229,255,.70) !important;
+    background:
+        radial-gradient(circle at 50% 45%, rgba(0,229,255,.13), transparent 65%),
+        rgba(0,229,255,.045) !important;
+    box-shadow:
+        0 0 0 3px rgba(0,229,255,.035),
+        0 0 20px rgba(0,229,255,.14),
+        inset 0 0 10px rgba(0,229,255,.045) !important;
+    outline: none !important;
+}
+
+/* Pin/info side sheets: clearer separation, readable hierarchy,
+   and less "flat empty panel" feeling. */
+#dm-view .dm-pins-panel,
+#dm-view .dm-info-panel {
+    overflow: hidden !important;
+    border-left: 1px solid rgba(0,229,255,.18) !important;
+    background:
+        radial-gradient(circle at 50% -5%, rgba(0,229,255,.065), transparent 33%),
+        linear-gradient(180deg, rgba(8,18,27,.995), rgba(3,9,15,.998)) !important;
+    box-shadow:
+        -26px 0 70px rgba(0,0,0,.56),
+        -1px 0 0 rgba(255,255,255,.025) !important;
+}
+
+#dm-view .dm-panel-header,
+#dm-view .dm-info-header {
+    flex: 0 0 78px !important;
+    min-height: 78px !important;
+    height: 78px !important;
+    padding: 0 17px 0 18px !important;
+    border-bottom: 1px solid rgba(0,229,255,.12) !important;
+    background:
+        linear-gradient(180deg, rgba(11,23,32,.998), rgba(7,15,23,.975)) !important;
+    box-shadow: 0 1px 0 rgba(255,255,255,.015) !important;
+}
+
+#dm-view .dm-pins-list {
+    height: calc(100% - 78px) !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    padding: 15px !important;
+    box-sizing: border-box !important;
+}
+
+#dm-view .dm-panel-state {
+    border: 1px solid rgba(80,120,135,.13) !important;
+    border-radius: 13px !important;
+    background:
+        linear-gradient(145deg, rgba(10,22,31,.76), rgba(5,12,18,.82)) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.018) !important;
+}
+
+#dm-view .dm-pinned-item {
+    transition:
+        transform .16s ease,
+        border-color .16s ease,
+        background .16s ease,
+        box-shadow .16s ease !important;
+}
+
+#dm-view .dm-pinned-item:hover {
+    transform: translateY(-1px) !important;
+    box-shadow:
+        0 10px 24px rgba(0,0,0,.26),
+        0 0 18px rgba(0,229,255,.045) !important;
+}
+
+/* Info content should remain independently scrollable underneath its header. */
+#dm-view .dm-info-panel > :not(.dm-info-header) {
+    box-sizing: border-box !important;
+}
+
+#dm-view .dm-info-profile {
+    border-bottom: 1px solid rgba(0,229,255,.065) !important;
+    background:
+        linear-gradient(180deg, rgba(0,229,255,.022), transparent) !important;
+}
+
+#dm-view .dm-info-actions,
+#dm-view .dm-info-section {
+    border-bottom: 1px solid rgba(255,255,255,.035) !important;
+}
+
+@media (max-width: 650px) {
+    #dm-view .dm-message-search {
+        top: 68px !important;
+        right: 8px !important;
+        width: calc(100% - 16px) !important;
+        max-width: none !important;
+    }
+
+    #dm-view .dm-message-search::before {
+        display: none !important;
+    }
+
+    #dm-view .dm-panel-header,
+    #dm-view .dm-info-header {
+        padding-left: 14px !important;
+        padding-right: 12px !important;
+    }
+}
