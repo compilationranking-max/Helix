@@ -9512,3 +9512,181 @@ body.helix-compact-mode .settings-option-row {
 #dm-view .dm-composer > div {
     border-left: 0 !important;
 }
+
+
+/* =========================================================
+   HELIX DMS — COMPLETE EMOJI PICKER
+   ========================================================= */
+
+#dm-view .dm-emoji-picker {
+    position: absolute !important;
+    right: 16px !important;
+    bottom: 76px !important;
+    z-index: 80 !important;
+    width: min(430px, calc(100% - 32px)) !important;
+    max-height: min(520px, 68vh) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+    border: 1px solid rgba(0,229,255,.24) !important;
+    border-radius: 16px !important;
+    background:
+        linear-gradient(180deg, rgba(9,20,29,.99), rgba(4,10,17,.995)) !important;
+    box-shadow:
+        0 24px 60px rgba(0,0,0,.48),
+        0 0 25px rgba(0,229,255,.08),
+        inset 0 1px 0 rgba(255,255,255,.025) !important;
+    backdrop-filter: blur(16px) !important;
+}
+
+#dm-view .dm-emoji-picker[hidden] {
+    display: none !important;
+}
+
+#dm-view .dm-emoji-picker-header {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 2 !important;
+    min-height: 58px !important;
+    display: grid !important;
+    grid-template-columns: auto minmax(0,1fr) 36px !important;
+    align-items: center !important;
+    gap: 10px !important;
+    padding: 8px 10px !important;
+    box-sizing: border-box !important;
+    border-bottom: 1px solid rgba(0,229,255,.10) !important;
+    background: rgba(8,17,26,.98) !important;
+}
+
+#dm-view .dm-emoji-picker-header strong {
+    color: #e9f8fb !important;
+    font-size: 14px !important;
+    font-weight: 700 !important;
+}
+
+#dm-view #dm-emoji-search {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 36px !important;
+    padding: 0 12px !important;
+    box-sizing: border-box !important;
+    border: 1px solid rgba(77,128,143,.24) !important;
+    border-radius: 10px !important;
+    outline: 0 !important;
+    color: #e2f7fa !important;
+    background: rgba(4,10,16,.78) !important;
+    font: 10px "Segoe UI", Inter, Arial, sans-serif !important;
+}
+
+#dm-view #dm-emoji-search:focus {
+    border-color: rgba(0,229,255,.48) !important;
+    box-shadow: 0 0 0 3px rgba(0,229,255,.045) !important;
+}
+
+#dm-view #dm-emoji-search::placeholder {
+    color: #5f7b87 !important;
+}
+
+#dm-view .dm-emoji-picker-header .dm-panel-close {
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+}
+
+#dm-view .dm-emoji-grid {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    display: grid !important;
+    grid-template-columns: repeat(9, minmax(0,1fr)) !important;
+    gap: 3px !important;
+    overflow-y: auto !important;
+    padding: 10px !important;
+    align-content: start !important;
+}
+
+#dm-view .dm-emoji-grid::-webkit-scrollbar {
+    width: 6px !important;
+}
+
+#dm-view .dm-emoji-grid::-webkit-scrollbar-thumb {
+    border-radius: 99px !important;
+    background: rgba(84,116,131,.24) !important;
+}
+
+#dm-view .dm-emoji-option {
+    width: 100% !important;
+    min-width: 0 !important;
+    aspect-ratio: 1 !important;
+    display: grid !important;
+    place-items: center !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 9px !important;
+    background: transparent !important;
+    color: inherit !important;
+    font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif !important;
+    font-size: 25px !important;
+    line-height: 1 !important;
+    cursor: pointer !important;
+    transition: background .12s ease, transform .12s ease !important;
+}
+
+#dm-view .dm-emoji-option:hover,
+#dm-view .dm-emoji-option:focus-visible {
+    background: rgba(0,229,255,.10) !important;
+    box-shadow: inset 0 0 0 1px rgba(0,229,255,.18) !important;
+    transform: scale(1.06) !important;
+    outline: none !important;
+}
+
+#dm-view .dm-emoji-option[hidden] {
+    display: none !important;
+}
+
+/* One emoji message = large expressive bubble. Two or more = normal message sizing. */
+#dm-view .dm-message-bubble.dm-emoji-only {
+    min-width: 0 !important;
+    padding: 5px 7px !important;
+    border-color: transparent !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+#dm-view .dm-message-bubble.dm-emoji-only .dm-message-text {
+    font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif !important;
+    font-size: 42px !important;
+    line-height: 1.05 !important;
+    color: inherit !important;
+    letter-spacing: 0 !important;
+}
+
+#dm-view .dm-message-row.is-sent .dm-message-bubble.dm-emoji-only .dm-message-text {
+    color: inherit !important;
+}
+
+#dm-view .dm-message-bubble.dm-emoji-only + .dm-message-meta,
+#dm-view .dm-message-row.is-sent .dm-message-bubble.dm-emoji-only + .dm-message-meta {
+    margin-top: 1px !important;
+}
+
+@media (max-width: 650px) {
+    #dm-view .dm-emoji-picker {
+        right: 8px !important;
+        bottom: 72px !important;
+        width: calc(100% - 16px) !important;
+        max-height: 58vh !important;
+    }
+
+    #dm-view .dm-emoji-grid {
+        grid-template-columns: repeat(7, minmax(0,1fr)) !important;
+    }
+
+    #dm-view .dm-emoji-option {
+        font-size: 23px !important;
+    }
+
+    #dm-view .dm-message-bubble.dm-emoji-only .dm-message-text {
+        font-size: 38px !important;
+    }
+}
