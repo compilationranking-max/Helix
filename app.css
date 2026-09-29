@@ -7877,25 +7877,7 @@ body.helix-compact-mode .settings-option-row {
     white-space: nowrap;
 }
 
-#dm-view .dm-person-copy span {
-    display: block;
-    margin-top: 2px;
-    color: #637b89;
-    font-size: 6px;
-    line-height: 1;
-    white-space: nowrap;
-}
-
-#dm-view .dm-person-copy span::after {
-    content: "friend on Helix";
-    display: block;
-    margin-top: 2px;
-    color: #435c69;
-    font-size: 5px;
-    line-height: 1;
-}
-
-#dm-view .dm-chat-actions {
+ {
     display: flex;
     align-items: center;
     gap: 5px;
@@ -8786,5 +8768,97 @@ body.helix-compact-mode .settings-option-row {
 
     #dm-view .dm-nickname-modal .dm-modal-actions {
         grid-template-columns: 1fr;
+    }
+}
+
+
+/* Desktop: this control is only for the mobile conversation view. */
+#dm-view > .dm-stage .dm-conversation-head .dm-mobile-back {
+    display: none !important;
+    width: 0 !important;
+    min-width: 0 !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: 0 !important;
+    outline: 0 !important;
+    box-shadow: none !important;
+    overflow: hidden !important;
+}
+
+/* Readable, non-duplicated identity line. */
+#dm-view .dm-chat-identity-line {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    margin-top: 4px !important;
+    min-width: 0 !important;
+    line-height: 1 !important;
+}
+
+#dm-view .dm-chat-username {
+    display: inline-block !important;
+    max-width: 190px !important;
+    overflow: hidden !important;
+    color: #88b8c5 !important;
+    font: 700 8.5px "SFMono-Regular", Consolas, monospace !important;
+    letter-spacing: .035em !important;
+    line-height: 1 !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+}
+
+#dm-view .dm-chat-friend-status {
+    display: inline-flex !important;
+    align-items: center !important;
+    color: #67b9c5 !important;
+    font: 600 8.5px "Segoe UI", Inter, Arial, sans-serif !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+}
+
+#dm-view .dm-chat-friend-status[hidden] {
+    display: none !important;
+}
+
+#dm-view .dm-chat-friend-status::before {
+    content: "";
+    width: 4px;
+    height: 4px;
+    margin-right: 5px;
+    flex: 0 0 4px;
+    border-radius: 50%;
+    background: #28dbe8;
+    box-shadow: 0 0 8px rgba(40,219,232,.55);
+}
+
+#dm-view .dm-conversation-head .dm-avatar {
+    position: relative !important;
+    z-index: 2 !important;
+    border-left: 0 !important;
+    outline: 0 !important;
+    box-shadow: 0 0 0 1px rgba(0,229,255,.08) !important;
+}
+
+@media (max-width: 650px) {
+    #dm-view > .dm-stage .dm-conversation-head .dm-mobile-back {
+        display: grid !important;
+        width: auto !important;
+        min-width: 31px !important;
+        height: 31px !important;
+        min-height: 31px !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        overflow: visible !important;
+    }
+
+    #dm-view .dm-chat-identity-line {
+        gap: 6px !important;
+    }
+
+    #dm-view .dm-chat-username,
+    #dm-view .dm-chat-friend-status {
+        font-size: 7.5px !important;
     }
 }
