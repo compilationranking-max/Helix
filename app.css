@@ -9297,3 +9297,82 @@ body.helix-compact-mode .settings-option-row {
         padding-right: 8px !important;
     }
 }
+
+
+/* =========================================================
+   HELIX DMS — COMPOSER CLEANUP
+   ========================================================= */
+
+#dm-view #dm-attach-button,
+#dm-view .dm-composer-attach-reference {
+    border: 0 !important;
+    outline: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    color: #19bfe9 !important;
+}
+
+#dm-view #dm-attach-button .dm-icon,
+#dm-view .dm-composer-attach-reference .dm-icon {
+    width: 18px !important;
+    height: 18px !important;
+    color: #19bfe9 !important;
+    stroke: #19bfe9 !important;
+    filter: drop-shadow(0 0 5px rgba(0, 190, 255, .42)) !important;
+}
+
+#dm-view #dm-attach-button:hover,
+#dm-view .dm-composer-attach-reference:hover {
+    border: 0 !important;
+    background: rgba(0, 190, 255, .055) !important;
+    color: #72ebff !important;
+    box-shadow: none !important;
+}
+
+#dm-view #dm-attach-button:hover .dm-icon,
+#dm-view .dm-composer-attach-reference:hover .dm-icon {
+    color: #72ebff !important;
+    stroke: #72ebff !important;
+    filter: drop-shadow(0 0 8px rgba(0, 205, 255, .70)) !important;
+}
+
+/* The + is decorative, so make it a clean glyph rather than a button-like circle. */
+#dm-view .dm-composer-actions-right {
+    gap: 3px !important;
+}
+
+#dm-view .dm-composer-actions-right::before {
+    width: 24px !important;
+    height: 30px !important;
+    flex: 0 0 24px !important;
+    border: 0 !important;
+    outline: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: #19d6e7 !important;
+    font-size: 21px !important;
+    line-height: 1 !important;
+}
+
+#dm-view .dm-composer:hover .dm-composer-actions-right::before {
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: #72f1fb !important;
+    text-shadow: 0 0 8px rgba(0, 220, 240, .55) !important;
+}
+
+/* Remove the unwanted bright divider down the far-left edge of the DM workspace. */
+#dm-view .dm-sidebar {
+    border-right: 0 !important;
+}
+
+#dm-view section.dm-conversation {
+    border-left: 0 !important;
+}
+
+#dm-view .dm-pins-panel,
+#dm-view .dm-info-panel {
+    border-left: 0 !important;
+}
