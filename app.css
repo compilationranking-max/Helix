@@ -7641,7 +7641,7 @@ body.helix-compact-mode .settings-option-row {
     width: 100%;
     min-height: 59px;
     display: grid;
-    grid-template-columns: 32px minmax(0, 1fr) 17px;
+    grid-template-columns: 32px minmax(0,1fr) 54px;
     align-items: center;
     gap: 8px;
     margin: 0 0 3px;
@@ -7704,31 +7704,20 @@ body.helix-compact-mode .settings-option-row {
     display: block;
     overflow: hidden;
     color: #eef7fb;
-    font-size: 10px;
-    font-weight: 650;
+    font-size: 11px;
+    font-weight: 700;
     line-height: 1.05;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-#dm-view .dm-conversation-copy small {
-    display: block;
-    margin-top: 2px;
-    overflow: hidden;
-    color: #667d8b;
-    font-size: 7px;
-    line-height: 1;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
 #dm-view .dm-conversation-preview {
     display: block;
-    margin-top: 3px;
+    margin-top: 4px;
     overflow: hidden;
-    color: #70828e;
-    font-size: 7px;
-    line-height: 1;
+    color: #738794;
+    font-size: 8px;
+    line-height: 1.1;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
@@ -7746,19 +7735,25 @@ body.helix-compact-mode .settings-option-row {
 }
 
 #dm-view .dm-conversation-meta {
-    min-width: 17px;
-    display: grid;
-    justify-items: center;
-    align-content: center;
-    gap: 3px;
-    color: #42dce8;
+    min-width: 54px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: flex-start;
+    align-self: stretch;
+    gap: 5px;
+    padding-top: 3px;
+    box-sizing: border-box;
 }
 
-#dm-view .dm-conversation-edit-mark {
-    color: #40dde8;
-    font-size: 10px;
+#dm-view .dm-conversation-username {
+    max-width: 70px;
+    overflow: hidden;
+    color: #5f7a88;
+    font: 700 7px "SFMono-Regular", Consolas, monospace;
     line-height: 1;
-    opacity: .80;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 #dm-view .dm-unread-badge {
