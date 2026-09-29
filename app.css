@@ -7404,7 +7404,7 @@ body.helix-compact-mode .settings-option-row {
 
 /* =========================================================
    HELIX DMs — CLEAN REFERENCE IMPLEMENTATION
-   Single DM skin. Right-column corrections are intentionally explicit.
+   This is the only DM layout skin.
    ========================================================= */
 
 #dm-view.dm-view {
@@ -7424,6 +7424,8 @@ body.helix-compact-mode .settings-option-row {
 #dm-view.dm-view[hidden] {
     display: none !important;
 }
+
+/* -------------------- 3-column shell -------------------- */
 
 #dm-view .dm-stage {
     display: flex;
@@ -7446,8 +7448,9 @@ body.helix-compact-mode .settings-option-row {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    border-right: 1px solid rgba(94,122,146,.13);
-    background: linear-gradient(180deg,#08101a 0%,#060c14 55%,#050a11 100%);
+    border-right: 1px solid rgba(94, 122, 146, .13);
+    background:
+        linear-gradient(180deg, #08101a 0%, #060c14 55%, #050a11 100%);
     box-sizing: border-box;
 }
 
@@ -7464,7 +7467,7 @@ body.helix-compact-mode .settings-option-row {
     background: #050a11;
 }
 
-/* Inbox */
+/* -------------------- inbox header -------------------- */
 
 #dm-view .dm-sidebar-head {
     height: 66px;
@@ -7474,7 +7477,7 @@ body.helix-compact-mode .settings-option-row {
     align-items: center;
     justify-content: space-between;
     padding: 0 14px 0 16px;
-    border-bottom: 1px solid rgba(94,122,146,.09);
+    border-bottom: 1px solid rgba(94, 122, 146, .09);
     box-sizing: border-box;
 }
 
@@ -7485,6 +7488,11 @@ body.helix-compact-mode .settings-option-row {
     font-weight: 700;
     line-height: 1;
     letter-spacing: -.03em;
+}
+
+#dm-view .dm-inbox-header-actions {
+    display: flex;
+    align-items: center;
 }
 
 #dm-view #dm-new-message-button {
@@ -7501,6 +7509,18 @@ body.helix-compact-mode .settings-option-row {
     cursor: pointer;
 }
 
+#dm-view #dm-new-message-button:hover {
+    color: #c9fbff;
+    text-shadow: 0 0 14px rgba(0, 229, 255, .7);
+}
+
+/* Hidden utility remains functional in the DOM. */
+#dm-view #dm-refresh-button {
+    display: none !important;
+}
+
+/* -------------------- inbox search -------------------- */
+
 #dm-view .dm-search-wrap {
     position: relative;
     height: 34px;
@@ -7508,6 +7528,7 @@ body.helix-compact-mode .settings-option-row {
     margin: 8px 12px 12px;
     display: flex;
     align-items: center;
+    box-sizing: border-box;
 }
 
 #dm-view .dm-search-wrap > .dm-search-icon {
@@ -7525,18 +7546,24 @@ body.helix-compact-mode .settings-option-row {
 #dm-view #dm-conversation-search {
     width: 100%;
     height: 34px;
+    min-width: 0;
     box-sizing: border-box;
-    padding: 0 30px;
-    border: 1px solid rgba(0,229,255,.34);
+    padding: 0 30px 0 30px;
+    border: 1px solid rgba(0, 229, 255, .34);
     border-radius: 999px;
     outline: none;
-    background: rgba(5,12,19,.40);
+    background: rgba(5, 12, 19, .40);
     color: #dff7fb;
-    font: 9px "SFMono-Regular",Consolas,monospace;
+    font: 9px "SFMono-Regular", Consolas, monospace;
 }
 
 #dm-view #dm-conversation-search::placeholder {
     color: #6d818f;
+}
+
+#dm-view #dm-conversation-search:focus {
+    border-color: rgba(0, 229, 255, .67);
+    box-shadow: 0 0 0 2px rgba(0, 229, 255, .05), 0 0 15px rgba(0, 229, 255, .07);
 }
 
 #dm-view #dm-conversation-search-clear {
@@ -7546,6 +7573,8 @@ body.helix-compact-mode .settings-option-row {
 #dm-view .dm-tabs {
     display: none !important;
 }
+
+/* -------------------- inbox labels -------------------- */
 
 #dm-view .dm-legacy-meta {
     min-height: 15px;
@@ -7560,7 +7589,7 @@ body.helix-compact-mode .settings-option-row {
 
 #dm-view .dm-legacy-meta strong {
     color: #00e5ff;
-    font: 700 8px "SFMono-Regular",Consolas,monospace;
+    font: 700 8px "SFMono-Regular", Consolas, monospace;
 }
 
 #dm-view .dm-legacy-friends-meta {
@@ -7570,16 +7599,35 @@ body.helix-compact-mode .settings-option-row {
     justify-content: space-between;
     padding: 0 13px 6px;
     color: #5c7180;
-    font: 700 7px "SFMono-Regular",Consolas,monospace;
+    font: 700 7px "SFMono-Regular", Consolas, monospace;
     letter-spacing: .13em;
 }
+
+#dm-view .dm-legacy-friends-meta strong {
+    color: #667b88;
+    letter-spacing: 0;
+}
+
+/* -------------------- conversation list -------------------- */
 
 #dm-view .dm-conversation-list {
     flex: 1 1 auto;
     min-height: 0;
     overflow-y: auto;
+    overflow-x: hidden;
     padding: 0 7px;
     scrollbar-width: thin;
+}
+
+#dm-view .dm-conversation-list::-webkit-scrollbar,
+#dm-view .dm-message-area::-webkit-scrollbar {
+    width: 5px;
+}
+
+#dm-view .dm-conversation-list::-webkit-scrollbar-thumb,
+#dm-view .dm-message-area::-webkit-scrollbar-thumb {
+    border-radius: 99px;
+    background: rgba(90, 116, 136, .22);
 }
 
 #dm-view .dm-conversation-list > .dm-conversation {
@@ -7587,12 +7635,13 @@ body.helix-compact-mode .settings-option-row {
     width: 100%;
     min-height: 59px;
     display: grid;
-    grid-template-columns: 32px minmax(0,1fr) 17px;
+    grid-template-columns: 32px minmax(0, 1fr) 17px;
     align-items: center;
     gap: 8px;
     margin: 0 0 3px;
     padding: 5px 7px;
     border: 1px solid transparent;
+    border-left-color: transparent;
     border-radius: 9px;
     box-sizing: border-box;
     background: transparent;
@@ -7601,31 +7650,137 @@ body.helix-compact-mode .settings-option-row {
     cursor: pointer;
 }
 
-#dm-view .dm-conversation-list > .dm-conversation.is-active {
-    border-top-color: rgba(0,229,255,.40);
-    border-bottom-color: rgba(0,229,255,.34);
-    border-left-color: rgba(0,229,255,.55);
-    border-right-color: transparent;
-    background: linear-gradient(90deg,rgba(0,229,255,.10),rgba(8,27,37,.14));
-    box-shadow:
-        inset 3px 0 0 #00e5ff,
-        -2px 0 12px rgba(0,229,255,.17),
-        0 0 9px rgba(0,229,255,.045);
+#dm-view .dm-conversation-list > .dm-conversation:hover {
+    background: rgba(20, 49, 61, .18);
 }
 
-/* Keep the classic left column suggestion card at the bottom of the inbox. */
+#dm-view .dm-conversation-list > .dm-conversation.is-active {
+    border-top-color: rgba(0, 229, 255, .40);
+    border-bottom-color: rgba(0, 229, 255, .34);
+    border-left-color: rgba(0, 229, 255, .55);
+    border-right-color: transparent;
+    background:
+        linear-gradient(90deg, rgba(0, 229, 255, .10), rgba(8, 27, 37, .14));
+    box-shadow:
+        inset 3px 0 0 #00e5ff,
+        -2px 0 12px rgba(0, 229, 255, .17),
+        0 0 9px rgba(0, 229, 255, .045);
+}
+
+#dm-view .dm-conversation-avatar {
+    width: 31px;
+    height: 31px;
+    flex: 0 0 31px;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    border-radius: 50%;
+    border: 0;
+    background: #26313c;
+    color: #e8fbff;
+    font-size: 9px;
+    box-shadow: 0 0 0 1px rgba(0, 229, 255, .09);
+}
+
+#dm-view .dm-conversation-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: inherit;
+}
+
+#dm-view .dm-conversation-copy {
+    min-width: 0;
+    display: block;
+}
+
+#dm-view .dm-conversation-copy strong {
+    display: block;
+    overflow: hidden;
+    color: #eef7fb;
+    font-size: 10px;
+    font-weight: 650;
+    line-height: 1.05;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#dm-view .dm-conversation-copy small {
+    display: block;
+    margin-top: 2px;
+    overflow: hidden;
+    color: #667d8b;
+    font-size: 7px;
+    line-height: 1;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#dm-view .dm-conversation-preview {
+    display: block;
+    margin-top: 3px;
+    overflow: hidden;
+    color: #70828e;
+    font-size: 7px;
+    line-height: 1;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#dm-view .dm-conversation-preview-icon {
+    display: inline-flex;
+    margin-right: 3px;
+    vertical-align: -2px;
+    color: #708691;
+}
+
+#dm-view .dm-conversation-preview-icon .dm-icon {
+    width: 9px;
+    height: 9px;
+}
+
+#dm-view .dm-conversation-meta {
+    min-width: 17px;
+    display: grid;
+    justify-items: center;
+    align-content: center;
+    gap: 3px;
+    color: #42dce8;
+}
+
+#dm-view .dm-conversation-edit-mark {
+    color: #40dde8;
+    font-size: 10px;
+    line-height: 1;
+    opacity: .80;
+}
+
+#dm-view .dm-unread-badge {
+    min-width: 12px;
+    height: 12px;
+    display: grid;
+    place-items: center;
+    padding: 0 3px;
+    border-radius: 999px;
+    background: #00dff2;
+    color: #021017;
+    font: 800 7px "SFMono-Regular", Consolas, monospace;
+}
+
+/* -------------------- Suggestions -------------------- */
+
 #dm-view .dm-suggestions-section {
     flex: 0 0 auto;
     min-height: 39px;
-    margin: 0 7px 10px;
+    margin: 21px 7px 100px;
     padding: 7px 9px;
     display: flex;
     align-items: center;
     gap: 9px;
     box-sizing: border-box;
-    border: 1px solid rgba(0,229,255,.17);
+    border: 1px solid rgba(0, 229, 255, .17);
     border-radius: 9px;
-    background: rgba(0,229,255,.025);
+    background: rgba(0, 229, 255, .025);
 }
 
 #dm-view .dm-suggestions-icon {
@@ -7634,50 +7789,69 @@ body.helix-compact-mode .settings-option-row {
     flex: 0 0 25px;
     display: grid;
     place-items: center;
-    border: 1px solid rgba(0,229,255,.22);
+    border: 1px solid rgba(0, 229, 255, .22);
     border-radius: 7px;
     color: #00dff0;
-    background: rgba(0,229,255,.05);
+    background: rgba(0, 229, 255, .05);
 }
 
-/* ---------------- Right-hand chat header ---------------- */
+#dm-view .dm-suggestions-icon .dm-icon {
+    width: 14px;
+    height: 14px;
+}
+
+#dm-view .dm-suggestions-section strong {
+    display: block;
+    color: #c7d8df;
+    font-size: 8px;
+    line-height: 1;
+}
+
+#dm-view .dm-suggestions-section small {
+    display: block;
+    margin-top: 3px;
+    color: #5a727f;
+    font: 6px "SFMono-Regular", Consolas, monospace;
+    text-transform: uppercase;
+}
+
+/* -------------------- chat header -------------------- */
 
 #dm-view .dm-conversation-head {
-    flex: 0 0 53px;
-    width: 100%;
     height: 53px;
     min-height: 53px;
     max-height: 53px;
+    flex: 0 0 53px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 10px 0 11px;
+    gap: 10px;
+    padding: 0 10px;
     box-sizing: border-box;
-    border-bottom: 1px solid rgba(95,123,150,.12);
-    background: rgba(7,12,19,.88);
+    border-bottom: 1px solid rgba(95, 123, 150, .12);
+    background: rgba(7, 12, 19, .88);
 }
 
 #dm-view .dm-person {
     min-width: 0;
-    flex: 0 1 auto;
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-right: 12px;
 }
 
 #dm-view .dm-avatar {
     width: 32px;
     height: 32px;
     flex: 0 0 32px;
-    overflow: hidden;
     display: grid;
     place-items: center;
+    overflow: hidden;
     border-radius: 50%;
     border: 0;
     background: #26313c;
     color: #e8fbff;
     font-size: 9px;
+    box-shadow: 0 0 0 1px rgba(0, 229, 255, .08);
 }
 
 #dm-view .dm-avatar img {
@@ -7689,27 +7863,26 @@ body.helix-compact-mode .settings-option-row {
 
 #dm-view .dm-person-copy {
     min-width: 0;
-    text-align: left;
-}
-
-#dm-view .dm-person-copy strong,
-#dm-view .dm-person-copy span {
-    display: block;
-    text-align: left;
 }
 
 #dm-view .dm-person-copy strong {
+    display: block;
+    overflow: hidden;
     color: #f0f8fc;
     font-size: 11px;
     font-weight: 650;
     line-height: 1.05;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 #dm-view .dm-person-copy span {
+    display: block;
     margin-top: 2px;
     color: #637b89;
     font-size: 6px;
     line-height: 1;
+    white-space: nowrap;
 }
 
 #dm-view .dm-person-copy span::after {
@@ -7718,13 +7891,13 @@ body.helix-compact-mode .settings-option-row {
     margin-top: 2px;
     color: #435c69;
     font-size: 5px;
+    line-height: 1;
 }
 
 #dm-view .dm-chat-actions {
     display: flex;
     align-items: center;
     gap: 5px;
-    margin-left: auto;
 }
 
 #dm-view .dm-head-action {
@@ -7733,13 +7906,23 @@ body.helix-compact-mode .settings-option-row {
     min-width: 27px;
     display: grid;
     place-items: center;
-    flex: 0 0 27px;
     padding: 0;
-    border: 1px solid rgba(0,229,255,.10);
+    border: 1px solid rgba(0, 229, 255, .10);
     border-radius: 50%;
-    background: transparent;
     color: #5d8190;
+    background: transparent;
     cursor: pointer;
+}
+
+#dm-view .dm-head-action:hover:not(:disabled) {
+    color: #d4fbff;
+    border-color: rgba(0, 229, 255, .25);
+    background: rgba(0, 229, 255, .045);
+}
+
+#dm-view .dm-head-action:disabled {
+    opacity: .36;
+    cursor: default;
 }
 
 #dm-view .dm-head-action .dm-icon {
@@ -7747,7 +7930,49 @@ body.helix-compact-mode .settings-option-row {
     height: 13px;
 }
 
-/* ---------------- Message canvas ---------------- */
+#dm-view #dm-nickname-button {
+    display: none !important;
+}
+
+/* Message search remains a real feature but is opened by the header search button. */
+#dm-view .dm-message-search {
+    position: absolute;
+    top: 53px;
+    right: 8px;
+    z-index: 40;
+    width: min(255px, calc(100% - 16px));
+    min-height: 36px;
+    display: grid;
+    grid-template-columns: 15px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 6px;
+    padding: 0 7px;
+    box-sizing: border-box;
+    border: 1px solid rgba(0, 229, 255, .24);
+    border-radius: 9px;
+    background: rgba(6, 12, 19, .98);
+    box-shadow: 0 12px 32px rgba(0,0,0,.38);
+}
+
+#dm-view .dm-message-search[hidden] {
+    display: none !important;
+}
+
+#dm-view .dm-message-search input {
+    min-width: 0;
+    width: 100%;
+    border: 0;
+    outline: 0;
+    color: #dff7fb;
+    background: transparent;
+    font: 8px "SFMono-Regular", Consolas, monospace;
+}
+
+#dm-view .dm-message-search .dm-search-icon {
+    width: 12px;
+    height: 12px;
+    color: #5edce6;
+}
 
 #dm-view .dm-chat-meta {
     position: absolute;
@@ -7761,13 +7986,12 @@ body.helix-compact-mode .settings-option-row {
     align-items: center;
     justify-content: flex-end;
     color: #415965;
-    font: 5px "SFMono-Regular",Consolas,monospace;
+    font: 5px "SFMono-Regular", Consolas, monospace;
     letter-spacing: .11em;
     text-transform: uppercase;
 }
 
-#dm-view #dm-message-status,
-#dm-view .dm-message-search {
+#dm-view #dm-message-status {
     display: none !important;
 }
 
@@ -7776,6 +8000,8 @@ body.helix-compact-mode .settings-option-row {
     color: #415965;
 }
 
+/* -------------------- message canvas -------------------- */
+
 #dm-view .dm-message-area {
     position: relative;
     flex: 1 1 auto;
@@ -7783,25 +8009,20 @@ body.helix-compact-mode .settings-option-row {
     min-height: 0;
     overflow-y: auto;
     overflow-x: hidden;
-    padding: 6px 10px 7px;
+    padding: 4px 10px 7px;
     box-sizing: border-box;
     background:
-        radial-gradient(circle,rgba(0,229,255,.048) .5px,transparent .82px) 0 0 / 9px 9px,
+        radial-gradient(circle, rgba(0, 229, 255, .048) .55px, transparent .82px) 0 0 / 9px 9px,
         #050a11;
 }
 
-/* No standalone media/code-image blocks in the default chat canvas. */
-#dm-view .dm-message-media {
-    display: none !important;
-}
-
-/* Message bubble rows */
 #dm-view .dm-message-row {
     position: relative;
     width: 100%;
     display: flex;
     flex-direction: column;
-    margin: 0 0 6px;
+    margin: 0 0 5px;
+    box-sizing: border-box;
 }
 
 #dm-view .dm-message-row.is-received {
@@ -7813,12 +8034,13 @@ body.helix-compact-mode .settings-option-row {
 }
 
 #dm-view .dm-message-bubble {
+    position: relative;
     max-width: min(72%, 530px);
     padding: 7px 10px;
     border: 1px solid transparent;
     border-radius: 9px;
     box-sizing: border-box;
-    background: #252a31;
+    background: #20262d;
     color: #e7f1f5;
     font-size: 9px;
     line-height: 1.42;
@@ -7826,15 +8048,15 @@ body.helix-compact-mode .settings-option-row {
 }
 
 #dm-view .dm-message-row.is-received .dm-message-bubble {
-    background: #252a31;
+    background: #262b31;
     border-color: transparent;
     color: #e8f0f4;
 }
 
 #dm-view .dm-message-row.is-sent .dm-message-bubble {
-    background: rgba(6,16,22,.78);
-    border-color: #00e5ff;
-    box-shadow: 0 0 6px rgba(0,229,255,.05);
+    background: rgba(6, 16, 22, .78);
+    border-color: rgba(0, 229, 255, .60);
+    box-shadow: 0 0 7px rgba(0, 229, 255, .055);
 }
 
 #dm-view .dm-message-text,
@@ -7849,29 +8071,27 @@ body.helix-compact-mode .settings-option-row {
 
 #dm-view .dm-message-row.is-sent .dm-message-text,
 #dm-view .dm-message-row.is-sent .dm-message-bubble p {
-    color: #22dce9;
+    color: #20dce9;
 }
 
 #dm-view .dm-message-meta {
     display: flex;
     align-items: center;
-    justify-content: flex-start;
     gap: 4px;
     margin: 3px 6px 0;
     color: #71828c;
-    font: 6px "SFMono-Regular",Consolas,monospace;
+    font: 6px "SFMono-Regular", Consolas, monospace;
     line-height: 1;
 }
 
-#dm-view .dm-message-row.is-sent .dm-message-meta {
-    justify-content: flex-end;
+#dm-view .dm-message-row.is-sent .dm-message-meta,
+#dm-view .dm-message-row.is-sent .dm-message-status {
     color: #22d9e7;
 }
 
 #dm-view .dm-message-status {
     display: inline-flex;
     align-items: center;
-    color: #22d9e7;
 }
 
 #dm-view .dm-message-status .dm-icon {
@@ -7880,8 +8100,52 @@ body.helix-compact-mode .settings-option-row {
 }
 
 #dm-view .dm-message-actions {
-    /* Hidden in the normal reference state. */
-    display: none !important;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    gap: 2px;
+    padding: 3px;
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 999px;
+    background: rgba(7,10,17,.97);
+    box-shadow: 0 9px 22px rgba(0,0,0,.26);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .16s ease;
+    z-index: 5;
+}
+
+#dm-view .dm-message-row.is-received .dm-message-actions {
+    left: calc(100% + 7px);
+}
+
+#dm-view .dm-message-row.is-sent .dm-message-actions {
+    right: calc(100% + 7px);
+}
+
+#dm-view .dm-message-bubble:hover .dm-message-actions,
+#dm-view .dm-message-actions:focus-within {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+#dm-view .dm-message-tool {
+    width: 21px;
+    height: 21px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: #93a7b1;
+    cursor: pointer;
+}
+
+#dm-view .dm-message-tool:hover {
+    color: #21dce9;
+    background: rgba(255,255,255,.07);
 }
 
 #dm-view .dm-reaction-strip {
@@ -7890,15 +8154,41 @@ body.helix-compact-mode .settings-option-row {
     margin: 2px 3px 0;
 }
 
+#dm-view .dm-reaction-pill {
+    padding: 1px 5px;
+    border: 1px solid rgba(0,229,255,.10);
+    border-radius: 999px;
+    background: rgba(8,14,21,.92);
+    color: #b8ccd4;
+    font-size: 8px;
+}
+
+#dm-view .dm-reply-reference {
+    margin-bottom: 5px;
+    padding: 5px 7px;
+    border: 0;
+    border-left: 2px solid rgba(0,229,255,.72);
+    border-radius: 0 7px 7px 0;
+    background: rgba(0,0,0,.13);
+}
+
+#dm-view .dm-reply-reference-copy strong {
+    font-size: 7px;
+}
+
+#dm-view .dm-reply-reference-text {
+    font-size: 8px;
+}
+
 /* -------------------- composer -------------------- */
 
 #dm-view .dm-composer-zone {
     flex: 0 0 57px;
     min-height: 57px;
     max-height: 57px;
-    padding: 8px 9px 4px;
+    padding: 8px 10px 4px;
     box-sizing: border-box;
-    border-top: 1px solid rgba(94,123,149,.09);
+    border-top: 1px solid rgba(94, 123, 149, .09);
     background: #050a11;
 }
 
@@ -7913,10 +8203,11 @@ body.helix-compact-mode .settings-option-row {
     box-sizing: border-box;
     border: 1px solid #00e5ff;
     border-radius: 999px;
-    background: rgba(5,15,21,.86);
+    background: rgba(5, 15, 21, .86);
     box-shadow: 0 0 10px rgba(0,229,255,.055), inset 0 0 9px rgba(0,229,255,.025);
 }
 
+#dm-view .dm-composer-attach-reference,
 #dm-view #dm-attach-button {
     width: 25px;
     height: 25px;
@@ -7932,6 +8223,13 @@ body.helix-compact-mode .settings-option-row {
     cursor: pointer;
 }
 
+#dm-view .dm-composer-attach-reference:hover,
+#dm-view #dm-attach-button:hover {
+    color: #ebfdff;
+    background: rgba(0, 229, 255, .05);
+}
+
+#dm-view .dm-composer-attach-reference .dm-icon,
 #dm-view #dm-attach-button .dm-icon {
     width: 15px;
     height: 15px;
@@ -7950,7 +8248,7 @@ body.helix-compact-mode .settings-option-row {
     box-sizing: border-box;
     color: #b5d4da;
     background: transparent;
-    font: 8px "Segoe UI",Inter,Arial,sans-serif;
+    font: 8px "Segoe UI", Inter, Arial, sans-serif;
 }
 
 #dm-view #dm-message-input::placeholder {
@@ -7962,10 +8260,6 @@ body.helix-compact-mode .settings-option-row {
     align-items: center;
     gap: 1px;
     margin-left: auto;
-}
-
-#dm-view .dm-composer-actions-right > *:not(#dm-send-button) {
-    display: none !important;
 }
 
 #dm-view .dm-composer-actions-right::before {
@@ -7980,6 +8274,7 @@ body.helix-compact-mode .settings-option-row {
     line-height: 1;
 }
 
+#dm-view .dm-send-control,
 #dm-view #dm-send-button {
     width: 27px;
     height: 27px;
@@ -7995,6 +8290,11 @@ body.helix-compact-mode .settings-option-row {
     cursor: pointer;
 }
 
+#dm-view #dm-send-button:hover:not(:disabled) {
+    color: #dbfdff;
+    text-shadow: 0 0 12px rgba(0,229,255,.8);
+}
+
 #dm-view #dm-send-button .dm-icon {
     width: 16px;
     height: 16px;
@@ -8005,22 +8305,65 @@ body.helix-compact-mode .settings-option-row {
     height: 10px;
     padding: 3px 4px 0;
     color: #4f6976;
-    font: 5.5px "SFMono-Regular",Consolas,monospace;
+    font: 5.5px "SFMono-Regular", Consolas, monospace;
 }
 
 #dm-view .dm-composer-footer > span + span {
     display: none;
 }
 
+#dm-view .dm-reply-bar,
+#dm-view .dm-media-preview,
+#dm-view .dm-attachment-error {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+#dm-view .dm-reply-bar {
+    min-height: 36px;
+    margin-bottom: 4px;
+    padding: 5px 7px;
+    border: 1px solid rgba(0,229,255,.12);
+    border-radius: 9px;
+    background: rgba(0,229,255,.025);
+}
+
 #dm-view .dm-reply-bar[hidden],
 #dm-view .dm-media-preview[hidden],
-#dm-view .dm-attachment-error[hidden],
+#dm-view .dm-attachment-error[hidden] {
+    display: none !important;
+}
+
+#dm-view .dm-media-preview {
+    min-height: 36px;
+    margin-bottom: 4px;
+    padding: 5px 7px;
+    border-radius: 9px;
+    background: rgba(8,14,20,.94);
+}
+
+/* -------------------- panels / mobile -------------------- */
+
+#dm-view .dm-info-panel,
+#dm-view .dm-pins-panel {
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: 30;
+    width: 310px;
+    height: 100%;
+    border-left: 1px solid rgba(255,255,255,.08);
+    background: #070c13;
+    box-shadow: -18px 0 45px rgba(0,0,0,.22);
+}
+
 #dm-view .dm-info-panel[hidden],
 #dm-view .dm-pins-panel[hidden],
 #dm-view .dm-context-menu[hidden],
 #dm-view .dm-emoji-picker[hidden],
 #dm-view .dm-forward-modal[hidden],
-#dm-view .dm-nickname-modal[hidden] {
+#dm-view .dm-nickname-modal[hidden],
+#dm-view .dm-media-viewer[hidden] {
     display: none !important;
 }
 
@@ -8066,4 +8409,10 @@ body.helix-compact-mode .settings-option-row {
     #dm-view .dm-mobile-back {
         display: grid;
     }
+
+    #dm-view .dm-composer-zone {
+        padding-left: 8px;
+        padding-right: 8px;
+    }
 }
+
