@@ -7496,17 +7496,23 @@ body.helix-compact-mode .settings-option-row {
 }
 
 #dm-view #dm-new-message-button {
-    width: 34px;
-    height: 34px;
-    flex: 0 0 34px;
+    width: 27px;
+    height: 27px;
+    flex: 0 0 27px;
     display: grid;
     place-items: center;
     padding: 0;
     border: 0;
     border-radius: 50%;
-    color: #17d6e5;
+    color: #18d7e6;
     background: transparent;
     cursor: pointer;
+}
+
+#dm-view #dm-new-message-button .dm-icon {
+    width: 14px;
+    height: 14px;
+    stroke-width: 1.8;
 }
 
 #dm-view #dm-new-message-button:hover {
@@ -7771,12 +7777,12 @@ body.helix-compact-mode .settings-option-row {
 
 #dm-view .dm-suggestions-section {
     flex: 0 0 auto;
-    min-height: 39px;
-    margin: 21px 7px 100px;
-    padding: 7px 9px;
+    min-height: 43px;
+    margin: auto 7px 10px;
+    padding: 8px 10px;
     display: flex;
     align-items: center;
-    gap: 9px;
+    gap: 10px;
     box-sizing: border-box;
     border: 1px solid rgba(0, 229, 255, .17);
     border-radius: 9px;
@@ -7803,7 +7809,7 @@ body.helix-compact-mode .settings-option-row {
 #dm-view .dm-suggestions-section strong {
     display: block;
     color: #c7d8df;
-    font-size: 8px;
+    font-size: 9px;
     line-height: 1;
 }
 
@@ -7811,7 +7817,7 @@ body.helix-compact-mode .settings-option-row {
     display: block;
     margin-top: 3px;
     color: #5a727f;
-    font: 6px "SFMono-Regular", Consolas, monospace;
+    font: 6.5px "SFMono-Regular", Consolas, monospace;
     text-transform: uppercase;
 }
 
