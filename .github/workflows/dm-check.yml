@@ -93,6 +93,10 @@ jobs:
               'Symbols',
               'Flags'
             ]
+,
+            'dm/emoji-popular.js': [
+              'window.HELIX_EMOJI_POPULAR'
+            ]
           };
 
           for (const [file, tokens] of Object.entries(contracts)) {
