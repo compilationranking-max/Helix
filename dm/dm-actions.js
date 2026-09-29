@@ -998,14 +998,22 @@
             messageId
                 ? String(messageId)
                 : null;
+        state.emojiSearch = "";
+        state.emojiCategory =
+            "Smileys & People";
 
         render.renderEmojiPicker();
         render.renderComposerState?.();
+
+        requestAnimationFrame(() => {
+            get("dm-emoji-search")?.focus();
+        });
     }
 
     function closeEmojiPicker() {
         state.emojiPickerOpen = false;
         state.emojiTargetMessageId = null;
+        state.emojiSearch = "";
 
         const picker = get("dm-emoji-picker");
         if (picker) picker.hidden = true;
@@ -1357,6 +1365,29 @@
             sendMessage
         );
 
+        get("dm-message-input")?.addEventListener(
+            "keydown",
+            (event) => {
+                if (
+                    event.key !== "Enter" ||
+                    event.shiftKey ||
+                    event.isComposing
+                ) {
+                    return;
+                }
+
+                event.preventDefault();
+
+                const form = get("dm-message-form");
+
+                if (form?.requestSubmit) {
+                    form.requestSubmit();
+                } else {
+                    sendMessage(event);
+                }
+            }
+        );
+
         get("dm-conversation-list")?.addEventListener(
             "click",
             (event) => {
@@ -1613,6 +1644,34 @@
         get("dm-emoji-picker")?.addEventListener(
             "click",
             async (event) => {
+                const categoryButton =
+                    event.target.closest(
+                        "[data-dm-emoji-category]"
+                    );
+
+                if (categoryButton) {
+                    const category =
+                        categoryButton.dataset.dmEmojiCategory ||
+                        "All";
+
+                    state.emojiCategory = category;
+                    state.emojiSearch = "";
+
+                    const search =
+                        get("dm-emoji-search");
+
+                    if (search) {
+                        search.value = "";
+                    }
+
+                    render.renderEmojiPicker();
+
+                    requestAnimationFrame(() => {
+                        get("dm-emoji-search")?.focus();
+                    });
+
+                    return;
+                }
                 const close =
                     event.target.closest(
                         "[data-dm-action=\"close-emoji-picker\"]"
@@ -1752,7 +1811,16 @@
 
         get("dm-composer-emoji-button")?.addEventListener(
             "click",
-            () => openEmojiPicker()
+            (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+
+                if (state.emojiPickerOpen) {
+                    closeEmojiPicker();
+                } else {
+                    openEmojiPicker();
+                }
+            }
         );
 
         get("dm-reply-cancel")?.addEventListener(
@@ -1893,8 +1961,9 @@
                     !event.target.closest(
                         "[data-dm-emoji-picker]"
                     ) &&
-                    event.target.id !==
-                        "dm-composer-emoji-button"
+                    !event.target.closest(
+                        "#dm-composer-emoji-button"
+                    )
                 ) {
                     closeEmojiPicker();
                 }
