@@ -1499,13 +1499,154 @@
             );
     }
 
-    const EMOJI = window.HELIX_ALL_EMOJI || [];
 
+    const EMOJI = window.HELIX_ALL_EMOJI || [];
+    const EMOJI_CATEGORIES = window.HELIX_EMOJI_CATEGORIES || [
+        "Smileys & People",
+        "Animals & Nature",
+        "Food & Drink",
+        "Activities",
+        "Travel & Places",
+        "Objects",
+        "Symbols",
+        "Flags"
+    ];
+    const EMOJI_DATA = window.HELIX_EMOJI_DATA || {};
+
+    const EMOJI_CATEGORY_ICONS = {
+        "All": "✨",
+        "Smileys & People": "😀",
+        "Animals & Nature": "🐻",
+        "Food & Drink": "🍔",
+        "Activities": "⚽",
+        "Travel & Places": "🚗",
+        "Objects": "💡",
+        "Symbols": "🔣",
+        "Flags": "🌐"
+    };
+
+    function normalizeEmojiSearch(value) {
+        return String(value || "")
+            .trim()
+            .toLowerCase()
+            .replace(/\s+/g, " ");
+    }
+
+    function emojiItemsForCategory(category) {
+        const source = EMOJI_DATA[category];
+
+        if (Array.isArray(source) && source.length) {
+            return source;
+        }
+
+        return EMOJI.map((emoji) => [emoji, "", []]);
+    }
+
+    function emojiSearchText(item, category) {
+        const emoji = String(item?.[0] || "");
+        const name = String(item?.[1] || "");
+        const keywords = Array.isArray(item?.[2]) ? item[2] : [];
+
+        return [emoji, name, ...keywords, category]
+            .join(" ")
+            .toLowerCase();
+    }
+
+    function updateEmojiPickerView() {
+        const picker = get("dm-emoji-picker");
+
+        if (!picker) return;
+
+        const query = normalizeEmojiSearch(state.emojiSearch);
+        const activeCategory = query
+            ? "All"
+            : (state.emojiCategory || "Smileys & People");
+
+        let visibleCount = 0;
+
+        picker.querySelectorAll("[data-emoji-section]").forEach((section) => {
+            const category = section.dataset.emojiSection || "";
+            const categoryAllowed =
+                activeCategory === "All" ||
+                category === activeCategory;
+
+            let sectionVisibleCount = 0;
+
+            section.querySelectorAll("[data-emoji]").forEach((option) => {
+                const matches =
+                    !query ||
+                    String(option.dataset.search || "").includes(query);
+
+                const visible =
+                    categoryAllowed && matches;
+
+                option.hidden = !visible;
+
+                if (visible) {
+                    sectionVisibleCount += 1;
+                    visibleCount += 1;
+                }
+            });
+
+            section.hidden = sectionVisibleCount === 0;
+        });
+
+        picker.querySelectorAll("[data-dm-emoji-category]").forEach((button) => {
+            const category =
+                button.dataset.dmEmojiCategory || "";
+
+            const active =
+                category === activeCategory ||
+                (category === "All" && Boolean(query));
+
+            button.classList.toggle("is-active", active);
+            button.setAttribute(
+                "aria-selected",
+                active ? "true" : "false"
+            );
+        });
+
+        const count =
+            picker.querySelector("#dm-emoji-result-count");
+
+        if (count) {
+            count.textContent = query
+                ? String(visibleCount) +
+                    " result" +
+                    (visibleCount === 1 ? "" : "s")
+                : String(visibleCount) + " emoji";
+        }
+
+        const empty =
+            picker.querySelector(".dm-emoji-empty");
+
+        if (empty) {
+            empty.hidden = visibleCount !== 0;
+        }
+    }
+
+    function setEmojiPickerCategory(category) {
+        const next =
+            category === "All" ||
+            EMOJI_CATEGORIES.includes(category)
+                ? category
+                : "Smileys & People";
+
+        state.emojiCategory = next;
+        state.emojiSearch = "";
+
+        const search = get("dm-emoji-search");
+        if (search) {
+            search.value = "";
+        }
+
+        updateEmojiPickerView();
+
+        search?.focus();
+    }
 
     function renderEmojiPicker() {
-        const picker = get(
-            "dm-emoji-picker"
-        );
+        const picker = get("dm-emoji-picker");
 
         if (!picker) return;
 
@@ -1516,8 +1657,14 @@
             "dm-emoji-picker-header"
         );
 
-        header.appendChild(
-            make("strong", "", "Emoji")
+        const title = make(
+            "div",
+            "dm-emoji-picker-title"
+        );
+
+        title.append(
+            make("strong", "", "Emoji"),
+            make("span", "dm-emoji-result-count", "")
         );
 
         const close = iconButton(
@@ -1529,62 +1676,215 @@
         close.dataset.dmAction =
             "close-emoji-picker";
 
-        header.appendChild(close);
+        header.append(title, close);
 
-        const search = document.createElement(
-            "input"
+        const searchWrap = make(
+            "div",
+            "dm-emoji-search-wrap"
         );
+
+        const searchIcon = make(
+            "span",
+            "dm-emoji-search-icon",
+            "⌕"
+        );
+
+        searchIcon.setAttribute(
+            "aria-hidden",
+            "true"
+        );
+
+        const search = document.createElement("input");
+
         search.id = "dm-emoji-search";
         search.type = "search";
         search.placeholder =
-            "Search emoji";
+            "Search emoji, e.g. heart, laugh, rocket";
         search.autocomplete = "off";
+        search.spellcheck = false;
+        search.value = state.emojiSearch || "";
         search.setAttribute(
             "aria-label",
             "Search emoji"
         );
 
-        header.appendChild(search);
-
-        const grid = make(
-            "div",
-            "dm-emoji-grid"
+        searchWrap.append(
+            searchIcon,
+            search
         );
 
-        EMOJI.forEach((emoji) => {
-            const option = textButton(
-                "dm-emoji-option",
-                emoji,
-                "Insert " + emoji
+        const categories = make(
+            "div",
+            "dm-emoji-category-tabs"
+        );
+
+        categories.setAttribute(
+            "role",
+            "tablist"
+        );
+
+        categories.setAttribute(
+            "aria-label",
+            "Emoji categories"
+        );
+
+        ["All", ...EMOJI_CATEGORIES].forEach((category) => {
+            const button = make(
+                "button",
+                "dm-emoji-category-tab"
             );
 
-            option.dataset.emoji =
-                emoji;
-            option.dataset.search =
-                emoji;
+            button.type = "button";
+            button.dataset.dmEmojiCategory =
+                category;
+            button.setAttribute(
+                "role",
+                "tab"
+            );
+            button.setAttribute(
+                "aria-selected",
+                "false"
+            );
+            button.setAttribute(
+                "aria-label",
+                category
+            );
 
-            grid.appendChild(option);
+            const icon = make(
+                "span",
+                "dm-emoji-category-icon",
+                EMOJI_CATEGORY_ICONS[category] || "•"
+            );
+
+            icon.setAttribute(
+                "aria-hidden",
+                "true"
+            );
+
+            const label = make(
+                "span",
+                "dm-emoji-category-label",
+                category
+            );
+
+            button.append(
+                icon,
+                label
+            );
+
+            categories.appendChild(button);
         });
 
-        picker.append(header, grid);
-        picker.hidden = !state.emojiPickerOpen;
+        const content = make(
+            "div",
+            "dm-emoji-picker-content"
+        );
+
+        EMOJI_CATEGORIES.forEach((category) => {
+            const section = make(
+                "section",
+                "dm-emoji-section"
+            );
+
+            section.dataset.emojiSection =
+                category;
+
+            const heading = make(
+                "div",
+                "dm-emoji-section-heading"
+            );
+
+            heading.append(
+                make(
+                    "span",
+                    "dm-emoji-section-icon",
+                    EMOJI_CATEGORY_ICONS[category] || "•"
+                ),
+                make(
+                    "h4",
+                    "",
+                    category
+                )
+            );
+
+            const grid = make(
+                "div",
+                "dm-emoji-grid"
+            );
+
+            emojiItemsForCategory(category).forEach((item) => {
+                const emoji =
+                    String(item?.[0] || "");
+
+                if (!emoji) return;
+
+                const name =
+                    String(item?.[1] || "");
+
+                const option = textButton(
+                    "dm-emoji-option",
+                    emoji,
+                    name
+                        ? "Insert " + name
+                        : "Insert " + emoji
+                );
+
+                option.dataset.emoji = emoji;
+                option.dataset.search =
+                    emojiSearchText(
+                        item,
+                        category
+                    );
+
+                grid.appendChild(option);
+            });
+
+            section.append(
+                heading,
+                grid
+            );
+
+            content.appendChild(section);
+        });
+
+        const empty = make(
+            "div",
+            "dm-emoji-empty",
+            "No matching emoji found."
+        );
+
+        empty.hidden = true;
+
+        const footer = make(
+            "div",
+            "dm-emoji-footer",
+            "Enter sends • Shift + Enter adds a new line"
+        );
+
+        picker.append(
+            header,
+            searchWrap,
+            categories,
+            content,
+            empty,
+            footer
+        );
+
+        picker.hidden =
+            !state.emojiPickerOpen;
+
+        updateEmojiPickerView();
     }
 
     function filterEmojiPicker(value) {
-        const query = String(value || "")
-            .trim();
+        state.emojiSearch =
+            String(value || "");
 
-        get("dm-emoji-picker")
-            ?.querySelectorAll(
-                ".dm-emoji-option"
-            )
-            .forEach((option) => {
-                option.hidden =
-                    Boolean(query) &&
-                    !option.dataset.emoji.includes(
-                        query
-                    );
-            });
+        if (state.emojiSearch.trim()) {
+            state.emojiCategory = "All";
+        }
+
+        updateEmojiPickerView();
     }
 
     function renderForwardPanel() {
