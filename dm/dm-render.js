@@ -2677,6 +2677,7 @@
         renderComposerState,
         renderEmojiPicker,
         filterEmojiPicker,
+        setEmojiPickerCategory,
         renderReplyReference,
         renderMessage,
         renderReactionStrip,
