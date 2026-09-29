@@ -9690,3 +9690,276 @@ body.helix-compact-mode .settings-option-row {
         font-size: 38px !important;
     }
 }
+
+
+/* =========================================================
+   HELIX DMS — FINAL CATEGORY EMOJI PICKER
+   ========================================================= */
+
+#dm-view .dm-emoji-picker {
+    position: absolute !important;
+    right: 16px !important;
+    bottom: 76px !important;
+    z-index: 120 !important;
+    width: min(455px, calc(100% - 24px)) !important;
+    height: min(610px, 70vh) !important;
+    max-height: min(610px, 70vh) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    padding: 10px !important;
+    border: 1px solid rgba(0,229,255,.22) !important;
+    border-radius: 17px !important;
+    background: linear-gradient(180deg, rgba(8,18,27,.995), rgba(3,9,15,.998)) !important;
+    box-shadow: 0 26px 70px rgba(0,0,0,.54), 0 0 30px rgba(0,229,255,.08), inset 0 1px 0 rgba(255,255,255,.025) !important;
+    backdrop-filter: blur(20px) !important;
+}
+
+#dm-view .dm-emoji-picker-header {
+    position: static !important;
+    min-height: 34px !important;
+    height: 34px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 10px !important;
+    padding: 0 2px !important;
+    border: 0 !important;
+    background: transparent !important;
+}
+
+#dm-view .dm-emoji-picker-title {
+    min-width: 0 !important;
+    display: flex !important;
+    align-items: baseline !important;
+    gap: 8px !important;
+}
+
+#dm-view .dm-emoji-picker-title strong {
+    color: #effcff !important;
+    font-size: 14px !important;
+    font-weight: 760 !important;
+    letter-spacing: .01em !important;
+}
+
+#dm-view .dm-emoji-result-count {
+    color: #6595a2 !important;
+    font: 700 8px/1 "SFMono-Regular", Consolas, monospace !important;
+    letter-spacing: .07em !important;
+    text-transform: uppercase !important;
+}
+
+#dm-view .dm-emoji-picker-header .dm-panel-close {
+    flex: 0 0 32px !important;
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+}
+
+#dm-view .dm-emoji-search-wrap {
+    position: relative !important;
+    flex: 0 0 auto !important;
+    margin: 7px 0 !important;
+}
+
+#dm-view .dm-emoji-search-wrap input {
+    height: 38px !important;
+    padding: 0 12px 0 34px !important;
+    border-radius: 11px !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+}
+
+#dm-view .dm-emoji-search-icon {
+    position: absolute !important;
+    left: 12px !important;
+    top: 50% !important;
+    z-index: 2 !important;
+    transform: translateY(-50%) !important;
+    color: #69a7b3 !important;
+    font-size: 18px !important;
+    line-height: 1 !important;
+    pointer-events: none !important;
+}
+
+#dm-view .dm-emoji-category-tabs {
+    display: flex !important;
+    flex: 0 0 auto !important;
+    gap: 5px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    padding: 2px 1px 8px !important;
+    scrollbar-width: thin !important;
+    scrollbar-color: rgba(0,229,255,.22) transparent !important;
+}
+
+#dm-view .dm-emoji-category-tab {
+    flex: 0 0 auto !important;
+    min-height: 32px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    padding: 5px 9px !important;
+    border: 1px solid transparent !important;
+    border-radius: 9px !important;
+    color: #7195a0 !important;
+    background: transparent !important;
+    cursor: pointer !important;
+    font: 650 8px/1 "Segoe UI", Inter, Arial, sans-serif !important;
+    white-space: nowrap !important;
+}
+
+#dm-view .dm-emoji-category-tab:hover,
+#dm-view .dm-emoji-category-tab.is-active,
+#dm-view .dm-emoji-category-tab:focus-visible {
+    color: #e9fdff !important;
+    border-color: rgba(0,229,255,.26) !important;
+    background: rgba(0,229,255,.08) !important;
+    box-shadow: 0 0 14px rgba(0,229,255,.08) !important;
+    outline: none !important;
+}
+
+#dm-view .dm-emoji-category-icon {
+    display: inline-grid !important;
+    place-items: center !important;
+    width: 17px !important;
+    min-width: 17px !important;
+    font-size: 15px !important;
+    line-height: 1 !important;
+}
+
+#dm-view .dm-emoji-category-label {
+    max-width: 115px !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+#dm-view .dm-emoji-picker-content {
+    min-height: 0 !important;
+    flex: 1 1 auto !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    padding: 0 1px !important;
+    scrollbar-width: thin !important;
+    scrollbar-color: rgba(0,229,255,.22) transparent !important;
+}
+
+#dm-view .dm-emoji-section {
+    margin: 0 0 15px !important;
+}
+
+#dm-view .dm-emoji-section-heading {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 4 !important;
+    min-height: 29px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 7px !important;
+    margin: 0 !important;
+    padding: 6px 4px 5px !important;
+    background: linear-gradient(180deg, rgba(8,18,27,.99), rgba(8,18,27,.88), transparent) !important;
+    backdrop-filter: blur(7px) !important;
+}
+
+#dm-view .dm-emoji-section-heading h4 {
+    margin: 0 !important;
+    color: #82aeba !important;
+    font: 750 9px/1 "Segoe UI", Inter, Arial, sans-serif !important;
+    letter-spacing: .11em !important;
+    text-transform: uppercase !important;
+}
+
+#dm-view .dm-emoji-section-icon {
+    font-size: 13px !important;
+    line-height: 1 !important;
+}
+
+#dm-view .dm-emoji-grid {
+    display: grid !important;
+    grid-template-columns: repeat(8, minmax(0,1fr)) !important;
+    gap: 2px !important;
+    overflow: visible !important;
+    padding: 1px 0 0 !important;
+    align-content: start !important;
+}
+
+#dm-view .dm-emoji-option {
+    width: 100% !important;
+    min-width: 0 !important;
+    aspect-ratio: 1 !important;
+    display: grid !important;
+    place-items: center !important;
+    padding: 0 !important;
+    border: 1px solid transparent !important;
+    border-radius: 8px !important;
+    background: transparent !important;
+    font-size: 24px !important;
+    line-height: 1 !important;
+    cursor: pointer !important;
+    transition: transform .1s ease, background .12s ease, border-color .12s ease, box-shadow .12s ease !important;
+}
+
+#dm-view .dm-emoji-option:hover,
+#dm-view .dm-emoji-option:focus-visible {
+    transform: scale(1.08) !important;
+    border-color: rgba(0,229,255,.18) !important;
+    background: rgba(0,229,255,.075) !important;
+    box-shadow: 0 0 12px rgba(0,229,255,.08) !important;
+    outline: none !important;
+}
+
+#dm-view .dm-emoji-option[hidden],
+#dm-view .dm-emoji-section[hidden],
+#dm-view .dm-emoji-empty[hidden] {
+    display: none !important;
+}
+
+#dm-view .dm-emoji-empty {
+    min-height: 100px !important;
+    display: grid !important;
+    place-items: center !important;
+    padding: 16px !important;
+    color: #6c909b !important;
+    text-align: center !important;
+    font: 600 11px/1.4 "Segoe UI", Inter, Arial, sans-serif !important;
+}
+
+#dm-view .dm-emoji-footer {
+    flex: 0 0 auto !important;
+    margin-top: 6px !important;
+    padding: 7px 4px 1px !important;
+    border-top: 1px solid rgba(255,255,255,.035) !important;
+    color: #486671 !important;
+    text-align: center !important;
+    font: 600 8px/1 "SFMono-Regular", Consolas, monospace !important;
+    letter-spacing: .03em !important;
+}
+
+@media (max-width: 650px) {
+    #dm-view .dm-emoji-picker {
+        left: 8px !important;
+        right: 8px !important;
+        bottom: 72px !important;
+        width: auto !important;
+        height: min(560px, 72vh) !important;
+        max-height: min(560px, 72vh) !important;
+    }
+
+    #dm-view .dm-emoji-category-label {
+        display: none !important;
+    }
+
+    #dm-view .dm-emoji-category-tab {
+        padding-inline: 8px !important;
+    }
+
+    #dm-view .dm-emoji-grid {
+        grid-template-columns: repeat(7, minmax(0,1fr)) !important;
+    }
+
+    #dm-view .dm-emoji-option {
+        font-size: 23px !important;
+    }
+}
