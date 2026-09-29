@@ -8245,17 +8245,7 @@ body.helix-compact-mode .settings-option-row {
     margin-left: auto;
 }
 
-#dm-view .dm-composer-actions-right::before {
-    content: "+";
-    width: 23px;
-    height: 25px;
-    flex: 0 0 23px;
-    display: grid;
-    place-items: center;
-    color: #16d9e7;
-    font-size: 17px;
-    line-height: 1;
-}
+#dm-view .dm-composer-actions-right::before { content: none; }
 
 #dm-view .dm-send-control,
 #dm-view #dm-send-button {
@@ -9341,27 +9331,7 @@ body.helix-compact-mode .settings-option-row {
     gap: 3px !important;
 }
 
-#dm-view .dm-composer-actions-right::before {
-    width: 24px !important;
-    height: 30px !important;
-    flex: 0 0 24px !important;
-    border: 0 !important;
-    outline: 0 !important;
-    border-radius: 0 !important;
-    background: transparent !important;
-    box-shadow: none !important;
-    color: #19d6e7 !important;
-    font-size: 21px !important;
-    line-height: 1 !important;
-}
-
-#dm-view .dm-composer:hover .dm-composer-actions-right::before {
-    border: 0 !important;
-    background: transparent !important;
-    box-shadow: none !important;
-    color: #72f1fb !important;
-    text-shadow: 0 0 8px rgba(0, 220, 240, .55) !important;
-}
+#dm-view .dm-composer-actions-right::before { content: none !important; }
 
 /* Remove the unwanted bright divider down the far-left edge of the DM workspace. */
 #dm-view .dm-sidebar {
@@ -9375,4 +9345,91 @@ body.helix-compact-mode .settings-option-row {
 #dm-view .dm-pins-panel,
 #dm-view .dm-info-panel {
     border-left: 0 !important;
+}
+
+
+/* =========================================================
+   HELIX DMS — COMPOSER ICON CLEANUP / EDGE-LINE REMOVAL
+   ========================================================= */
+
+#dm-view,
+#dm-view .dm-stage,
+#dm-view section.dm-conversation,
+#dm-view .dm-message-area,
+#dm-view .dm-composer-zone {
+    border-left: 0 !important;
+    outline: 0 !important;
+}
+
+#dm-view .dm-stage {
+    box-shadow: none !important;
+}
+
+#dm-view section.dm-conversation {
+    box-shadow: none !important;
+}
+
+#dm-view .dm-composer-actions-right {
+    display: flex !important;
+    align-items: center !important;
+    gap: 7px !important;
+}
+
+#dm-view .dm-composer-emoji-visible {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    flex: 0 0 32px !important;
+    display: grid !important;
+    place-items: center !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: 0 !important;
+    outline: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    color: #22d5ee !important;
+    cursor: pointer !important;
+    box-shadow: none !important;
+    transition: color .16s ease, filter .16s ease, transform .16s ease !important;
+}
+
+#dm-view .dm-composer-emoji-visible .dm-icon {
+    width: 18px !important;
+    height: 18px !important;
+    stroke: currentColor !important;
+    filter: drop-shadow(0 0 5px rgba(0,205,255,.40)) !important;
+}
+
+#dm-view .dm-composer-emoji-visible:hover:not(:disabled) {
+    color: #7cefff !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    transform: translateY(-1px) !important;
+}
+
+#dm-view .dm-composer-emoji-visible:hover:not(:disabled) .dm-icon {
+    filter: drop-shadow(0 0 8px rgba(0,220,255,.72)) !important;
+}
+
+#dm-view .dm-composer-emoji-visible:disabled {
+    opacity: .35 !important;
+    cursor: default !important;
+}
+
+#dm-view .dm-composer-plus {
+    width: 24px !important;
+    height: 30px !important;
+    min-width: 24px !important;
+    flex: 0 0 24px !important;
+    display: grid !important;
+    place-items: center !important;
+    margin: 0 !important;
+    color: #1fe0ee !important;
+    font: 500 21px/1 "Segoe UI", Inter, Arial, sans-serif !important;
+    text-shadow: 0 0 7px rgba(0,218,234,.34) !important;
+}
+
+#dm-view .dm-composer-actions-right #dm-send-button {
+    margin-left: 0 !important;
 }
