@@ -554,6 +554,7 @@
         const infoButton = get("dm-info-button");
         const nicknameButton = get("dm-nickname-button");
         const pinsButton = get("dm-pins-button");
+        const friendStatus = get("dm-chat-friend-status");
 
         if (!state.activeConversation) {
             if (title) title.textContent = "Your messages";
@@ -569,6 +570,7 @@
             if (infoButton) infoButton.disabled = true;
             if (nicknameButton) nicknameButton.disabled = true;
             if (pinsButton) pinsButton.disabled = true;
+            if (friendStatus) friendStatus.hidden = true;
             return;
         }
 
@@ -586,6 +588,10 @@
         if (username) {
             username.textContent =
                 "-" + conversation.username;
+        }
+
+        if (friendStatus) {
+            friendStatus.hidden = false;
         }
 
         if (avatar) {
