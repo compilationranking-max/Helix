@@ -3517,6 +3517,28 @@ async function openAccountActivityModal() {
 })();
 
 // =========================================================
+// =========================================================
+// LIVE HOME DATE
+// =========================================================
+function updateHomeDate() {
+    const target = document.querySelector("#home-date .home-date-text");
+    if (!target) return;
+
+    const now = new Date();
+    const formatted = new Intl.DateTimeFormat("en-IN", {
+        weekday: "long",
+        month: "long",
+        day: "numeric"
+    }).format(now);
+
+    target.textContent = formatted;
+}
+
+updateHomeDate();
+
+// Keep the label current across midnight without requiring a page refresh.
+window.setInterval(updateHomeDate, 60 * 1000);
+
 // INITIALIZATION
 // =========================================================
 
