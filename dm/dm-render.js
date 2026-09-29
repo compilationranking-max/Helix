@@ -1707,13 +1707,16 @@
 
         const searchIcon = make(
             "span",
-            "dm-emoji-search-icon",
-            "⌕"
+            "dm-emoji-search-icon"
         );
 
         searchIcon.setAttribute(
             "aria-hidden",
             "true"
+        );
+
+        searchIcon.appendChild(
+            makeIcon("search")
         );
 
         const search = document.createElement("input");
