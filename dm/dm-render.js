@@ -943,6 +943,18 @@
 
         const bubble = make("div", "dm-message-bubble");
 
+        const trimmedText = String(message.text || "").trim();
+        const singleEmoji =
+            !message.isDeleted &&
+            !message.mediaKind &&
+            Boolean(trimmedText) &&
+            window.HELIX_ALL_EMOJI_SET instanceof Set &&
+            window.HELIX_ALL_EMOJI_SET.has(trimmedText);
+
+        if (singleEmoji) {
+            bubble.classList.add("dm-emoji-only");
+        }
+
         const reference = renderReplyReference(message);
         if (reference) {
             bubble.appendChild(reference);
@@ -1487,27 +1499,8 @@
             );
     }
 
-    const EMOJI = [
-        "😀","😃","😄","😁","😆","😅","😂","🤣","😊","😇","🙂","🙃",
-        "😉","😌","😍","🥰","😘","😗","😙","😚","😋","😛","😝","😜",
-        "🤪","🤨","🧐","🤓","😎","🤩","🥳","😏","😒","😞","😔","😟",
-        "😕","🙁","☹️","😣","😖","😫","😩","🥺","😢","😭","😤","😠",
-        "😡","🤬","🤯","😳","🥵","🥶","😱","😨","😰","😥","😓","🤗",
-        "🤔","🫡","🤭","🫢","🫣","🤫","🤥","😶","🫠","😐","😑","😬",
-        "🙄","😯","😦","😧","😮","😲","🥱","😴","🤤","😪","😵","🤐",
-        "🥴","🤢","🤮","🤧","😷","🤒","🤕","🤑","🤠","😈","👿","👹",
-        "👺","🤡","💩","👻","💀","☠️","👽","👾","🤖","🎃","😺","😸",
-        "😹","😻","😼","😽","🙀","😿","😾","🙈","🙉","🙊","💯","💥",
-        "💫","💦","💨","🔥","⭐","🌟","✨","⚡","💡","🎉","🎊","❤️",
-        "🧡","💛","💚","💙","💜","🖤","🤍","🤎","💔","❣️","💕","💞",
-        "💓","💗","💖","💘","💝","💟","👍","👎","👏","🙌","🫶","🤝",
-        "🙏","💪","👀","👋","✌️","🤞","🤟","🤘","👌","🤌","🤏","🫰",
-        "☝️","👇","👉","👈","✍️","💅","🤳","🧠","💭","💬","✅","❌",
-        "⚠️","❓","❗","‼️","⁉️","➕","➖","🎯","🚀","🌙","☀️","🌈",
-        "🌊","🍕","🍔","🍟","🍎","🍉","🍓","☕","🍩","🎂","🍪","⚽",
-        "🏀","🏆","🎮","🎧","🎵","🎸","📚","💻","📱","⌚","🔒","🔑",
-        "🔔","📌","✏️"
-    ];
+    const EMOJI = window.HELIX_ALL_EMOJI || [];
+
 
     function renderEmojiPicker() {
         const picker = get(
@@ -1566,6 +1559,8 @@
             );
 
             option.dataset.emoji =
+                emoji;
+            option.dataset.search =
                 emoji;
 
             grid.appendChild(option);
