@@ -78,7 +78,7 @@ jobs:
               'event.key !== "Enter"',
               'form?.requestSubmit',
               '#dm-composer-emoji-button',
-              'event.target.closest('
+              'event.target.closest(',
               'render.setEmojiPickerCategory'
             ],
             'dm/emoji-meta.js': [
