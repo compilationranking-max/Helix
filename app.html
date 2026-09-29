@@ -34,7 +34,7 @@
 
     <title>Helix</title>
 
-    <link rel="stylesheet" href="app.css?v=20260929-dm-nickname-manager">
+    <link rel="stylesheet" href="app.css?v=20260929-dm-header-nickname-polish">
 </head>
 
 <body>
@@ -509,7 +509,10 @@
                     <span class="dm-avatar" id="dm-chat-avatar" aria-hidden="true">DM</span>
                     <div class="dm-person-copy">
                         <strong id="dm-chat-title">Your messages</strong>
-                        <span id="dm-chat-username">Select a conversation to start messaging.</span>
+                        <span class="dm-chat-identity-line">
+                            <span class="dm-chat-username" id="dm-chat-username">Select a conversation to start messaging.</span>
+                            <span class="dm-chat-friend-status">Friend on Helix</span>
+                        </span>
                     </div>
                 </div>
 
@@ -662,11 +665,17 @@
             <h2 id="dm-nickname-title">Set a nickname</h2>
             <p class="helix-modal-description">Choose any friend and set the nickname you want to see in your Helix DMs.</p>
             <form class="dm-nickname-form" id="dm-nickname-form">
-                <label><span>Friend</span><select id="dm-nickname-friend" aria-label="Choose friend for nickname"></select></label>
-                <label><span>Nickname</span><input id="dm-nickname-value" type="text" maxlength="50" autocomplete="off" placeholder="e.g. Bro"></label>
+                <label class="dm-nickname-field">
+                    <span>Friend</span>
+                    <select id="dm-nickname-friend" aria-label="Choose friend for nickname"></select>
+                </label>
+                <label class="dm-nickname-field">
+                    <span>Nickname</span>
+                    <input id="dm-nickname-value" type="text" maxlength="50" autocomplete="off" placeholder="e.g. Bro">
+                </label>
                 <div class="dm-form-error" id="dm-nickname-error" aria-live="polite"></div>
                 <div class="dm-modal-actions">
-                    <button class="dm-modal-secondary" id="dm-nickname-remove" type="button">Remove</button>
+                    <button class="dm-modal-secondary" id="dm-nickname-remove" type="button">Remove nickname</button>
                     <button class="dm-modal-primary" id="dm-nickname-save" type="submit">Save nickname</button>
                 </div>
             </form>
