@@ -24,6 +24,7 @@ jobs:
           node --check dm/dm-api.js
           node --check dm/dm-render.js
           node --check dm/dm-actions.js
+          node --check dm/emoji-meta.js
       - name: Git whitespace check
         run: git diff --check HEAD^ HEAD
       - name: DM runtime tests
@@ -73,7 +74,23 @@ jobs:
               'dm-new-message-button',
               'dm-conversation-filter',
               'function startNewMessage()',
-              'function handleConversationFilter('
+              'function handleConversationFilter(',
+              'event.key !== "Enter"',
+              'form?.requestSubmit',
+              '#dm-composer-emoji-button',
+              'event.target.closest('
+            ],
+            'dm/emoji-meta.js': [
+              'window.HELIX_EMOJI_CATEGORIES',
+              'window.HELIX_EMOJI_DATA',
+              'Smileys & People',
+              'Animals & Nature',
+              'Food & Drink',
+              'Activities',
+              'Travel & Places',
+              'Objects',
+              'Symbols',
+              'Flags'
             ]
           };
 
@@ -171,6 +188,11 @@ jobs:
           }
 
           const html = fs.readFileSync('app.html', 'utf8');
+
+          const emojiMeta = fs.readFileSync('dm/emoji-meta.js', 'utf8');
+          if (!emojiMeta.includes('window.HELIX_EMOJI_DATA')) {
+            throw new Error('Emoji metadata bundle is missing.');
+          }
           for (const required of [
             'id="dm-new-message-button"',
             'data-dm-conversation-filter="all"',
