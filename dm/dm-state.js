@@ -37,7 +37,7 @@
 
         emojiPickerOpen: false,
         emojiTargetMessageId: null,
-        emojiCategory: "Smileys & People",
+        emojiCategory: "Popular",
         emojiSearch: "",
 
         forwardPanelOpen: false,
@@ -155,7 +155,7 @@
         state.contextMenu.messageId = null;
         state.emojiPickerOpen = false;
         state.emojiTargetMessageId = null;
-        state.emojiCategory = "Smileys & People";
+        state.emojiCategory = "Popular";
         state.emojiSearch = "";
         state.forwardPanelOpen = false;
         state.forwardMessageId = null;
