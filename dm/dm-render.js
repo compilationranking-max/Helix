@@ -1649,6 +1649,7 @@
     function setEmojiPickerCategory(category) {
         const next =
             category === "All" ||
+            category === "Popular" ||
             EMOJI_CATEGORIES.includes(category)
                 ? category
                 : "Popular";
