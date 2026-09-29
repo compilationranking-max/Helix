@@ -988,9 +988,10 @@
             );
             bubble.appendChild(deleted);
         } else {
+            const media = renderMedia(message);
+            if (media) bubble.appendChild(media);
+
             if (message.text) {
-                const media = renderMedia(message);
-                if (media) bubble.appendChild(media);
                 bubble.appendChild(
                     make("p", "dm-message-text", message.text)
                 );
