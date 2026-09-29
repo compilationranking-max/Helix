@@ -1512,9 +1512,11 @@
         "Flags"
     ];
     const EMOJI_DATA = window.HELIX_EMOJI_DATA || {};
+    const EMOJI_POPULAR = window.HELIX_EMOJI_POPULAR || [];
 
     const EMOJI_CATEGORY_ICONS = {
         "All": "✨",
+        "Popular": "🔥",
         "Smileys & People": "😀",
         "Animals & Nature": "🐻",
         "Food & Drink": "🍔",
@@ -1533,13 +1535,31 @@
     }
 
     function emojiItemsForCategory(category) {
+        if (category === "Popular") {
+            const byEmoji = new Map();
+
+            Object.values(EMOJI_DATA).forEach((entries) => {
+                if (!Array.isArray(entries)) return;
+                entries.forEach((item) => {
+                    const emoji = String(item?.[0] || "");
+                    if (emoji && !byEmoji.has(emoji)) {
+                        byEmoji.set(emoji, item);
+                    }
+                });
+            });
+
+            return EMOJI_POPULAR
+                .map((emoji) => byEmoji.get(emoji) || [emoji, "", []])
+                .filter((item) => item?.[0]);
+        }
+
         const source = EMOJI_DATA[category];
 
         if (Array.isArray(source) && source.length) {
             return source;
         }
 
-        return EMOJI.map((emoji) => [emoji, "", []]);
+        return [];
     }
 
     function emojiSearchText(item, category) {
@@ -1560,15 +1580,16 @@
         const query = normalizeEmojiSearch(state.emojiSearch);
         const activeCategory = query
             ? "All"
-            : (state.emojiCategory || "Smileys & People");
+            : (state.emojiCategory || "Popular");
 
         let visibleCount = 0;
 
         picker.querySelectorAll("[data-emoji-section]").forEach((section) => {
             const category = section.dataset.emojiSection || "";
             const categoryAllowed =
-                activeCategory === "All" ||
-                category === activeCategory;
+                activeCategory === "All"
+                    ? category !== "Popular"
+                    : category === activeCategory;
 
             let sectionVisibleCount = 0;
 
@@ -1630,7 +1651,7 @@
             category === "All" ||
             EMOJI_CATEGORIES.includes(category)
                 ? category
-                : "Smileys & People";
+                : "Popular";
 
         state.emojiCategory = next;
         state.emojiSearch = "";
@@ -1728,7 +1749,7 @@
             "Emoji categories"
         );
 
-        ["All", ...EMOJI_CATEGORIES].forEach((category) => {
+        ["All", "Popular", ...EMOJI_CATEGORIES].forEach((category) => {
             const button = make(
                 "button",
                 "dm-emoji-category-tab"
@@ -1780,7 +1801,7 @@
             "dm-emoji-picker-content"
         );
 
-        EMOJI_CATEGORIES.forEach((category) => {
+        ["Popular", ...EMOJI_CATEGORIES].forEach((category) => {
             const section = make(
                 "section",
                 "dm-emoji-section"
