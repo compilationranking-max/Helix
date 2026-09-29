@@ -484,8 +484,7 @@
                     conversation.nickname ||
                         conversation.displayName ||
                         conversation.username
-                ),
-                make("small", "", "-" + conversation.username)
+                )
             );
 
             const latest = conversation.latestMessage;
@@ -525,6 +524,13 @@
                 "dm-conversation-meta"
             );
 
+            const usernameLabel = make(
+                "span",
+                "dm-conversation-username",
+                "-" + conversation.username
+            );
+            meta.appendChild(usernameLabel);
+
             if (Number(conversation.unreadCount || 0) > 0) {
                 const unread = make(
                     "span",
@@ -535,14 +541,6 @@
                 );
                 meta.appendChild(unread);
             }
-
-            const editMark = make(
-                "span",
-                "dm-conversation-edit-mark",
-                "✎"
-            );
-            editMark.setAttribute("aria-hidden", "true");
-            meta.appendChild(editMark);
 
             row.append(avatar, copy, meta);
             list.appendChild(row);
