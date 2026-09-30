@@ -11300,3 +11300,102 @@ body.helix-compact-mode .settings-option-row {
 #dm-view .dm-emoji-search-wrap input {
     padding-left: 45px !important;
 }
+
+/* =========================================================
+   HELIX DMS — DEDICATED NICKNAME / PINNED ICON SYSTEM
+   ========================================================= */
+
+/* Private nickname: the icon is a dedicated identity/tag mark, not a
+   generic "edit" pencil. */
+#dm-view .dm-private-nickname-icon {
+    position: relative !important;
+    overflow: visible !important;
+    color: #66eaf2 !important;
+    border-color: rgba(0,229,255,.28) !important;
+    background:
+        radial-gradient(circle at 50% 42%, rgba(0,229,255,.15), transparent 62%),
+        linear-gradient(145deg, rgba(0,229,255,.075), rgba(0,229,255,.025)) !important;
+    box-shadow:
+        inset 0 0 12px rgba(0,229,255,.045),
+        0 0 15px rgba(0,229,255,.05) !important;
+}
+
+#dm-view .dm-private-nickname-icon::after {
+    content: "" !important;
+    position: absolute !important;
+    right: 4px !important;
+    bottom: 4px !important;
+    width: 6px !important;
+    height: 6px !important;
+    border: 1px solid rgba(5,18,25,.95) !important;
+    border-radius: 50% !important;
+    background: #67edf4 !important;
+    box-shadow: 0 0 7px rgba(0,229,255,.55) !important;
+}
+
+#dm-view .dm-private-nickname-icon .dm-icon {
+    width: 17px !important;
+    height: 17px !important;
+    stroke-width: 2.2 !important;
+}
+
+/* Pinned-message identity mark: message bubble + pushpin, with a subtle
+   cyan "locked in place" indicator. */
+#dm-view .dm-pinned-icon {
+    position: relative !important;
+    overflow: visible !important;
+    border-color: rgba(0,229,255,.30) !important;
+    color: #65e8ef !important;
+    background:
+        radial-gradient(circle at 50% 42%, rgba(0,229,255,.15), transparent 64%),
+        linear-gradient(145deg, rgba(0,229,255,.08), rgba(0,229,255,.025)) !important;
+    box-shadow:
+        inset 0 0 13px rgba(0,229,255,.045),
+        0 0 16px rgba(0,229,255,.055) !important;
+}
+
+#dm-view .dm-pinned-icon::after {
+    content: "" !important;
+    position: absolute !important;
+    width: 6px !important;
+    height: 6px !important;
+    right: -2px !important;
+    top: -2px !important;
+    border: 2px solid #07131b !important;
+    border-radius: 50% !important;
+    background: #3de2eb !important;
+    box-shadow:
+        0 0 7px rgba(0,229,255,.55),
+        0 0 12px rgba(0,229,255,.16) !important;
+}
+
+#dm-view .dm-pinned-icon .dm-icon {
+    width: 17px !important;
+    height: 17px !important;
+    stroke-width: 2.15 !important;
+}
+
+/* Unpin control: unmistakably different from the pinned badge. */
+#dm-view .dm-pinned-unpin {
+    border-color: rgba(92,137,149,.28) !important;
+    background:
+        linear-gradient(145deg, rgba(13,27,36,.86), rgba(5,12,18,.96)) !important;
+}
+
+#dm-view .dm-pinned-unpin .dm-icon {
+    width: 15px !important;
+    height: 15px !important;
+    stroke-width: 2.15 !important;
+}
+
+#dm-view .dm-pinned-unpin:hover,
+#dm-view .dm-pinned-unpin:focus-visible {
+    color: #8ef2f8 !important;
+    border-color: rgba(0,229,255,.56) !important;
+    background:
+        radial-gradient(circle at 50% 50%, rgba(0,229,255,.10), transparent 68%),
+        rgba(0,229,255,.045) !important;
+    box-shadow:
+        0 0 0 3px rgba(0,229,255,.028),
+        0 0 18px rgba(0,229,255,.10) !important;
+}
