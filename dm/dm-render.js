@@ -2170,7 +2170,7 @@
 
         const actions = make("div", "dm-info-actions");
         const nicknameButton = iconButton(
-            "dm-info-action",
+            "dm-info-action dm-private-nickname-button",
             "edit",
             "Edit private nickname"
         );
@@ -2325,7 +2325,7 @@
 
         const close =
             iconButton(
-                "dm-media-viewer-close",
+                "dm-media-viewer-close dm-close-control",
                 "close",
                 "Close media"
             );
