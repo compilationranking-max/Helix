@@ -11399,3 +11399,143 @@ body.helix-compact-mode .settings-option-row {
         0 0 0 3px rgba(0,229,255,.028),
         0 0 18px rgba(0,229,255,.10) !important;
 }
+
+/* =========================================================
+   HELIX DMS — FINAL ICON LEGIBILITY OVERRIDE
+   ========================================================= */
+
+/* Emoji search uses the exact same search glyph as the working
+   "Search messages" header action — no decorative box around it. */
+#dm-view .dm-emoji-search-icon {
+    position: absolute !important;
+    left: 12px !important;
+    top: 50% !important;
+    z-index: 4 !important;
+    width: 16px !important;
+    height: 16px !important;
+    display: block !important;
+    transform: translateY(-50%) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    color: #5edce6 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    filter: drop-shadow(0 0 5px rgba(0,229,255,.34)) !important;
+    pointer-events: none !important;
+}
+
+#dm-view .dm-emoji-search-icon circle,
+#dm-view .dm-emoji-search-icon path {
+    vector-effect: non-scaling-stroke !important;
+}
+
+#dm-view .dm-emoji-search-icon .dm-icon,
+#dm-view .dm-emoji-search-icon svg {
+    display: none !important;
+}
+
+#dm-view #dm-emoji-search {
+    padding-left: 38px !important;
+}
+
+/* Private nickname = clear tag/label pictogram. */
+#dm-view .dm-private-nickname-icon {
+    flex: 0 0 34px !important;
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    min-height: 34px !important;
+    display: grid !important;
+    place-items: center !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+    border: 1px solid rgba(0,229,255,.33) !important;
+    border-radius: 10px !important;
+    color: #7ff6fb !important;
+    background:
+        linear-gradient(145deg, rgba(0,229,255,.11), rgba(0,229,255,.035)) !important;
+    box-shadow:
+        inset 0 0 12px rgba(0,229,255,.04),
+        0 0 13px rgba(0,229,255,.06) !important;
+}
+
+#dm-view .dm-private-nickname-icon::after {
+    display: none !important;
+    content: none !important;
+}
+
+#dm-view .dm-private-nickname-icon .dm-icon {
+    width: 19px !important;
+    height: 19px !important;
+    display: block !important;
+    color: #7ff6fb !important;
+    stroke: #7ff6fb !important;
+    stroke-width: 2.8 !important;
+    fill: none !important;
+    overflow: visible !important;
+    filter: drop-shadow(0 0 5px rgba(0,229,255,.30)) !important;
+}
+
+/* Pinned-message = unmistakable pushpin silhouette. */
+#dm-view .dm-pinned-icon {
+    position: relative !important;
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    min-height: 36px !important;
+    display: grid !important;
+    place-items: center !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+    border: 1px solid rgba(0,229,255,.34) !important;
+    border-radius: 10px !important;
+    color: #7ff6fb !important;
+    background:
+        linear-gradient(145deg, rgba(0,229,255,.12), rgba(0,229,255,.035)) !important;
+    box-shadow:
+        inset 0 0 13px rgba(0,229,255,.045),
+        0 0 16px rgba(0,229,255,.065) !important;
+}
+
+#dm-view .dm-pinned-icon::after {
+    display: none !important;
+    content: none !important;
+}
+
+#dm-view .dm-pinned-icon .dm-icon {
+    width: 20px !important;
+    height: 20px !important;
+    display: block !important;
+    color: #7ff6fb !important;
+    stroke: #7ff6fb !important;
+    stroke-width: 2.7 !important;
+    fill: none !important;
+    overflow: visible !important;
+    filter: drop-shadow(0 0 5px rgba(0,229,255,.32)) !important;
+}
+
+/* Unpin gets the same pin family, but with a clear diagonal strike. */
+#dm-view .dm-pinned-unpin {
+    color: #82abb4 !important;
+}
+
+#dm-view .dm-pinned-unpin .dm-icon {
+    width: 17px !important;
+    height: 17px !important;
+    display: block !important;
+    color: currentColor !important;
+    stroke: currentColor !important;
+    stroke-width: 2.5 !important;
+    fill: none !important;
+    overflow: visible !important;
+}
+
+/* Never let generic SVG rules wash out these three icon families. */
+#dm-view .dm-private-nickname-icon svg,
+#dm-view .dm-pinned-icon svg,
+#dm-view .dm-pinned-unpin svg {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
