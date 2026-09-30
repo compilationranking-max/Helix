@@ -10310,3 +10310,303 @@ body.helix-compact-mode .settings-option-row {
         padding-right: 12px !important;
     }
 }
+
+
+/* =========================================================
+   HELIX DMS — SEARCH / INFO MEDIA / CLOSE CONTROLS FINAL FIX
+   ========================================================= */
+
+/* The message-search row contains icon + input + count + close button.
+   Keep all four in one line; the previous 3-column grid caused the X
+   to wrap underneath the search bar. */
+#dm-view .dm-message-search {
+    grid-template-columns: 18px minmax(0,1fr) auto 34px !important;
+    align-items: center !important;
+    overflow: visible !important;
+}
+
+#dm-view .dm-message-search .dm-search-icon {
+    display: block !important;
+    width: 16px !important;
+    height: 16px !important;
+    color: #53e2ee !important;
+    stroke: currentColor !important;
+    filter: drop-shadow(0 0 6px rgba(0,229,255,.36)) !important;
+}
+
+#dm-view #dm-message-search-count {
+    min-width: 0 !important;
+    max-width: 48px !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+}
+
+#dm-view #dm-message-search-clear {
+    position: relative !important;
+    z-index: 8 !important;
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    flex: 0 0 32px !important;
+    display: grid !important;
+    place-items: center !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    padding: 0 !important;
+    border: 1px solid rgba(101,157,170,.40) !important;
+    border-radius: 50% !important;
+    color: #b0d3da !important;
+    background: rgba(5,13,20,.88) !important;
+    cursor: pointer !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.035),
+        0 0 12px rgba(0,229,255,.05) !important;
+}
+
+#dm-view #dm-message-search-clear .dm-icon,
+#dm-view #dm-message-search-clear svg {
+    display: block !important;
+    width: 14px !important;
+    height: 14px !important;
+    color: currentColor !important;
+    stroke: currentColor !important;
+    stroke-width: 2.25 !important;
+    fill: none !important;
+}
+
+#dm-view #dm-message-search-clear:hover,
+#dm-view #dm-message-search-clear:focus-visible {
+    color: #edfeff !important;
+    border-color: rgba(0,229,255,.72) !important;
+    background: rgba(0,229,255,.08) !important;
+    box-shadow:
+        0 0 0 3px rgba(0,229,255,.035),
+        0 0 18px rgba(0,229,255,.13) !important;
+    outline: none !important;
+}
+
+/* Emoji close button: make its SVG explicitly visible against the dark header. */
+#dm-view .dm-emoji-picker .dm-panel-close {
+    position: relative !important;
+    z-index: 10 !important;
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    display: grid !important;
+    place-items: center !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    color: #a8cbd2 !important;
+    border-color: rgba(94,146,159,.40) !important;
+}
+
+#dm-view .dm-emoji-picker .dm-panel-close svg,
+#dm-view .dm-emoji-picker .dm-panel-close .dm-icon {
+    display: block !important;
+    width: 16px !important;
+    height: 16px !important;
+    color: currentColor !important;
+    stroke: currentColor !important;
+    stroke-width: 2.2 !important;
+    fill: none !important;
+    opacity: 1 !important;
+}
+
+/* Info panel: compact, deliberate media thumbnails. */
+#dm-view .dm-info-panel {
+    display: flex !important;
+    flex-direction: column !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+}
+
+#dm-view .dm-info-header {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 20 !important;
+    flex: 0 0 78px !important;
+    min-height: 78px !important;
+}
+
+#dm-view .dm-info-profile,
+#dm-view .dm-info-actions,
+#dm-view .dm-info-section {
+    flex: 0 0 auto !important;
+}
+
+#dm-view .dm-info-media-grid {
+    width: 100% !important;
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0,1fr)) !important;
+    gap: 8px !important;
+    margin-top: 10px !important;
+}
+
+#dm-view .dm-info-media-item {
+    width: 100% !important;
+    max-width: 108px !important;
+    aspect-ratio: 1 / 1 !important;
+    min-width: 0 !important;
+    justify-self: start !important;
+    display: grid !important;
+    place-items: center !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+    border: 1px solid rgba(79,130,144,.26) !important;
+    border-radius: 11px !important;
+    background: #071119 !important;
+    color: #7eabb5 !important;
+    cursor: pointer !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.025),
+        0 6px 16px rgba(0,0,0,.20) !important;
+    transition:
+        transform .15s ease,
+        border-color .15s ease,
+        box-shadow .15s ease !important;
+}
+
+#dm-view .dm-info-media-item img {
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    object-position: center !important;
+}
+
+#dm-view .dm-info-media-item:hover,
+#dm-view .dm-info-media-item:focus-visible {
+    transform: translateY(-1px) !important;
+    border-color: rgba(0,229,255,.52) !important;
+    box-shadow:
+        0 10px 22px rgba(0,0,0,.30),
+        0 0 15px rgba(0,229,255,.08) !important;
+    outline: none !important;
+}
+
+#dm-view .dm-info-media-video {
+    width: 100% !important;
+    height: 100% !important;
+    display: grid !important;
+    place-items: center !important;
+    background:
+        radial-gradient(circle, rgba(0,229,255,.10), transparent 65%),
+        #071119 !important;
+}
+
+#dm-view .dm-info-media-video .dm-icon {
+    width: 25px !important;
+    height: 25px !important;
+    color: #6edce7 !important;
+    stroke: currentColor !important;
+}
+
+/* Full-screen expansion opened by clicking a shared-media thumbnail. */
+#dm-view .dm-media-viewer {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 500 !important;
+    display: grid !important;
+    place-items: center !important;
+    padding: 24px !important;
+    box-sizing: border-box !important;
+}
+
+#dm-view .dm-media-viewer[hidden] {
+    display: none !important;
+}
+
+#dm-view .dm-media-viewer-backdrop {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    border: 0 !important;
+    background: rgba(0,4,9,.88) !important;
+    backdrop-filter: blur(12px) !important;
+}
+
+#dm-view .dm-media-viewer-panel {
+    position: relative !important;
+    z-index: 2 !important;
+    width: min(94vw, 1100px) !important;
+    height: min(92vh, 900px) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 12px !important;
+    padding: 52px 18px 16px !important;
+    box-sizing: border-box !important;
+    border: 1px solid rgba(0,229,255,.24) !important;
+    border-radius: 18px !important;
+    background:
+        linear-gradient(180deg, rgba(7,15,23,.98), rgba(2,7,12,.99)) !important;
+    box-shadow:
+        0 28px 90px rgba(0,0,0,.62),
+        0 0 35px rgba(0,229,255,.08) !important;
+}
+
+#dm-view .dm-media-viewer-media {
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    object-fit: contain !important;
+    border-radius: 10px !important;
+    background: #02070c !important;
+}
+
+#dm-view .dm-media-viewer-close {
+    position: absolute !important;
+    top: 13px !important;
+    right: 13px !important;
+    z-index: 4 !important;
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    display: grid !important;
+    place-items: center !important;
+    padding: 0 !important;
+    border: 1px solid rgba(94,146,159,.40) !important;
+    border-radius: 50% !important;
+    color: #a8cbd2 !important;
+    background: rgba(6,14,21,.88) !important;
+}
+
+#dm-view .dm-media-viewer-close svg,
+#dm-view .dm-media-viewer-close .dm-icon {
+    width: 16px !important;
+    height: 16px !important;
+    display: block !important;
+    color: currentColor !important;
+    stroke: currentColor !important;
+    stroke-width: 2.2 !important;
+    fill: none !important;
+}
+
+@media (max-width: 650px) {
+    #dm-view .dm-message-search {
+        right: 8px !important;
+        width: calc(100% - 16px) !important;
+    }
+
+    #dm-view .dm-info-media-grid {
+        grid-template-columns: repeat(3, minmax(0,1fr)) !important;
+    }
+
+    #dm-view .dm-info-media-item {
+        max-width: none !important;
+    }
+
+    #dm-view .dm-media-viewer {
+        padding: 10px !important;
+    }
+
+    #dm-view .dm-media-viewer-panel {
+        width: 100% !important;
+        height: 100% !important;
+        border-radius: 12px !important;
+        padding: 50px 10px 12px !important;
+    }
+}
