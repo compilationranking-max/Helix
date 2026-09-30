@@ -29,13 +29,13 @@
         emoji:
             '<circle cx="24" cy="24" r="15"/><path d="M18 21h.01M30 21h.01M17 28c4 4 10 4 14 0"/>',
         pin:
-            '<path d="m18 8 12 12"/><path d="m28 10 7 7-5 5 3 8-4 4-8-3-5 5-7-7 5-5-3-8 4-4 8 3z"/><path d="m24 28-9 9"/>',
+            '<path d="m17 7 24 24-6 6-8-8-14 14-3-3 14-14-8-8z"/><path d="m13 13 7-7"/>',
         pinnedMessage:
-            '<path d="M9 12.5A4.5 4.5 0 0 1 13.5 8h21A4.5 4.5 0 0 1 39 12.5v12A4.5 4.5 0 0 1 34.5 29H24l-6 5v-5h-4.5A4.5 4.5 0 0 1 9 24.5z"/><path d="M24 14.5v7"/><path d="M20.8 17.5h6.4"/>',
+            '<path d="m17 7 24 24-6 6-8-8-14 14-3-3 14-14-8-8z"/><path d="m13 13 7-7"/>',
         unpin:
-            '<path d="M16 7.5 32 23.5"/><path d="m29 9 4.5 4.5-4 4 2.5 6.5-3.5 3.5-6.5-2.5-4 4-4.5-4.5 4-4-2.5-6.5 3.5-3.5 6.5 2.5z"/><path d="m24 28-7.5 7.5"/>',
+            '<path d="m17 7 24 24"/><path d="m31 8 9 9-7 7 4 9-6 6-9-4-7 7-9-9 7-7-4-9 6-6 9 4z"/><path d="m24 32-9 9"/>',
         privateNickname:
-            '<path d="M10 13.5 23.5 6l14.5 8-14.5 8z"/><path d="M10 13.5v12L23.5 33l13.5-7.5v-12"/><path d="M19 18.5h9"/><path d="M19 22.5h6"/>',
+            '<path d="M8 8h14l20 20-14 14L8 22V8z"/><circle cx="15.5" cy="14.5" r="2.1"/>',
         forward:
             '<path d="M31 10 41 20 31 30"/><path d="M41 20H19a10 10 0 0 0-10 10v8"/>',
         reply:
@@ -1712,19 +1712,39 @@
             "dm-emoji-search-wrap"
         );
 
-        const searchIcon = make(
-            "span",
-            "dm-emoji-search-icon"
+        const searchIcon = document.createElement("svg");
+        searchIcon.className =
+            "dm-emoji-search-icon dm-search-icon";
+        searchIcon.setAttribute(
+            "viewBox",
+            "0 0 24 24"
         );
-
+        searchIcon.setAttribute(
+            "fill",
+            "none"
+        );
+        searchIcon.setAttribute(
+            "stroke",
+            "currentColor"
+        );
+        searchIcon.setAttribute(
+            "stroke-width",
+            "1.7"
+        );
+        searchIcon.setAttribute(
+            "stroke-linecap",
+            "round"
+        );
+        searchIcon.setAttribute(
+            "stroke-linejoin",
+            "round"
+        );
         searchIcon.setAttribute(
             "aria-hidden",
             "true"
         );
-
-        searchIcon.appendChild(
-            makeIcon("search")
-        );
+        searchIcon.innerHTML =
+            '<circle cx="10.8" cy="10.8" r="6.2"></circle><path d="m16 16 4 4"></path>';
 
         const search = document.createElement("input");
 
