@@ -30,6 +30,12 @@
             '<circle cx="24" cy="24" r="15"/><path d="M18 21h.01M30 21h.01M17 28c4 4 10 4 14 0"/>',
         pin:
             '<path d="m18 8 12 12"/><path d="m28 10 7 7-5 5 3 8-4 4-8-3-5 5-7-7 5-5-3-8 4-4 8 3z"/><path d="m24 28-9 9"/>',
+        pinnedMessage:
+            '<path d="M9 12.5A4.5 4.5 0 0 1 13.5 8h21A4.5 4.5 0 0 1 39 12.5v12A4.5 4.5 0 0 1 34.5 29H24l-6 5v-5h-4.5A4.5 4.5 0 0 1 9 24.5z"/><path d="M24 14.5v7"/><path d="M20.8 17.5h6.4"/>',
+        unpin:
+            '<path d="M16 7.5 32 23.5"/><path d="m29 9 4.5 4.5-4 4 2.5 6.5-3.5 3.5-6.5-2.5-4 4-4.5-4.5 4-4-2.5-6.5 3.5-3.5 6.5 2.5z"/><path d="m24 28-7.5 7.5"/>',
+        privateNickname:
+            '<path d="M10 13.5 23.5 6l14.5 8-14.5 8z"/><path d="M10 13.5v12L23.5 33l13.5-7.5v-12"/><path d="M19 18.5h9"/><path d="M19 22.5h6"/>',
         forward:
             '<path d="M31 10 41 20 31 30"/><path d="M41 20H19a10 10 0 0 0-10 10v8"/>',
         reply:
@@ -1413,7 +1419,7 @@
                             "dm-pinned-icon"
                         );
                     icon.appendChild(
-                        makeIcon("pin")
+                        makeIcon("pinnedMessage")
                     );
 
                     const copy =
@@ -1474,7 +1480,7 @@
                     const unpin =
                         iconButton(
                             "dm-pinned-unpin",
-                            "pin",
+                            "unpin",
                             "Unpin message"
                         );
                     unpin.dataset.dmAction =
@@ -2181,7 +2187,7 @@
             "dm-private-nickname-icon"
         );
         nicknameIcon.appendChild(
-            makeIcon("edit")
+            makeIcon("privateNickname")
         );
 
         const nicknameCopy = make(
