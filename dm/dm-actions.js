@@ -1289,6 +1289,22 @@
         render.renderMessageStatus();
     }
 
+    function closeMessageSearch() {
+        state.messageSearch = "";
+
+        const panel = get("dm-message-search");
+        const toggle = get("dm-message-search-toggle");
+        const input = get("dm-message-search-input");
+
+        if (input) input.value = "";
+        if (panel) panel.hidden = true;
+
+        toggle?.setAttribute("aria-expanded", "false");
+
+        render.renderMessages();
+        render.renderMessageStatus();
+    }
+
     function startNewMessage() {
         state.conversationFilter = "all";
         state.conversationSearch = "";
@@ -1357,7 +1373,7 @@
 
         get("dm-message-search-clear")?.addEventListener(
             "click",
-            clearMessageSearch
+            closeMessageSearch
         );
 
         get("dm-message-form")?.addEventListener(
