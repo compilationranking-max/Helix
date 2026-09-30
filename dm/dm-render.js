@@ -1690,10 +1690,11 @@
         );
 
         const close = iconButton(
-            "dm-panel-close",
+            "dm-panel-close dm-close-control",
             "close",
             "Close emoji picker"
         );
+        close.setAttribute("data-close-glyph", "×");
 
         close.dataset.dmAction =
             "close-emoji-picker";
@@ -2072,10 +2073,11 @@
         );
 
         const close = iconButton(
-            "dm-panel-close",
+            "dm-panel-close dm-close-control",
             "close",
             "Close conversation info"
         );
+        close.setAttribute("data-close-glyph", "×");
         close.dataset.dmAction = "close-info";
         header.append(heading, close);
         panel.appendChild(header);
