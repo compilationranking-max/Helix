@@ -2175,8 +2175,48 @@
             "Edit private nickname"
         );
         nicknameButton.dataset.dmAction = "private-nickname";
-        nicknameButton.appendChild(
-            make("span", "", "Private nickname")
+
+        const nicknameIcon = make(
+            "span",
+            "dm-private-nickname-icon"
+        );
+        nicknameIcon.appendChild(
+            makeIcon("edit")
+        );
+
+        const nicknameCopy = make(
+            "span",
+            "dm-private-nickname-copy"
+        );
+        nicknameCopy.append(
+            make(
+                "strong",
+                "",
+                "Private nickname"
+            ),
+            make(
+                "small",
+                "",
+                conversation.nickname
+                    ? "Change the name shown only to you"
+                    : "Set a private name for this conversation"
+            )
+        );
+
+        const nicknameArrow = make(
+            "span",
+            "dm-private-nickname-arrow",
+            "›"
+        );
+        nicknameArrow.setAttribute(
+            "aria-hidden",
+            "true"
+        );
+
+        nicknameButton.replaceChildren(
+            nicknameIcon,
+            nicknameCopy,
+            nicknameArrow
         );
         actions.appendChild(nicknameButton);
         panel.appendChild(actions);
