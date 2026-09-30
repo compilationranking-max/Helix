@@ -2177,7 +2177,7 @@
         const actions = make("div", "dm-info-actions");
         const nicknameButton = iconButton(
             "dm-info-action dm-private-nickname-button",
-            "edit",
+            "privateNickname",
             "Edit private nickname"
         );
         nicknameButton.dataset.dmAction = "private-nickname";
