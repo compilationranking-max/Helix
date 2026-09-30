@@ -11005,3 +11005,298 @@ body.helix-compact-mode .settings-option-row {
         flex-basis: 40px !important;
     }
 }
+
+/* =========================================================
+   HELIX DMS — PINNED MESSAGE + NICKNAME ICON + EMOJI SEARCH FINISH
+   ========================================================= */
+
+/* Private nickname action: dedicated icon tile. */
+#dm-view .dm-private-nickname-button {
+    align-items: center !important;
+    overflow: hidden !important;
+}
+
+#dm-view .dm-private-nickname-icon {
+    position: relative !important;
+    flex: 0 0 34px !important;
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    display: grid !important;
+    place-items: center !important;
+    box-sizing: border-box !important;
+    border: 1px solid rgba(0,229,255,.24) !important;
+    border-radius: 10px !important;
+    color: #53e5ef !important;
+    background:
+        radial-gradient(circle at 50% 42%, rgba(0,229,255,.12), rgba(0,229,255,.045) 64%, rgba(0,229,255,.02) 65%) !important;
+    box-shadow:
+        inset 0 0 12px rgba(0,229,255,.035),
+        0 0 13px rgba(0,229,255,.045) !important;
+}
+
+#dm-view .dm-private-nickname-icon .dm-icon {
+    width: 16px !important;
+    height: 16px !important;
+    display: block !important;
+    color: currentColor !important;
+    stroke: currentColor !important;
+    fill: none !important;
+}
+
+#dm-view .dm-private-nickname-copy {
+    min-width: 0 !important;
+    flex: 1 1 auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    gap: 3px !important;
+}
+
+#dm-view .dm-private-nickname-copy strong {
+    display: block !important;
+    margin: 0 !important;
+    color: #e2fbff !important;
+    font: 700 10px/1.1 "Segoe UI", Inter, Arial, sans-serif !important;
+}
+
+#dm-view .dm-private-nickname-copy small {
+    display: block !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    color: #638b96 !important;
+    font: 600 7px/1.2 "SFMono-Regular", Consolas, monospace !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+}
+
+#dm-view .dm-private-nickname-arrow {
+    flex: 0 0 18px !important;
+    width: 18px !important;
+    min-width: 18px !important;
+    color: #588b96 !important;
+    font: 400 23px/1 Arial, sans-serif !important;
+    text-align: center !important;
+    transition: color .16s ease, transform .16s ease !important;
+}
+
+#dm-view .dm-private-nickname-button:hover .dm-private-nickname-arrow,
+#dm-view .dm-private-nickname-button:focus-visible .dm-private-nickname-arrow {
+    color: #9af3fa !important;
+    transform: translateX(2px) !important;
+}
+
+/* Pinned messages: restore clear sender → preview → timestamp hierarchy. */
+#dm-view .dm-pins-list {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 9px !important;
+    min-height: 0 !important;
+}
+
+#dm-view .dm-pinned-item {
+    position: relative !important;
+    display: grid !important;
+    grid-template-columns: 36px minmax(0,1fr) 34px !important;
+    grid-template-rows: auto !important;
+    align-items: center !important;
+    gap: 11px !important;
+    width: 100% !important;
+    min-height: 78px !important;
+    box-sizing: border-box !important;
+    padding: 11px 11px 10px !important;
+    border: 1px solid rgba(66,113,128,.22) !important;
+    border-radius: 14px !important;
+    background:
+        linear-gradient(145deg, rgba(10,25,35,.96), rgba(5,13,20,.985)) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.025),
+        0 8px 22px rgba(0,0,0,.18) !important;
+    text-align: left !important;
+}
+
+#dm-view .dm-pinned-item::before {
+    content: "" !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 10px !important;
+    bottom: 10px !important;
+    width: 2px !important;
+    border-radius: 99px !important;
+    background: rgba(0,229,255,.26) !important;
+    box-shadow: 0 0 9px rgba(0,229,255,.12) !important;
+}
+
+#dm-view .dm-pinned-item:hover,
+#dm-view .dm-pinned-item:focus-visible {
+    transform: translateY(-1px) !important;
+    border-color: rgba(0,229,255,.38) !important;
+    background:
+        linear-gradient(145deg, rgba(11,31,41,.985), rgba(5,15,22,.99)) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.03),
+        0 12px 28px rgba(0,0,0,.26),
+        0 0 17px rgba(0,229,255,.05) !important;
+    outline: none !important;
+}
+
+#dm-view .dm-pinned-icon {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    display: grid !important;
+    place-items: center !important;
+    box-sizing: border-box !important;
+    border: 1px solid rgba(0,229,255,.22) !important;
+    border-radius: 10px !important;
+    color: #4de0eb !important;
+    background:
+        radial-gradient(circle at 50% 42%, rgba(0,229,255,.13), transparent 67%),
+        rgba(0,229,255,.045) !important;
+}
+
+#dm-view .dm-pinned-icon .dm-icon {
+    width: 16px !important;
+    height: 16px !important;
+    display: block !important;
+    color: currentColor !important;
+    stroke: currentColor !important;
+}
+
+#dm-view .dm-pinned-copy {
+    min-width: 0 !important;
+    width: 100% !important;
+    display: grid !important;
+    grid-template-columns: minmax(0,1fr) !important;
+    grid-auto-rows: auto !important;
+    align-content: center !important;
+    gap: 4px !important;
+}
+
+#dm-view .dm-pinned-copy > strong {
+    display: block !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+    color: #dff7fb !important;
+    font: 750 9px/1.1 "Segoe UI", Inter, Arial, sans-serif !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+}
+
+#dm-view .dm-pinned-text {
+    min-width: 0 !important;
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+    color: #91aab3 !important;
+    font: 500 9px/1.25 "Segoe UI", Inter, Arial, sans-serif !important;
+}
+
+#dm-view .dm-pinned-text > span:last-child {
+    min-width: 0 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+}
+
+#dm-view .dm-pinned-time {
+    display: block !important;
+    color: #476872 !important;
+    font: 600 7px/1 "SFMono-Regular", Consolas, monospace !important;
+    letter-spacing: .02em !important;
+}
+
+#dm-view .dm-pinned-media-icon {
+    flex: 0 0 auto !important;
+    width: 13px !important;
+    height: 13px !important;
+    display: inline-grid !important;
+    place-items: center !important;
+    color: #4fdce7 !important;
+}
+
+#dm-view .dm-pinned-media-icon .dm-icon {
+    width: 12px !important;
+    height: 12px !important;
+    stroke: currentColor !important;
+}
+
+#dm-view .dm-pinned-unpin {
+    position: relative !important;
+    z-index: 2 !important;
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    display: grid !important;
+    place-items: center !important;
+    padding: 0 !important;
+    border: 1px solid rgba(86,132,146,.24) !important;
+    border-radius: 9px !important;
+    color: #7b9da6 !important;
+    background: rgba(255,255,255,.018) !important;
+}
+
+#dm-view .dm-pinned-unpin .dm-icon {
+    width: 14px !important;
+    height: 14px !important;
+    color: currentColor !important;
+    stroke: currentColor !important;
+    fill: none !important;
+}
+
+#dm-view .dm-pinned-unpin:hover,
+#dm-view .dm-pinned-unpin:focus-visible {
+    color: #e8fdff !important;
+    border-color: rgba(0,229,255,.48) !important;
+    background: rgba(0,229,255,.07) !important;
+    box-shadow: 0 0 16px rgba(0,229,255,.09) !important;
+    outline: none !important;
+}
+
+/* Emoji search: visible icon well + separated text start. */
+#dm-view .dm-emoji-search-wrap {
+    position: relative !important;
+    isolation: isolate !important;
+}
+
+#dm-view .dm-emoji-search-icon {
+    position: absolute !important;
+    left: 10px !important;
+    top: 50% !important;
+    z-index: 3 !important;
+    width: 24px !important;
+    height: 24px !important;
+    display: grid !important;
+    place-items: center !important;
+    transform: translateY(-50%) !important;
+    border: 1px solid rgba(0,229,255,.22) !important;
+    border-radius: 7px !important;
+    color: #7ff5fb !important;
+    background:
+        radial-gradient(circle at 50% 48%, rgba(0,229,255,.14), rgba(0,229,255,.055) 68%, rgba(0,229,255,.025) 69%) !important;
+    box-shadow:
+        inset 0 0 9px rgba(0,229,255,.045),
+        0 0 12px rgba(0,229,255,.055) !important;
+    pointer-events: none !important;
+}
+
+#dm-view .dm-emoji-search-icon .dm-icon,
+#dm-view .dm-emoji-search-icon svg {
+    width: 14px !important;
+    height: 14px !important;
+    display: block !important;
+    color: #a6fbff !important;
+    stroke: #a6fbff !important;
+    stroke-width: 2.3 !important;
+    fill: none !important;
+    opacity: 1 !important;
+    filter: drop-shadow(0 0 5px rgba(0,229,255,.48)) !important;
+}
+
+#dm-view #dm-emoji-search,
+#dm-view .dm-emoji-search-wrap input {
+    padding-left: 45px !important;
+}
