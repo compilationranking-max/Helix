@@ -11543,3 +11543,198 @@ body.helix-compact-mode .settings-option-row {
         display: none !important;
     }
 }
+
+/* =========================================================
+   HELIX DMS — EXACT WORKING EDIT ICON / UNPIN ICON
+   No custom nickname/pinned logo wrappers.
+   ========================================================= */
+
+/* Private nickname MUST use the same visible pencil SVG as message Edit. */
+#dm-view .dm-private-nickname-button {
+    position: relative !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 11px !important;
+    box-sizing: border-box !important;
+}
+
+#dm-view .dm-private-nickname-button > svg.dm-private-nickname-edit-icon {
+    display: block !important;
+    position: relative !important;
+    flex: 0 0 18px !important;
+    width: 18px !important;
+    height: 18px !important;
+    min-width: 18px !important;
+    min-height: 18px !important;
+    max-width: 18px !important;
+    max-height: 18px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    color: #61e5ee !important;
+    stroke: #61e5ee !important;
+    stroke-width: 2.5 !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+    fill: none !important;
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    filter: drop-shadow(0 0 5px rgba(0,229,255,.30)) !important;
+}
+
+#dm-view .dm-private-nickname-button > svg.dm-private-nickname-edit-icon path {
+    display: inline !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    stroke: currentColor !important;
+    stroke-width: 2.5 !important;
+    fill: none !important;
+}
+
+#dm-view .dm-private-nickname-button:hover > svg.dm-private-nickname-edit-icon,
+#dm-view .dm-private-nickname-button:focus-visible > svg.dm-private-nickname-edit-icon {
+    color: #9af6fb !important;
+    stroke: #9af6fb !important;
+    filter: drop-shadow(0 0 8px rgba(0,229,255,.55)) !important;
+}
+
+/* One chevron only. */
+#dm-view .dm-private-nickname-button::after {
+    display: none !important;
+    content: none !important;
+}
+
+#dm-view .dm-private-nickname-copy {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+}
+
+#dm-view .dm-private-nickname-arrow {
+    flex: 0 0 auto !important;
+    color: #679ca7 !important;
+    font: 400 22px/1 Arial, sans-serif !important;
+}
+
+/* Remove all obsolete icon wrappers from the visual tree if an old cached
+   DOM ever survives for a moment. */
+#dm-view .dm-private-nickname-icon,
+#dm-view .dm-pinned-icon {
+    display: none !important;
+}
+
+/* Pinned rows are text + action only. */
+#dm-view .dm-pinned-item {
+    display: grid !important;
+    grid-template-columns: minmax(0,1fr) auto !important;
+    align-items: center !important;
+    gap: 12px !important;
+}
+
+#dm-view .dm-pinned-copy {
+    min-width: 0 !important;
+}
+
+/* Unpin icon: force the SVG itself visible, not just the button. */
+#dm-view .dm-pinned-unpin {
+    position: relative !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 7px !important;
+    min-width: 74px !important;
+    height: 34px !important;
+    min-height: 34px !important;
+    box-sizing: border-box !important;
+    overflow: visible !important;
+    color: #86adb6 !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+#dm-view .dm-pinned-unpin > svg.dm-icon {
+    display: block !important;
+    position: relative !important;
+    flex: 0 0 15px !important;
+    width: 15px !important;
+    height: 15px !important;
+    min-width: 15px !important;
+    min-height: 15px !important;
+    max-width: 15px !important;
+    max-height: 15px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    color: currentColor !important;
+    stroke: currentColor !important;
+    stroke-width: 2.4 !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+    fill: none !important;
+    background: transparent !important;
+    border: 0 !important;
+}
+
+#dm-view .dm-pinned-unpin > svg.dm-icon path,
+#dm-view .dm-pinned-unpin > svg.dm-icon line {
+    display: inline !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    stroke: currentColor !important;
+    stroke-width: 2.4 !important;
+    fill: none !important;
+}
+
+#dm-view .dm-pinned-unpin:hover > svg.dm-icon,
+#dm-view .dm-pinned-unpin:focus-visible > svg.dm-icon {
+    color: #9cf5fa !important;
+    stroke: #9cf5fa !important;
+    filter: drop-shadow(0 0 7px rgba(0,229,255,.42)) !important;
+}
+
+#dm-view .dm-pinned-unpin-label {
+    flex: 0 0 auto !important;
+    color: currentColor !important;
+}
+
+/* Emoji search: same exact search geometry and forced visibility. */
+#dm-view .dm-emoji-search-icon {
+    position: absolute !important;
+    left: 12px !important;
+    top: 50% !important;
+    width: 17px !important;
+    height: 17px !important;
+    min-width: 17px !important;
+    min-height: 17px !important;
+    display: block !important;
+    z-index: 10 !important;
+    transform: translateY(-50%) !important;
+    color: #66e7ef !important;
+    stroke: #66e7ef !important;
+    stroke-width: 1.7 !important;
+    fill: none !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: none !important;
+    overflow: visible !important;
+    filter: drop-shadow(0 0 5px rgba(0,229,255,.34)) !important;
+}
+
+#dm-view .dm-emoji-search-icon circle,
+#dm-view .dm-emoji-search-icon path {
+    display: inline !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    stroke: currentColor !important;
+    stroke-width: 1.7 !important;
+    fill: none !important;
+}
+
+#dm-view #dm-emoji-search {
+    padding-left: 38px !important;
+}
+
