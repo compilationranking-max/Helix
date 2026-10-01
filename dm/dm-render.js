@@ -30,12 +30,8 @@
             '<circle cx="24" cy="24" r="15"/><path d="M18 21h.01M30 21h.01M17 28c4 4 10 4 14 0"/>',
         pin:
             '<path d="m17 7 24 24-6 6-8-8-14 14-3-3 14-14-8-8z"/><path d="m13 13 7-7"/>',
-        pinnedMessage:
-            '<path d="m17 7 24 24-6 6-8-8-14 14-3-3 14-14-8-8z"/><path d="m13 13 7-7"/>',
         unpin:
             '<path d="m17 7 24 24"/><path d="m31 8 9 9-7 7 4 9-6 6-9-4-7 7-9-9 7-7-4-9 6-6 9 4z"/><path d="m24 32-9 9"/>',
-        privateNickname:
-            '<path d="M8 8h14l20 20-14 14L8 22V8z"/><circle cx="15.5" cy="14.5" r="2.1"/>',
         forward:
             '<path d="M31 10 41 20 31 30"/><path d="M41 20H19a10 10 0 0 0-10 10v8"/>',
         reply:
@@ -1413,15 +1409,6 @@
                         "Jump to pinned message"
                     );
 
-                    const icon =
-                        make(
-                            "span",
-                            "dm-pinned-icon"
-                        );
-                    icon.appendChild(
-                        makeIcon("pinnedMessage")
-                    );
-
                     const copy =
                         make(
                             "div",
@@ -1488,8 +1475,15 @@
                     unpin.dataset.messageId =
                         String(message.id);
 
+                    const unpinLabel = make(
+                        "span",
+                        "dm-pinned-unpin-label",
+                        "Unpin"
+                    );
+
+                    unpin.appendChild(unpinLabel);
+
                     row.append(
-                        icon,
                         copy,
                         unpin
                     );
@@ -2197,18 +2191,10 @@
         const actions = make("div", "dm-info-actions");
         const nicknameButton = iconButton(
             "dm-info-action dm-private-nickname-button",
-            "privateNickname",
+            "edit",
             "Edit private nickname"
         );
         nicknameButton.dataset.dmAction = "private-nickname";
-
-        const nicknameIcon = make(
-            "span",
-            "dm-private-nickname-icon"
-        );
-        nicknameIcon.appendChild(
-            makeIcon("privateNickname")
-        );
 
         const nicknameCopy = make(
             "span",
@@ -2240,7 +2226,7 @@
         );
 
         nicknameButton.replaceChildren(
-            nicknameIcon,
+            nicknameButton.querySelector(".dm-icon"),
             nicknameCopy,
             nicknameArrow
         );
