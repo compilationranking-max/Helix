@@ -11332,8 +11332,6 @@ body.helix-compact-mode .settings-option-row {
 }
 
 /* Never let generic SVG rules wash out these three icon families. */
-#dm-view .dm-private-nickname-icon svg,
-#dm-view .dm-pinned-icon svg,
 #dm-view .dm-pinned-unpin svg {
     opacity: 1 !important;
     visibility: visible !important;
