@@ -2189,12 +2189,28 @@
         panel.appendChild(profile);
 
         const actions = make("div", "dm-info-actions");
-        const nicknameButton = iconButton(
-            "dm-info-action dm-private-nickname-button",
-            "edit",
+
+        const nicknameButton = make(
+            "button",
+            "dm-info-action dm-private-nickname-button"
+        );
+        nicknameButton.type = "button";
+        nicknameButton.dataset.dmAction =
+            "private-nickname";
+        nicknameButton.title =
+            "Edit private nickname";
+        nicknameButton.setAttribute(
+            "aria-label",
             "Edit private nickname"
         );
-        nicknameButton.dataset.dmAction = "private-nickname";
+
+        // This is the exact same edit icon used by message editing.
+        const nicknameEditIcon = makeIcon(
+            "edit"
+        );
+        nicknameEditIcon.classList.add(
+            "dm-private-nickname-edit-icon"
+        );
 
         const nicknameCopy = make(
             "span",
@@ -2225,8 +2241,8 @@
             "true"
         );
 
-        nicknameButton.replaceChildren(
-            nicknameButton.querySelector(".dm-icon"),
+        nicknameButton.append(
+            nicknameEditIcon,
             nicknameCopy,
             nicknameArrow
         );
