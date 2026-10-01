@@ -11539,3 +11539,218 @@ body.helix-compact-mode .settings-option-row {
     opacity: 1 !important;
     visibility: visible !important;
 }
+
+/* =========================================================
+   HELIX DMS — CLEAN PINNED / NICKNAME FINAL STRUCTURE
+   ========================================================= */
+
+/* Private nickname: use the same edit icon as message editing.
+   The icon is intentionally not a custom badge or wrapper. */
+#dm-view .dm-private-nickname-button {
+    display: flex !important;
+    align-items: center !important;
+    width: 100% !important;
+    min-height: 52px !important;
+    height: 52px !important;
+    padding: 0 14px !important;
+    gap: 11px !important;
+    box-sizing: border-box !important;
+    border: 1px solid rgba(0,229,255,.23) !important;
+    border-radius: 13px !important;
+    color: #dffbff !important;
+    background:
+        linear-gradient(135deg, rgba(9,28,37,.96), rgba(5,13,20,.99)) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.035),
+        0 8px 22px rgba(0,0,0,.20) !important;
+}
+
+#dm-view .dm-private-nickname-button > .dm-icon {
+    display: block !important;
+    flex: 0 0 17px !important;
+    width: 17px !important;
+    height: 17px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    color: #5de4ef !important;
+    stroke: #5de4ef !important;
+    stroke-width: 2.4 !important;
+    fill: none !important;
+    filter: drop-shadow(0 0 5px rgba(0,229,255,.28)) !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+#dm-view .dm-private-nickname-button:hover > .dm-icon,
+#dm-view .dm-private-nickname-button:focus-visible > .dm-icon {
+    color: #8cf4fa !important;
+    stroke: #8cf4fa !important;
+    filter: drop-shadow(0 0 8px rgba(0,229,255,.48)) !important;
+}
+
+#dm-view .dm-private-nickname-button > .dm-private-nickname-copy {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+}
+
+#dm-view .dm-private-nickname-button > .dm-private-nickname-arrow {
+    flex: 0 0 auto !important;
+}
+
+/* Remove every obsolete custom nickname icon treatment from the active UI. */
+#dm-view .dm-private-nickname-icon {
+    display: none !important;
+}
+
+/* Pinned messages: text + action only. No icon column. */
+#dm-view .dm-pinned-item {
+    grid-template-columns: minmax(0,1fr) auto !important;
+    grid-template-rows: 1fr !important;
+    align-items: center !important;
+    gap: 12px !important;
+    min-height: 76px !important;
+    padding: 11px 10px 11px 14px !important;
+}
+
+#dm-view .dm-pinned-item::before {
+    left: 0 !important;
+    top: 11px !important;
+    bottom: 11px !important;
+    width: 2px !important;
+    background: rgba(0,229,255,.34) !important;
+    box-shadow: 0 0 9px rgba(0,229,255,.14) !important;
+}
+
+#dm-view .dm-pinned-icon {
+    display: none !important;
+}
+
+/* Sender / message / time form one readable stack. */
+#dm-view .dm-pinned-copy {
+    min-width: 0 !important;
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: flex-start !important;
+    gap: 4px !important;
+}
+
+#dm-view .dm-pinned-copy > strong {
+    width: 100% !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+    color: #dff9fc !important;
+    font-size: 10px !important;
+    font-weight: 750 !important;
+    line-height: 1.1 !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+}
+
+#dm-view .dm-pinned-text {
+    width: 100% !important;
+    min-width: 0 !important;
+    display: block !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+    color: #91adb5 !important;
+    font-size: 10px !important;
+    line-height: 1.25 !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+}
+
+#dm-view .dm-pinned-text > .dm-pinned-media-icon {
+    display: inline-grid !important;
+    vertical-align: -2px !important;
+    margin-right: 5px !important;
+}
+
+#dm-view .dm-pinned-text > span:last-child {
+    display: inline !important;
+    min-width: 0 !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    white-space: nowrap !important;
+}
+
+#dm-view .dm-pinned-time {
+    display: block !important;
+    margin-top: 0 !important;
+    color: #4e717c !important;
+    font: 600 7px/1 "SFMono-Regular", Consolas, monospace !important;
+    letter-spacing: .03em !important;
+}
+
+/* Unpin: labeled compact action with a clear crossed-pin icon. */
+#dm-view .dm-pinned-unpin {
+    width: auto !important;
+    min-width: 74px !important;
+    height: 34px !important;
+    min-height: 34px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 7px !important;
+    padding: 0 10px !important;
+    box-sizing: border-box !important;
+    border: 1px solid rgba(90,133,146,.30) !important;
+    border-radius: 9px !important;
+    color: #83aab3 !important;
+    background:
+        linear-gradient(145deg, rgba(12,26,35,.90), rgba(5,12,18,.98)) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.025) !important;
+    cursor: pointer !important;
+}
+
+#dm-view .dm-pinned-unpin .dm-icon {
+    flex: 0 0 15px !important;
+    width: 15px !important;
+    height: 15px !important;
+    color: currentColor !important;
+    stroke: currentColor !important;
+    stroke-width: 2.2 !important;
+    fill: none !important;
+}
+
+#dm-view .dm-pinned-unpin-label {
+    display: block !important;
+    color: currentColor !important;
+    font: 700 8px/1 "Segoe UI", Inter, Arial, sans-serif !important;
+    letter-spacing: .03em !important;
+}
+
+#dm-view .dm-pinned-unpin:hover,
+#dm-view .dm-pinned-unpin:focus-visible {
+    color: #e7fdff !important;
+    border-color: rgba(0,229,255,.54) !important;
+    background:
+        linear-gradient(145deg, rgba(8,38,48,.97), rgba(5,15,22,.99)) !important;
+    box-shadow:
+        0 0 0 3px rgba(0,229,255,.03),
+        0 0 18px rgba(0,229,255,.10) !important;
+    outline: none !important;
+}
+
+@media (max-width: 650px) {
+    #dm-view .dm-pinned-item {
+        grid-template-columns: minmax(0,1fr) auto !important;
+        gap: 8px !important;
+        padding-left: 12px !important;
+    }
+
+    #dm-view .dm-pinned-unpin {
+        min-width: 34px !important;
+        width: 34px !important;
+        padding: 0 !important;
+        gap: 0 !important;
+    }
+
+    #dm-view .dm-pinned-unpin-label {
+        display: none !important;
+    }
+}
