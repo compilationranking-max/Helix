@@ -11733,3 +11733,120 @@ body.helix-compact-mode .settings-option-row {
     padding-left: 38px !important;
 }
 
+/* =========================================================
+   HELIX DMS — VERIFIED ICONS FINAL
+   Exact existing Edit icon + visible Unpin icon.
+   ========================================================= */
+
+#dm-view .dm-private-nickname-button > svg.dm-private-nickname-edit-icon {
+    display: block !important;
+    flex: 0 0 18px !important;
+    width: 18px !important;
+    height: 18px !important;
+    min-width: 18px !important;
+    min-height: 18px !important;
+    max-width: 18px !important;
+    max-height: 18px !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    position: relative !important;
+    color: #64e6ef !important;
+    stroke: #64e6ef !important;
+    stroke-width: 2.5 !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+    fill: none !important;
+    overflow: visible !important;
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    filter: drop-shadow(0 0 5px rgba(0,229,255,.32)) !important;
+}
+
+#dm-view .dm-private-nickname-button > svg.dm-private-nickname-edit-icon path {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    stroke: currentColor !important;
+    stroke-width: 2.5 !important;
+    fill: none !important;
+}
+
+#dm-view .dm-private-nickname-button:hover > svg.dm-private-nickname-edit-icon,
+#dm-view .dm-private-nickname-button:focus-visible > svg.dm-private-nickname-edit-icon {
+    color: #9af7fb !important;
+    stroke: #9af7fb !important;
+    filter: drop-shadow(0 0 8px rgba(0,229,255,.52)) !important;
+}
+
+/* Pinned rows have no left logo. The only icon is this Unpin action. */
+#dm-view .dm-pinned-item {
+    grid-template-columns: minmax(0,1fr) auto !important;
+}
+
+#dm-view .dm-pinned-unpin {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 7px !important;
+    min-width: 76px !important;
+    width: auto !important;
+    height: 34px !important;
+    min-height: 34px !important;
+    padding: 0 10px !important;
+    box-sizing: border-box !important;
+    color: #8bb1b9 !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+#dm-view .dm-pinned-unpin > svg.dm-icon {
+    display: block !important;
+    flex: 0 0 16px !important;
+    width: 16px !important;
+    height: 16px !important;
+    min-width: 16px !important;
+    min-height: 16px !important;
+    max-width: 16px !important;
+    max-height: 16px !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    position: relative !important;
+    color: currentColor !important;
+    stroke: currentColor !important;
+    stroke-width: 2.6 !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+    fill: none !important;
+    overflow: visible !important;
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+}
+
+#dm-view .dm-pinned-unpin > svg.dm-icon path {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    stroke: currentColor !important;
+    stroke-width: 2.6 !important;
+    fill: none !important;
+}
+
+#dm-view .dm-pinned-unpin-label {
+    display: block !important;
+    flex: 0 0 auto !important;
+    color: currentColor !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+#dm-view .dm-pinned-unpin:hover,
+#dm-view .dm-pinned-unpin:focus-visible {
+    color: #9af6fb !important;
+    border-color: rgba(0,229,255,.60) !important;
+    box-shadow:
+        0 0 0 3px rgba(0,229,255,.03),
+        0 0 18px rgba(0,229,255,.12) !important;
+    outline: none !important;
+}
