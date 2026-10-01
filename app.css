@@ -9100,14 +9100,6 @@ body.helix-compact-mode .settings-option-row {
         linear-gradient(145deg, rgba(13,34,43,.98), rgba(7,17,24,.98)) !important;
 }
 
-#dm-view .dm-pinned-icon {
-    width: 34px !important;
-    height: 34px !important;
-    border-radius: 10px !important;
-    border-color: rgba(0,229,255,.24) !important;
-    color: #45dce7 !important;
-    background: rgba(0,229,255,.055) !important;
-}
 
 #dm-view .dm-pinned-copy strong {
     font-size: 10px !important;
@@ -11016,33 +11008,7 @@ body.helix-compact-mode .settings-option-row {
     overflow: hidden !important;
 }
 
-#dm-view .dm-private-nickname-icon {
-    position: relative !important;
-    flex: 0 0 34px !important;
-    width: 34px !important;
-    height: 34px !important;
-    min-width: 34px !important;
-    display: grid !important;
-    place-items: center !important;
-    box-sizing: border-box !important;
-    border: 1px solid rgba(0,229,255,.24) !important;
-    border-radius: 10px !important;
-    color: #53e5ef !important;
-    background:
-        radial-gradient(circle at 50% 42%, rgba(0,229,255,.12), rgba(0,229,255,.045) 64%, rgba(0,229,255,.02) 65%) !important;
-    box-shadow:
-        inset 0 0 12px rgba(0,229,255,.035),
-        0 0 13px rgba(0,229,255,.045) !important;
-}
 
-#dm-view .dm-private-nickname-icon .dm-icon {
-    width: 16px !important;
-    height: 16px !important;
-    display: block !important;
-    color: currentColor !important;
-    stroke: currentColor !important;
-    fill: none !important;
-}
 
 #dm-view .dm-private-nickname-copy {
     min-width: 0 !important;
@@ -11140,28 +11106,7 @@ body.helix-compact-mode .settings-option-row {
     outline: none !important;
 }
 
-#dm-view .dm-pinned-icon {
-    width: 36px !important;
-    height: 36px !important;
-    min-width: 36px !important;
-    display: grid !important;
-    place-items: center !important;
-    box-sizing: border-box !important;
-    border: 1px solid rgba(0,229,255,.22) !important;
-    border-radius: 10px !important;
-    color: #4de0eb !important;
-    background:
-        radial-gradient(circle at 50% 42%, rgba(0,229,255,.13), transparent 67%),
-        rgba(0,229,255,.045) !important;
-}
 
-#dm-view .dm-pinned-icon .dm-icon {
-    width: 16px !important;
-    height: 16px !important;
-    display: block !important;
-    color: currentColor !important;
-    stroke: currentColor !important;
-}
 
 #dm-view .dm-pinned-copy {
     min-width: 0 !important;
@@ -11305,76 +11250,6 @@ body.helix-compact-mode .settings-option-row {
    HELIX DMS — DEDICATED NICKNAME / PINNED ICON SYSTEM
    ========================================================= */
 
-/* Private nickname: the icon is a dedicated identity/tag mark, not a
-   generic "edit" pencil. */
-#dm-view .dm-private-nickname-icon {
-    position: relative !important;
-    overflow: visible !important;
-    color: #66eaf2 !important;
-    border-color: rgba(0,229,255,.28) !important;
-    background:
-        radial-gradient(circle at 50% 42%, rgba(0,229,255,.15), transparent 62%),
-        linear-gradient(145deg, rgba(0,229,255,.075), rgba(0,229,255,.025)) !important;
-    box-shadow:
-        inset 0 0 12px rgba(0,229,255,.045),
-        0 0 15px rgba(0,229,255,.05) !important;
-}
-
-#dm-view .dm-private-nickname-icon::after {
-    content: "" !important;
-    position: absolute !important;
-    right: 4px !important;
-    bottom: 4px !important;
-    width: 6px !important;
-    height: 6px !important;
-    border: 1px solid rgba(5,18,25,.95) !important;
-    border-radius: 50% !important;
-    background: #67edf4 !important;
-    box-shadow: 0 0 7px rgba(0,229,255,.55) !important;
-}
-
-#dm-view .dm-private-nickname-icon .dm-icon {
-    width: 17px !important;
-    height: 17px !important;
-    stroke-width: 2.2 !important;
-}
-
-/* Pinned-message identity mark: message bubble + pushpin, with a subtle
-   cyan "locked in place" indicator. */
-#dm-view .dm-pinned-icon {
-    position: relative !important;
-    overflow: visible !important;
-    border-color: rgba(0,229,255,.30) !important;
-    color: #65e8ef !important;
-    background:
-        radial-gradient(circle at 50% 42%, rgba(0,229,255,.15), transparent 64%),
-        linear-gradient(145deg, rgba(0,229,255,.08), rgba(0,229,255,.025)) !important;
-    box-shadow:
-        inset 0 0 13px rgba(0,229,255,.045),
-        0 0 16px rgba(0,229,255,.055) !important;
-}
-
-#dm-view .dm-pinned-icon::after {
-    content: "" !important;
-    position: absolute !important;
-    width: 6px !important;
-    height: 6px !important;
-    right: -2px !important;
-    top: -2px !important;
-    border: 2px solid #07131b !important;
-    border-radius: 50% !important;
-    background: #3de2eb !important;
-    box-shadow:
-        0 0 7px rgba(0,229,255,.55),
-        0 0 12px rgba(0,229,255,.16) !important;
-}
-
-#dm-view .dm-pinned-icon .dm-icon {
-    width: 17px !important;
-    height: 17px !important;
-    stroke-width: 2.15 !important;
-}
-
 /* Unpin control: unmistakably different from the pinned badge. */
 #dm-view .dm-pinned-unpin {
     border-color: rgba(92,137,149,.28) !important;
@@ -11438,82 +11313,6 @@ body.helix-compact-mode .settings-option-row {
 
 #dm-view #dm-emoji-search {
     padding-left: 38px !important;
-}
-
-/* Private nickname = clear tag/label pictogram. */
-#dm-view .dm-private-nickname-icon {
-    flex: 0 0 34px !important;
-    width: 34px !important;
-    height: 34px !important;
-    min-width: 34px !important;
-    min-height: 34px !important;
-    display: grid !important;
-    place-items: center !important;
-    overflow: hidden !important;
-    box-sizing: border-box !important;
-    border: 1px solid rgba(0,229,255,.33) !important;
-    border-radius: 10px !important;
-    color: #7ff6fb !important;
-    background:
-        linear-gradient(145deg, rgba(0,229,255,.11), rgba(0,229,255,.035)) !important;
-    box-shadow:
-        inset 0 0 12px rgba(0,229,255,.04),
-        0 0 13px rgba(0,229,255,.06) !important;
-}
-
-#dm-view .dm-private-nickname-icon::after {
-    display: none !important;
-    content: none !important;
-}
-
-#dm-view .dm-private-nickname-icon .dm-icon {
-    width: 19px !important;
-    height: 19px !important;
-    display: block !important;
-    color: #7ff6fb !important;
-    stroke: #7ff6fb !important;
-    stroke-width: 2.8 !important;
-    fill: none !important;
-    overflow: visible !important;
-    filter: drop-shadow(0 0 5px rgba(0,229,255,.30)) !important;
-}
-
-/* Pinned-message = unmistakable pushpin silhouette. */
-#dm-view .dm-pinned-icon {
-    position: relative !important;
-    width: 36px !important;
-    height: 36px !important;
-    min-width: 36px !important;
-    min-height: 36px !important;
-    display: grid !important;
-    place-items: center !important;
-    overflow: hidden !important;
-    box-sizing: border-box !important;
-    border: 1px solid rgba(0,229,255,.34) !important;
-    border-radius: 10px !important;
-    color: #7ff6fb !important;
-    background:
-        linear-gradient(145deg, rgba(0,229,255,.12), rgba(0,229,255,.035)) !important;
-    box-shadow:
-        inset 0 0 13px rgba(0,229,255,.045),
-        0 0 16px rgba(0,229,255,.065) !important;
-}
-
-#dm-view .dm-pinned-icon::after {
-    display: none !important;
-    content: none !important;
-}
-
-#dm-view .dm-pinned-icon .dm-icon {
-    width: 20px !important;
-    height: 20px !important;
-    display: block !important;
-    color: #7ff6fb !important;
-    stroke: #7ff6fb !important;
-    stroke-width: 2.7 !important;
-    fill: none !important;
-    overflow: visible !important;
-    filter: drop-shadow(0 0 5px rgba(0,229,255,.32)) !important;
 }
 
 /* Unpin gets the same pin family, but with a clear diagonal strike. */
@@ -11599,11 +11398,6 @@ body.helix-compact-mode .settings-option-row {
     flex: 0 0 auto !important;
 }
 
-/* Remove every obsolete custom nickname icon treatment from the active UI. */
-#dm-view .dm-private-nickname-icon {
-    display: none !important;
-}
-
 /* Pinned messages: text + action only. No icon column. */
 #dm-view .dm-pinned-item {
     grid-template-columns: minmax(0,1fr) auto !important;
@@ -11623,9 +11417,6 @@ body.helix-compact-mode .settings-option-row {
     box-shadow: 0 0 9px rgba(0,229,255,.14) !important;
 }
 
-#dm-view .dm-pinned-icon {
-    display: none !important;
-}
 
 /* Sender / message / time form one readable stack. */
 #dm-view .dm-pinned-copy {
