@@ -11620,11 +11620,6 @@ body.helix-compact-mode .settings-option-row {
 
 /* Remove all obsolete icon wrappers from the visual tree if an old cached
    DOM ever survives for a moment. */
-#dm-view .dm-private-nickname-icon,
-#dm-view .dm-pinned-icon {
-    display: none !important;
-}
-
 /* Pinned rows are text + action only. */
 #dm-view .dm-pinned-item {
     display: grid !important;
