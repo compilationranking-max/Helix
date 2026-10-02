@@ -521,6 +521,20 @@
             if (event.code === "Space") {
                 event.preventDefault();
                 toggleActivePlayback();
+                return;
+            }
+
+            if (event.key.toLowerCase() === "m") {
+                event.preventDefault();
+
+                const cards = getCards();
+                const card = cards[activeIndex >= 0 ? activeIndex : 0];
+                const video = getVideo(card);
+
+                if (video) {
+                    video.muted = !video.muted;
+                    syncMuteButton(card);
+                }
             }
         });
 
