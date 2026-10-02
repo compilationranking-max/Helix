@@ -49,6 +49,7 @@
 
     let observer = null;
     let scrollFrame = 0;
+    let wheelLockUntil = 0;
     let activeIndex = -1;
     let renderGeneration = 0;
 
@@ -413,6 +414,144 @@
         syncProgress(card);
     };
 
+    const goToReel = (index) => {
+        const cards = getCards();
+        const feed = getFeed();
+        if (!feed || !cards.length) return;
+
+        const targetIndex = Math.max(0, Math.min(cards.length - 1, index));
+        const target = cards[targetIndex];
+        if (!target) return;
+
+        target.scrollIntoView({
+            behavior: "smooth",
+            block: "start"
+        });
+
+        window.setTimeout(() => {
+            if (targetIndex !== activeIndex) {
+                updatePlayback(targetIndex, true);
+            }
+        }, 140);
+    };
+
+    const toggleActivePlayback = async () => {
+        const cards = getCards();
+        const card = cards[activeIndex >= 0 ? activeIndex : 0];
+        const video = getVideo(card);
+        if (!video) return;
+
+        try {
+            if (video.paused || video.ended) {
+                await updatePlayback(
+                    Number(card.dataset.reelIndex),
+                    true
+                );
+            } else {
+                video.pause();
+                syncPlayButton(card);
+            }
+        } catch {
+            syncPlayButton(card);
+        }
+    };
+
+    const setupReelsInput = () => {
+        const feed = getFeed();
+        if (!feed || feed.dataset.stage3InputBound === "true") return;
+
+        feed.dataset.stage3InputBound = "true";
+
+        /*
+         * Mouse wheel:
+         * one wheel gesture = one Reel movement.
+         */
+        feed.addEventListener("wheel", (event) => {
+            if (Math.abs(event.deltaY) < 8) return;
+            if (event.ctrlKey || event.metaKey || event.shiftKey) return;
+
+            const now = Date.now();
+            if (now < wheelLockUntil) {
+                event.preventDefault();
+                return;
+            }
+
+            event.preventDefault();
+            wheelLockUntil = now + 520;
+
+            if (event.deltaY > 0) {
+                goToReel(activeIndex + 1);
+            } else {
+                goToReel(activeIndex - 1);
+            }
+        }, { passive: false });
+
+        /*
+         * Keyboard navigation:
+         * ArrowDown = next Reel
+         * ArrowUp = previous Reel
+         * Space = play/pause current Reel
+         */
+        document.addEventListener("keydown", (event) => {
+            const target = event.target;
+            const tag = target?.tagName?.toLowerCase();
+            const typing =
+                tag === "input" ||
+                tag === "textarea" ||
+                tag === "select" ||
+                target?.isContentEditable;
+
+            if (typing) return;
+
+            const reelsSection = document.getElementById("reels-view");
+            if (!reelsSection || reelsSection.hidden) return;
+
+            if (event.key === "ArrowDown") {
+                event.preventDefault();
+                goToReel(activeIndex + 1);
+                return;
+            }
+
+            if (event.key === "ArrowUp") {
+                event.preventDefault();
+                goToReel(activeIndex - 1);
+                return;
+            }
+
+            if (event.code === "Space") {
+                event.preventDefault();
+                toggleActivePlayback();
+            }
+        });
+
+        /*
+         * Click/tap the Reel media surface itself to play/pause.
+         * Interactive controls are deliberately excluded.
+         */
+        feed.addEventListener("click", (event) => {
+            const target = event.target;
+            if (!(target instanceof Element)) return;
+
+            if (
+                target.closest("button, a, input, textarea, select") ||
+                target.closest(".reels-stage3-progress-track")
+            ) {
+                return;
+            }
+
+            const card = target.closest(".reels-stage3-card");
+            if (!card) return;
+
+            const index = Number(card.dataset.reelIndex);
+            if (index !== activeIndex) {
+                goToReel(index);
+                return;
+            }
+
+            toggleActivePlayback();
+        });
+    };
+
     const setupScrollObserver = () => {
         const feed = getFeed();
         const cards = getCards();
@@ -476,6 +615,7 @@
         getCards().forEach((card) => bindCard(card, generation));
 
         setupScrollObserver();
+        setupReelsInput();
         updatePlayback(0, true);
         preloadNext(0);
     };
