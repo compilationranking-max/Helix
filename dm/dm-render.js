@@ -2183,14 +2183,6 @@
             "Edit private nickname"
         );
 
-        // This is the exact same edit icon used by message editing.
-        const nicknameEditIcon = makeIcon(
-            "edit"
-        );
-        nicknameEditIcon.classList.add(
-            "dm-private-nickname-edit-icon"
-        );
-
         const nicknameCopy = make(
             "span",
             "dm-private-nickname-copy"
@@ -2221,7 +2213,6 @@
         );
 
         nicknameButton.append(
-            nicknameEditIcon,
             nicknameCopy,
             nicknameArrow
         );
@@ -2501,17 +2492,6 @@
                 "reply"
             );
 
-            if (
-                message.sender === currentUsername() &&
-                !message.mediaUrl
-            ) {
-                addAction(
-                    "Edit message",
-                    "edit",
-                    "edit-message"
-                );
-            }
-
             addAction(
                 "React",
                 "reaction",
@@ -2538,12 +2518,14 @@
                 "toggle-pin"
             );
 
-            if (message.sender === currentUsername()) {
+            if (
+                message.sender === currentUsername() &&
+                !message.mediaUrl
+            ) {
                 addAction(
-                    "Delete message",
-                    "delete",
-                    "delete-message",
-                    { danger: true }
+                    "Edit message",
+                    "edit",
+                    "edit-message"
                 );
             }
         } else {
