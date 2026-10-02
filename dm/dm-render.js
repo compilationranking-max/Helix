@@ -2519,7 +2519,7 @@
         if (!message.isDeleted) {
             addAction(
                 "Add Reaction",
-                "reaction",
+                "emoji",
                 "react",
                 { chevron: true }
             );
