@@ -1367,27 +1367,14 @@
         } else if (!state.pinnedMessages.length) {
             const empty = make(
                 "div",
-                "dm-panel-state"
-            );
-            const mark = make(
-                "span",
-                "dm-list-state-mark"
-            );
-            mark.appendChild(
-                makeIcon("pin")
+                "dm-pinned-empty-state"
             );
 
-            empty.append(
-                mark,
+            empty.appendChild(
                 make(
                     "strong",
                     "",
                     "No pinned messages"
-                ),
-                make(
-                    "small",
-                    "",
-                    "Pinned messages in this conversation will appear here."
                 )
             );
 
@@ -1465,23 +1452,15 @@
                     );
 
                     const unpin =
-                        iconButton(
+                        textButton(
                             "dm-pinned-unpin",
-                            "unpin",
+                            "Unpin",
                             "Unpin message"
                         );
                     unpin.dataset.dmAction =
                         "unpin-message";
                     unpin.dataset.messageId =
                         String(message.id);
-
-                    const unpinLabel = make(
-                        "span",
-                        "dm-pinned-unpin-label",
-                        "Unpin"
-                    );
-
-                    unpin.appendChild(unpinLabel);
 
                     row.append(
                         copy,
