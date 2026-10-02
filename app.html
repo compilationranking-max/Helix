@@ -689,6 +689,62 @@
 
             <section class="reels-view" id="reels-view" data-main-section="reels" hidden aria-label="Reels">
 
+                <style>
+                    #reels-view.reels-view{position:relative;width:100%;height:100%;min-height:100%;padding:0;overflow:hidden;background:radial-gradient(circle at 50% 40%,rgba(0,229,255,.055),transparent 34%),radial-gradient(circle at 82% 68%,rgba(168,85,247,.08),transparent 28%),#070a10;color:#fff}
+                    #reels-view .reels-stage-shell{position:relative;width:100%;height:100%;min-height:0;overflow:hidden}
+                    #reels-view .reels-toolbar{position:relative;z-index:20;display:flex;align-items:flex-end;justify-content:space-between;gap:28px;min-height:108px;padding:24px 38px 17px;border-bottom:1px solid rgba(255,255,255,.055);background:linear-gradient(180deg,rgba(7,10,16,.98),rgba(7,10,16,.86));backdrop-filter:blur(14px)}
+                    #reels-view .reels-toolbar h2{margin:7px 0 0;color:#fff;font-size:clamp(28px,2.2vw,38px);font-weight:800;line-height:1;letter-spacing:-.035em}
+                    #reels-view .reels-tabs{display:flex;align-items:center;gap:26px}
+                    #reels-view .reels-tab{position:relative;display:inline-flex;align-items:center;padding:9px 0 11px;border:0;background:transparent;color:#7f8999;font:700 11px/1 "SFMono-Regular",Consolas,monospace;letter-spacing:.11em;text-transform:uppercase;cursor:default}
+                    #reels-view .reels-tab:after{content:"";position:absolute;right:0;bottom:0;left:0;height:2px;transform:scaleX(0);background:#00e5ff;box-shadow:0 0 14px rgba(0,229,255,.55)}
+                    #reels-view .reels-tab.active{color:#f3fbff}
+                    #reels-view .reels-tab.active:after{transform:scaleX(1)}
+                    #reels-view .reels-create-button{position:absolute;top:135px;left:28px;z-index:22;display:inline-flex;align-items:center;gap:10px;min-width:112px;height:42px;padding:0 15px 0 11px;border:1px solid rgba(0,229,255,.34);border-radius:999px;background:rgba(8,15,22,.72);color:#dffcff;font:700 11px/1 "SFMono-Regular",Consolas,monospace;letter-spacing:.08em;text-transform:uppercase;cursor:default;box-shadow:0 14px 26px rgba(0,0,0,.28),0 0 24px rgba(0,229,255,.06);backdrop-filter:blur(12px)}
+                    #reels-view .reels-create-plus{display:grid;width:24px;height:24px;place-items:center;border:1px solid rgba(0,229,255,.45);border-radius:50%;color:#00e5ff;font-size:16px;line-height:1}
+                    #reels-view .reels-feed{position:relative;width:100%;height:calc(100% - 108px);min-height:0;display:flex;align-items:center;justify-content:center;padding:24px 120px 28px;overflow:hidden;background:radial-gradient(circle at 50% 50%,rgba(0,229,255,.045),transparent 30%)}
+                    #reels-view .helix-reel-card.reels-static-card{position:relative;width:min(430px,48vw);height:min(76vh,760px);min-height:560px;margin:0;display:block;overflow:hidden;border:1px solid rgba(255,255,255,.09);border-radius:24px;background:#06090f;box-shadow:0 32px 84px rgba(0,0,0,.56),0 0 44px rgba(0,229,255,.055)}
+                    #reels-view .reels-static-card .helix-reel-media{position:absolute;inset:0;height:100%;min-height:0;overflow:hidden;background:linear-gradient(160deg,#0b1119,#070a10 48%,#110b1d)}
+                    #reels-view .reels-static-visual{position:absolute;inset:0;overflow:hidden;background:radial-gradient(circle at 30% 24%,rgba(0,242,254,.16),transparent 26%),radial-gradient(circle at 75% 70%,rgba(168,85,247,.18),transparent 30%),linear-gradient(160deg,#0a1117,#080b12 52%,#120b1a)}
+                    #reels-view .reels-visual-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.045) 1px,transparent 1px);background-size:30px 30px}
+                    #reels-view .reels-visual-orbit{position:absolute;border:1px solid rgba(0,229,255,.28);border-radius:50%}
+                    #reels-view .reels-orbit-a{width:74%;height:38%;top:18%;left:12%;transform:rotate(-18deg)}
+                    #reels-view .reels-orbit-b{width:48%;height:62%;top:8%;left:27%;border-color:rgba(168,85,247,.28);transform:rotate(48deg)}
+                    #reels-view .reels-visual-core{position:absolute;top:50%;left:50%;width:138px;height:138px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;transform:translate(-50%,-50%);border:1px solid rgba(0,229,255,.4);border-radius:50%;background:radial-gradient(circle,rgba(0,229,255,.17),rgba(5,11,18,.92) 62%);box-shadow:0 0 44px rgba(0,229,255,.12),inset 0 0 24px rgba(168,85,247,.08)}
+                    #reels-view .reels-visual-core span{color:rgba(221,250,255,.72);font:700 9px/1 "SFMono-Regular",Consolas,monospace;letter-spacing:.32em}
+                    #reels-view .reels-visual-core strong{color:#fff;font:800 16px/1 "SFMono-Regular",Consolas,monospace;letter-spacing:.12em}
+                    #reels-view .reels-visual-scanline{position:absolute;top:22%;left:0;width:100%;height:1px;background:linear-gradient(90deg,transparent,rgba(0,229,255,.7),transparent);box-shadow:0 0 14px rgba(0,229,255,.24)}
+                    #reels-view .reels-static-topline{position:absolute;top:18px;left:18px;z-index:3;display:inline-flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid rgba(255,255,255,.09);border-radius:999px;background:rgba(4,8,13,.54);color:rgba(230,246,255,.72);font:700 8px/1 "SFMono-Regular",Consolas,monospace;letter-spacing:.12em}
+                    #reels-view .reels-live-marker{width:6px;height:6px;border-radius:50%;background:#00e5ff;box-shadow:0 0 10px rgba(0,229,255,.8)}
+                    #reels-view .reels-static-overlay{position:absolute;right:0;bottom:0;left:0;z-index:6;padding:130px 22px 28px;background:linear-gradient(to top,rgba(2,5,9,.97),rgba(2,5,9,.68) 38%,transparent 76%)}
+                    #reels-view .reels-creator{display:flex;align-items:center;gap:11px;max-width:calc(100% - 76px)}
+                    #reels-view .reels-creator-avatar{width:42px;height:42px;flex:0 0 42px;display:grid;place-items:center;border:1px solid rgba(0,229,255,.6);border-radius:50%;background:linear-gradient(140deg,#0c2330,#251339);color:#fff;font-weight:800;box-shadow:0 0 18px rgba(0,229,255,.1)}
+                    #reels-view .reels-creator .helix-reel-author-info{display:flex;flex-direction:column}
+                    #reels-view .reels-creator .helix-reel-author-info strong{color:#fff;font-size:14px}
+                    #reels-view .reels-creator .helix-reel-author-info span{color:#8d9aaa;font-size:11px}
+                    #reels-view .helix-reel-caption{max-width:calc(100% - 54px);margin:15px 0 0;color:rgba(246,251,255,.92);font-size:13px;line-height:1.5}
+                    #reels-view .reels-hashtags{display:block;margin-top:6px;color:#6eefff;font-weight:700}
+                    #reels-view .reels-static-actions{position:absolute;right:16px;bottom:24px;z-index:12;display:flex;flex-direction:column;align-items:center;gap:10px;padding:0}
+                    #reels-view .reels-static-actions .helix-reel-action{width:54px;min-height:54px;padding:8px 4px;border:1px solid rgba(255,255,255,.11);border-radius:16px;background:rgba(5,10,16,.55);color:#fff;box-shadow:0 12px 24px rgba(0,0,0,.26),inset 0 1px 0 rgba(255,255,255,.05);backdrop-filter:blur(10px);cursor:default}
+                    #reels-view .reels-static-actions .helix-action-icon{font-size:22px;line-height:1}
+                    #reels-view .reels-static-actions .helix-action-count{margin-top:5px;color:rgba(231,242,250,.72);font:700 9px/1 "SFMono-Regular",Consolas,monospace}
+                    #reels-view .reels-static-actions .helix-reel-action:first-child .helix-action-icon{color:#ff7aa8}
+                    #reels-view .reels-static-actions .helix-reel-action:nth-child(2) .helix-action-icon{color:#b6cbff}
+                    #reels-view .reels-static-actions .helix-reel-action:nth-child(3) .helix-action-icon{color:#9fffea}
+                    #reels-view .reels-static-actions .helix-reel-action:nth-child(4) .helix-action-icon{color:#00e5ff}
+                    @media(max-width:700px){
+                        #reels-view .reels-toolbar{min-height:92px;padding:18px 16px 13px;flex-direction:column;justify-content:flex-end;align-items:flex-start;gap:7px}
+                        #reels-view .reels-tabs{width:100%;justify-content:space-between;gap:12px}
+                        #reels-view .reels-tab{flex:1;text-align:left;font-size:9px}
+                        #reels-view .reels-create-button{top:112px;left:12px;height:38px;min-width:42px;width:42px;padding:0;justify-content:center}
+                        #reels-view .reels-create-button span:last-child{display:none}
+                        #reels-view .reels-feed{height:calc(100% - 92px);padding:18px 10px 20px}
+                        #reels-view .helix-reel-card.reels-static-card{width:min(430px,calc(100vw - 70px));height:min(74vh,720px);min-height:500px;border-radius:22px}
+                        #reels-view .reels-static-overlay{padding:122px 17px 24px}
+                        #reels-view .reels-static-actions{right:10px;bottom:18px}
+                        #reels-view .reels-static-actions .helix-reel-action{width:50px;min-height:50px}
+                    }
+                </style>
+
                 <div class="reels-stage-shell">
                     <header class="reels-toolbar" aria-label="Reels header">
                         <div class="reels-heading">
