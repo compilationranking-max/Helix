@@ -21,7 +21,9 @@
             hashtags: "#HELIX #BUILD #FUTURE",
             likes: "1.2K",
             comments: "184",
-            shares: "76"
+            shares: "76",
+            likeCount: 1200,
+            liked: false
         },
         {
             id: "helix-reel-02",
@@ -32,7 +34,9 @@
             hashtags: "#HELIX #DESIGN #SIGNAL",
             likes: "946",
             comments: "118",
-            shares: "42"
+            shares: "42",
+            likeCount: 946,
+            liked: false
         },
         {
             id: "helix-reel-03",
@@ -43,7 +47,9 @@
             hashtags: "#HELIX #CREATE #SHIP",
             likes: "2.4K",
             comments: "301",
-            shares: "119"
+            shares: "119",
+            likeCount: 2400,
+            liked: false
         }
     ];
 
@@ -154,9 +160,14 @@
 
             <div class="helix-reel-actions reels-static-actions"
                  aria-label="Reel actions">
-                <button class="helix-reel-action" type="button" aria-label="Like Reel">
+                <button
+                    class="helix-reel-action reels-like-button"
+                    type="button"
+                    aria-label="Like Reel"
+                    aria-pressed="false"
+                >
                     <span class="helix-action-icon" aria-hidden="true">♡</span>
-                    <span class="helix-action-count">${reel.likes}</span>
+                    <span class="helix-action-count reels-like-count">${reel.likeCount}</span>
                 </button>
                 <button class="helix-reel-action" type="button" aria-label="Comment on Reel">
                     <span class="helix-action-icon" aria-hidden="true">◌</span>
@@ -213,6 +224,85 @@
         fill.style.width = percent + "%";
         label.textContent =
             `${formatTime(current)} / ${formatTime(duration)}`;
+    };
+
+    const formatLikeCount = (count) => {
+        if (count >= 1000000) {
+            return (count / 1000000).toFixed(1).replace(/\.0$/, "") + "M";
+        }
+
+        if (count >= 1000) {
+            return (count / 1000).toFixed(1).replace(/\.0$/, "") + "K";
+        }
+
+        return String(count);
+    };
+
+    const syncLikeButton = (card) => {
+        const index = Number(card?.dataset.reelIndex);
+        const reel = REELS[index];
+        const button = card?.querySelector(".reels-like-button");
+        const count = card?.querySelector(".reels-like-count");
+
+        if (!reel || !button || !count) return;
+
+        button.classList.toggle("liked", reel.liked);
+        button.setAttribute("aria-pressed", String(reel.liked));
+        button.setAttribute(
+            "aria-label",
+            reel.liked ? "Unlike Reel" : "Like Reel"
+        );
+
+        const icon = button.querySelector(".helix-action-icon");
+        if (icon) icon.textContent = reel.liked ? "♥" : "♡";
+
+        count.textContent = formatLikeCount(reel.likeCount);
+    };
+
+    const animateLike = (card) => {
+        const burst = document.createElement("span");
+        burst.className = "reels-like-burst";
+        burst.setAttribute("aria-hidden", "true");
+        burst.textContent = "♥";
+        card.appendChild(burst);
+
+        requestAnimationFrame(() => {
+            burst.classList.add("is-visible");
+        });
+
+        window.setTimeout(() => burst.remove(), 720);
+    };
+
+    const setLikeState = (card, liked) => {
+        const index = Number(card?.dataset.reelIndex);
+        const reel = REELS[index];
+        if (!reel || !card) return;
+
+        if (reel.liked === liked) {
+            syncLikeButton(card);
+            return;
+        }
+
+        reel.liked = liked;
+        reel.likeCount = Math.max(
+            0,
+            reel.likeCount + (liked ? 1 : -1)
+        );
+
+        syncLikeButton(card);
+
+        if (liked) {
+            animateLike(card);
+        }
+    };
+
+    const toggleLike = (card) => {
+        if (!card) return;
+        const index = Number(card.dataset.reelIndex);
+        const reel = REELS[index];
+        if (!reel) return;
+
+        setLikeState(card, !reel.liked);
     };
 
     const pauseVideo = (video) => {
@@ -328,6 +418,12 @@
             card.querySelector(".reels-stage2-video-fallback");
         const loading =
             card.querySelector(".reels-stage3-loading");
+        const likeButton = card.querySelector(".reels-like-button");
+
+        likeButton?.addEventListener("click", (event) => {
+            event.stopPropagation();
+            toggleLike(card);
+        });
 
         playButton?.addEventListener("click", async (event) => {
             event.stopPropagation();
@@ -412,6 +508,7 @@
         syncPlayButton(card);
         syncMuteButton(card);
         syncProgress(card);
+        syncLikeButton(card);
     };
 
     const goToReel = (index) => {
@@ -542,6 +639,35 @@
          * Click/tap the Reel media surface itself to play/pause.
          * Interactive controls are deliberately excluded.
          */
+        let tapTimer = 0;
+
+        feed.addEventListener("dblclick", (event) => {
+            const target = event.target;
+            if (!(target instanceof Element)) return;
+
+            if (
+                target.closest("button, a, input, textarea, select") ||
+                target.closest(".reels-stage3-progress-track")
+            ) {
+                return;
+            }
+
+            const card = target.closest(".reels-stage3-card");
+            if (!card) return;
+
+            window.clearTimeout(tapTimer);
+            tapTimer = 0;
+
+            const index = Number(card.dataset.reelIndex);
+            if (index !== activeIndex) {
+                goToReel(index);
+                setLikeState(card, true);
+                return;
+            }
+
+            setLikeState(card, true);
+        });
+
         feed.addEventListener("click", (event) => {
             const target = event.target;
             if (!(target instanceof Element)) return;
@@ -556,13 +682,19 @@
             const card = target.closest(".reels-stage3-card");
             if (!card) return;
 
-            const index = Number(card.dataset.reelIndex);
-            if (index !== activeIndex) {
-                goToReel(index);
-                return;
-            }
+            window.clearTimeout(tapTimer);
 
-            toggleActivePlayback();
+            tapTimer = window.setTimeout(() => {
+                tapTimer = 0;
+
+                const index = Number(card.dataset.reelIndex);
+                if (index !== activeIndex) {
+                    goToReel(index);
+                    return;
+                }
+
+                toggleActivePlayback();
+            }, 220);
         });
     };
 
