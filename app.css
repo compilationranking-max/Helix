@@ -13298,3 +13298,74 @@ body.helix-compact-mode .settings-option-row {
         border-radius: 22px;
     }
 }
+
+
+/* =========================================================
+   REELS — STAGE 4 / LIKE INTERACTION
+   Like state, count and double-click feedback only.
+   ========================================================= */
+
+#reels-view .reels-like-button.liked {
+    color: #ff6f9d;
+    border-color: rgba(255, 111, 157, 0.72);
+    background: rgba(255, 79, 135, 0.14);
+    box-shadow:
+        0 15px 30px rgba(0, 0, 0, 0.30),
+        0 0 24px rgba(255, 79, 135, 0.18),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+#reels-view .reels-like-button.liked .helix-action-icon {
+    color: #ff6f9d;
+    text-shadow: 0 0 16px rgba(255, 79, 135, 0.48);
+    animation: reels-like-pop 300ms cubic-bezier(.2,.85,.35,1.4);
+}
+
+#reels-view .reels-like-button.liked .reels-like-count {
+    color: #ffb1c9;
+}
+
+#reels-view .reels-like-burst {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    z-index: 25;
+    pointer-events: none;
+    color: #ff6f9d;
+    font-size: 96px;
+    line-height: 1;
+    opacity: 0;
+    transform: translate(-50%, -42%) scale(.35) rotate(-8deg);
+    filter:
+        drop-shadow(0 0 16px rgba(255,79,135,.5))
+        drop-shadow(0 0 36px rgba(255,79,135,.22));
+}
+
+#reels-view .reels-like-burst.is-visible {
+    animation: reels-doubletap-heart 680ms cubic-bezier(.15,.78,.28,1) forwards;
+}
+
+@keyframes reels-like-pop {
+    0% { transform: scale(1); }
+    45% { transform: scale(1.28); }
+    100% { transform: scale(1); }
+}
+
+@keyframes reels-doubletap-heart {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, -42%) scale(.35) rotate(-8deg);
+    }
+    18% {
+        opacity: 1;
+        transform: translate(-50%, -42%) scale(1.08) rotate(4deg);
+    }
+    55% {
+        opacity: .92;
+        transform: translate(-50%, -48%) scale(.94) rotate(-2deg);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -72%) scale(1.32) rotate(3deg);
+    }
+}
