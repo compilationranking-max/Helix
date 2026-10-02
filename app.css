@@ -13204,3 +13204,97 @@ body.helix-compact-mode .settings-option-row {
         height: calc(100% - 72px);
     }
 }
+
+
+/* =========================================================
+   REELS — STAGE 3 / VERTICAL SCROLL EXPERIENCE
+   One Reel fills the feed viewport; snap + smooth active playback.
+   ========================================================= */
+
+#reels-view .reels-feed {
+    height: calc(100% - 78px);
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 0;
+    padding: 0 120px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    scroll-snap-type: y mandatory;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+}
+
+#reels-view .reels-stage3-card {
+    flex: 0 0 100%;
+    width: min(430px, 48vw);
+    height: 100%;
+    min-height: 0;
+    max-height: none;
+    margin: 0;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+}
+
+#reels-view .reels-stage3-card .helix-reel-media {
+    height: 100%;
+    min-height: 0;
+}
+
+#reels-view .reels-stage3-card .reels-stage3-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+#reels-view .reels-stage3-card .reels-stage3-play,
+#reels-view .reels-stage3-card .reels-stage3-mute,
+#reels-view .reels-stage3-card .reels-stage3-progress {
+    z-index: 16;
+}
+
+#reels-view .reels-stage3-card .reels-stage3-play.is-playing {
+    opacity: 0;
+}
+
+#reels-view .reels-stage3-card:hover .reels-stage3-play.is-playing,
+#reels-view .reels-stage3-play:focus-visible {
+    opacity: 1;
+}
+
+#reels-view .reels-stage3-progress {
+    pointer-events: none;
+}
+
+#reels-view .reels-stage3-progress-track {
+    cursor: pointer;
+}
+
+@media (max-width: 900px) {
+    #reels-view .reels-feed {
+        padding-right: 84px;
+        padding-left: 84px;
+    }
+
+    #reels-view .reels-stage3-card {
+        width: min(430px, 62vw);
+    }
+}
+
+@media (max-width: 700px) {
+    #reels-view .reels-feed {
+        height: calc(100% - 72px);
+        padding: 0 10px;
+    }
+
+    #reels-view .reels-stage3-card {
+        width: min(430px, calc(100vw - 70px));
+        height: 100%;
+        min-height: 0;
+        border-radius: 22px;
+    }
+}
