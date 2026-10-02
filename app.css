@@ -13152,3 +13152,27 @@ body.helix-compact-mode .settings-option-row {
         height: calc(100% - 82px);
     }
 }
+
+
+/* REELS — thinner header pass */
+#reels-view .reels-toolbar {
+    min-height: 74px;
+    padding-top: 14px;
+    padding-bottom: 10px;
+}
+
+#reels-view .reels-feed {
+    height: calc(100% - 74px);
+}
+
+@media (max-width: 700px) {
+    #reels-view .reels-toolbar {
+        min-height: 74px;
+        padding-top: 12px;
+        padding-bottom: 9px;
+    }
+
+    #reels-view .reels-feed {
+        height: calc(100% - 74px);
+    }
+}
