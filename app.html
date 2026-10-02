@@ -717,6 +717,14 @@
                     #reels-view .reels-live-marker{width:6px;height:6px;border-radius:50%;background:#00e5ff;box-shadow:0 0 10px rgba(0,229,255,.8)}
                     #reels-view .reels-static-overlay{position:absolute;right:0;bottom:0;left:0;z-index:6;padding:130px 22px 28px;background:linear-gradient(to top,rgba(2,5,9,.97),rgba(2,5,9,.68) 38%,transparent 76%)}
                     #reels-view .reels-creator{display:flex;align-items:center;gap:11px;max-width:calc(100% - 76px)}
+                    #reels-view .reels-creator-profile-button{appearance:none;-webkit-appearance:none;display:inline-flex;align-items:center;gap:10px;min-width:0;padding:0;border:0;border-radius:0;background:transparent!important;color:inherit;text-align:left;cursor:pointer;box-shadow:none!important}
+                    #reels-view .reels-creator-profile-button:hover{background:transparent!important}
+                    #reels-view .reels-creator-profile-button .helix-reel-author-info{display:flex;flex-direction:column;min-width:0;background:transparent!important}
+                    #reels-view .reels-creator-profile-button .helix-reel-author-info strong{color:#fff;font-size:14px;font-weight:800;line-height:1.15}
+                    #reels-view .reels-creator-profile-button .helix-reel-author-info span{margin-top:3px;color:#8d9aaa;font-size:11px;line-height:1.1}
+                    #reels-view .reels-follow-button{appearance:none;-webkit-appearance:none;flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;height:31px;padding:0 12px;border:1px solid rgba(0,229,255,.48);border-radius:999px;background:rgba(5,14,22,.82)!important;color:#79efff!important;font:800 8px/1 "SFMono-Regular",Consolas,monospace;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;box-shadow:0 0 16px rgba(0,229,255,.045)!important;transition:border-color .18s ease,background .18s ease,color .18s ease,transform .18s ease}
+                    #reels-view .reels-follow-button:hover{transform:translateY(-1px);border-color:#00e5ff;background:rgba(0,229,255,.12)!important;color:#dffcff!important;box-shadow:0 0 20px rgba(0,229,255,.12)!important}
+                    #reels-view .reels-follow-button.following{border-color:rgba(104,255,210,.48);background:rgba(104,255,210,.08)!important;color:#7fffd0!important}
                     #reels-view .reels-creator-avatar{width:42px;height:42px;flex:0 0 42px;display:grid;place-items:center;border:1px solid rgba(0,229,255,.6);border-radius:50%;background:linear-gradient(140deg,#0c2330,#251339);color:#fff;font-weight:800;box-shadow:0 0 18px rgba(0,229,255,.1)}
                     #reels-view .reels-creator .helix-reel-author-info{display:flex;flex-direction:column}
                     #reels-view .reels-creator .helix-reel-author-info strong{color:#fff;font-size:14px}
