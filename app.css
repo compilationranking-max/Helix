@@ -14124,3 +14124,359 @@ body.helix-compact-mode .settings-option-row {
         padding: 16px 12px 20px;
     }
 }
+
+
+/* =========================================================
+   REELS — STAGE 8 / CREATOR PROFILE
+   Creator identity, follow state and creator navigation.
+   ========================================================= */
+
+#reels-view .reels-creator {
+    align-items: center;
+    gap: 10px;
+}
+
+#reels-view .reels-creator-profile-button {
+    min-width: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+#reels-view .reels-creator-profile-button:hover .reels-creator-avatar {
+    border-color: #00e5ff;
+    box-shadow: 0 0 18px rgba(0,229,255,.18);
+}
+
+#reels-view .reels-creator-profile-button:hover .reels-reel-author-info strong {
+    color: #7df4ff;
+}
+
+#reels-view .reels-reel-author-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+#reels-view .reels-follow-button {
+    flex: 0 0 auto;
+    height: 31px;
+    padding: 0 11px;
+    border: 1px solid rgba(0,229,255,.38);
+    border-radius: 999px;
+    background: rgba(0,229,255,.07);
+    color: #79efff;
+    font: 800 8px/1 "SFMono-Regular", Consolas, monospace;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: border-color .18s ease, background .18s ease, color .18s ease, transform .18s ease;
+}
+
+#reels-view .reels-follow-button:hover {
+    transform: translateY(-1px);
+    border-color: rgba(0,229,255,.7);
+    background: rgba(0,229,255,.13);
+}
+
+#reels-view .reels-follow-button.following {
+    border-color: rgba(104,255,210,.38);
+    background: rgba(104,255,210,.075);
+    color: #7fffd0;
+}
+
+#reels-view .reels-creator-panel-wrap {
+    position: absolute;
+    inset: 0;
+    z-index: 115;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+#reels-view .reels-creator-panel-wrap[hidden] {
+    display: none !important;
+}
+
+#reels-view .reels-creator-panel-wrap.is-open {
+    pointer-events: auto;
+}
+
+#reels-view .reels-creator-panel-backdrop {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    background: rgba(0,0,0,.48);
+    opacity: 0;
+    cursor: pointer;
+    transition: opacity 220ms ease;
+    backdrop-filter: blur(3px);
+}
+
+#reels-view .reels-creator-panel-wrap.is-open .reels-creator-panel-backdrop {
+    opacity: 1;
+}
+
+#reels-view .reels-creator-panel {
+    position: absolute;
+    top: 0;
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    width: min(440px, 42vw);
+    height: 100%;
+    min-height: 0;
+    border-left: 1px solid rgba(0,229,255,.14);
+    background:
+        linear-gradient(180deg, rgba(8,13,20,.995), rgba(5,9,15,.995));
+    box-shadow:
+        -25px 0 70px rgba(0,0,0,.45),
+        -1px 0 30px rgba(0,229,255,.05);
+    transform: translateX(102%);
+    transition: transform 250ms cubic-bezier(.2,.75,.3,1);
+}
+
+#reels-view .reels-creator-panel-wrap.is-open .reels-creator-panel {
+    transform: translateX(0);
+}
+
+#reels-view .reels-creator-panel-header {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 15px;
+    padding: 25px 23px 19px;
+    border-bottom: 1px solid rgba(255,255,255,.06);
+}
+
+#reels-view .reels-creator-panel-kicker {
+    color: #6eefff;
+    font: 700 8px/1 "SFMono-Regular", Consolas, monospace;
+    letter-spacing: .15em;
+}
+
+#reels-view .reels-creator-panel-header h2 {
+    margin: 8px 0 0;
+    color: #fff;
+    font-size: 23px;
+    line-height: 1;
+    letter-spacing: -.025em;
+}
+
+#reels-view .reels-creator-panel-close {
+    width: 34px;
+    height: 34px;
+    flex: 0 0 34px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 1px solid rgba(255,255,255,.09);
+    border-radius: 50%;
+    background: rgba(255,255,255,.035);
+    color: #dbeaff;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+#reels-view .reels-creator-panel-close:hover {
+    border-color: rgba(0,229,255,.55);
+    background: rgba(0,229,255,.08);
+    color: #00e5ff;
+}
+
+#reels-view .reels-creator-profile-main {
+    flex: 0 0 auto;
+    display: grid;
+    grid-template-columns: 72px minmax(0,1fr) auto;
+    align-items: center;
+    gap: 14px;
+    padding: 27px 23px 24px;
+    border-bottom: 1px solid rgba(255,255,255,.05);
+}
+
+#reels-view .reels-creator-profile-avatar {
+    width: 72px;
+    height: 72px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(0,229,255,.45);
+    border-radius: 50%;
+    background:
+        radial-gradient(circle at 30% 24%, rgba(0,242,254,.26), transparent 25%),
+        linear-gradient(145deg,#0e2430,#261638);
+    color: #effcff;
+    font: 900 14px/1 "SFMono-Regular", Consolas, monospace;
+    box-shadow:
+        0 0 24px rgba(0,229,255,.1),
+        inset 0 0 24px rgba(168,85,247,.06);
+}
+
+#reels-view .reels-creator-profile-identity {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+#reels-view .reels-creator-profile-identity strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: #fff;
+    font-size: 18px;
+    font-weight: 800;
+}
+
+#reels-view .reels-creator-profile-identity span {
+    margin-top: 5px;
+    color: #77899a;
+    font: 700 9px/1 "SFMono-Regular", Consolas, monospace;
+}
+
+#reels-view .reels-profile-follow {
+    min-width: 88px;
+    height: 36px;
+    padding: 0 13px;
+    border: 1px solid rgba(0,229,255,.38);
+    border-radius: 999px;
+    background: rgba(0,229,255,.07);
+    color: #79efff;
+    font: 800 9px/1 "SFMono-Regular", Consolas, monospace;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    cursor: pointer;
+}
+
+#reels-view .reels-profile-follow.following {
+    border-color: rgba(104,255,210,.4);
+    background: rgba(104,255,210,.075);
+    color: #7fffd0;
+}
+
+#reels-view .reels-creator-profile-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 23px;
+}
+
+#reels-view .reels-creator-profile-section {
+    padding: 17px 0;
+    border-bottom: 1px solid rgba(255,255,255,.045);
+}
+
+#reels-view .reels-creator-profile-section > span {
+    color: #6b7e8f;
+    font: 800 8px/1 "SFMono-Regular", Consolas, monospace;
+    letter-spacing: .14em;
+}
+
+#reels-view .reels-creator-profile-section p {
+    margin: 9px 0 0;
+    color: #c1ced8;
+    font-size: 12px;
+    line-height: 1.65;
+}
+
+#reels-view .reels-creator-profile-section .reels-profile-hashtags {
+    color: #6eefff;
+    font-weight: 800;
+}
+
+#reels-view .reels-creator-navigation {
+    flex: 0 0 auto;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 8px;
+    padding: 15px 18px 18px;
+    border-top: 1px solid rgba(255,255,255,.06);
+    background: rgba(4,9,15,.96);
+}
+
+#reels-view .reels-creator-navigation button {
+    min-width: 0;
+    height: 38px;
+    padding: 0 10px;
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 10px;
+    background: rgba(255,255,255,.025);
+    color: #9aacbc;
+    font: 700 8px/1 "SFMono-Regular", Consolas, monospace;
+    cursor: pointer;
+}
+
+#reels-view .reels-creator-navigation button:hover:not(:disabled) {
+    border-color: rgba(0,229,255,.35);
+    background: rgba(0,229,255,.06);
+    color: #7ef2ff;
+}
+
+#reels-view .reels-creator-navigation button:disabled {
+    opacity: .3;
+    cursor: default;
+}
+
+#reels-view #reels-creator-view-reel {
+    border-color: rgba(0,229,255,.28);
+    background: rgba(0,229,255,.065);
+    color: #77efff;
+}
+
+@media (max-width: 700px) {
+    #reels-view .reels-creator-panel {
+        top: auto;
+        right: 0;
+        bottom: 0;
+        width: 100%;
+        height: min(80vh, 720px);
+        border-top: 1px solid rgba(0,229,255,.14);
+        border-left: 0;
+        border-radius: 22px 22px 0 0;
+        transform: translateY(102%);
+    }
+
+    #reels-view .reels-creator-panel-wrap.is-open .reels-creator-panel {
+        transform: translateY(0);
+    }
+
+    #reels-view .reels-creator-panel-header {
+        padding: 20px 17px 15px;
+    }
+
+    #reels-view .reels-creator-profile-main {
+        grid-template-columns: 60px minmax(0,1fr);
+        padding: 20px 17px;
+    }
+
+    #reels-view .reels-creator-profile-avatar {
+        width: 60px;
+        height: 60px;
+    }
+
+    #reels-view .reels-profile-follow {
+        grid-column: 1 / -1;
+        width: 100%;
+    }
+
+    #reels-view .reels-creator-profile-body {
+        padding: 12px 17px;
+    }
+
+    #reels-view .reels-creator-navigation {
+        padding-right: 12px;
+        padding-left: 12px;
+    }
+
+    #reels-view .reels-follow-button {
+        height: 29px;
+    }
+}
