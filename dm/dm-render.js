@@ -1898,6 +1898,38 @@
         picker.hidden =
             !state.emojiPickerOpen;
 
+        picker.classList.toggle(
+            "is-message-reaction-picker",
+            Boolean(state.emojiTargetMessageId)
+        );
+
+        if (
+            state.emojiPickerOpen &&
+            state.emojiTargetMessageId &&
+            Number.isFinite(Number(state.contextMenu.x)) &&
+            Number.isFinite(Number(state.contextMenu.y))
+        ) {
+            const menuGap = 10;
+            const x = Number(state.contextMenu.x);
+            const y = Number(state.contextMenu.y);
+
+            picker.style.left = Math.max(
+                8,
+                Math.min(x, window.innerWidth - 348)
+            ) + "px";
+            picker.style.top = Math.max(
+                8,
+                Math.min(y, window.innerHeight - 438)
+            ) + "px";
+            picker.style.right = "auto";
+            picker.style.bottom = "auto";
+        } else {
+            picker.style.left = "";
+            picker.style.top = "";
+            picker.style.right = "";
+            picker.style.bottom = "";
+        }
+
         updateEmojiPickerView();
     }
 
@@ -2449,19 +2481,44 @@
             return;
         }
 
-        function addAction(label, icon, action, options = {}) {
-            const item = iconButton(
-                "dm-context-item" +
-                    (options.danger ? " is-danger" : ""),
-                icon,
-                label
-            );
+        const CONTEXT_ICONS = {
+            reaction:
+                '<circle cx="12" cy="12" r="8.5"/><path d="M8.5 10h.01M15.5 10h.01"/><path d="M8.5 14c1.8 2.2 5.2 2.2 7 0"/>',
+            edit:
+                '<path d="M4.5 19.5h4L18.8 9.2l-4-4L4.5 15.5z"/><path d="m13.7 6.8 4 4"/><path d="M4.5 19.5 9 18.4"/>',
+            reply:
+                '<path d="M10 7 5 12l5 5"/><path d="M6 12h7.5A5.5 5.5 0 0 1 19 17.5V19"/>',
+            forward:
+                '<path d="m14 7 5 5-5 5"/><path d="M18.5 12H11A5.5 5.5 0 0 0 5.5 17.5V19"/>',
+            copy:
+                '<rect x="8" y="7" width="10" height="12" rx="1.5"/><path d="M6 16V5.5A1.5 1.5 0 0 1 7.5 4H16"/>',
+            pin:
+                '<path d="m8 5 8 8"/><path d="m16 5-8 8"/><path d="M7 13h10"/><path d="M12 13v7"/>'
+        };
 
+        function makeContextIcon(name) {
+            const svg = document.createElement("svg");
+            svg.className = "dm-context-icon";
+            svg.setAttribute("viewBox", "0 0 24 24");
+            svg.setAttribute("fill", "none");
+            svg.setAttribute("stroke", "currentColor");
+            svg.setAttribute("stroke-width", "1.9");
+            svg.setAttribute("stroke-linecap", "round");
+            svg.setAttribute("stroke-linejoin", "round");
+            svg.setAttribute("aria-hidden", "true");
+            svg.innerHTML = CONTEXT_ICONS[name] || CONTEXT_ICONS.copy;
+            return svg;
+        }
+
+        function addAction(label, icon, action, options = {}) {
+            const item = make("button", "dm-context-item");
+            item.type = "button";
             item.dataset.dmContextAction = action;
             item.dataset.messageId = message.id;
             item.setAttribute("role", "menuitem");
 
-            item.appendChild(
+            item.append(
+                makeContextIcon(icon),
                 make("span", "dm-context-item-label", label)
             );
 
