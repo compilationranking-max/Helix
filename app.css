@@ -11957,3 +11957,185 @@ body.helix-compact-mode .settings-option-row {
     letter-spacing: .01em !important;
     text-align: center !important;
 }
+
+
+/* =========================================================
+   HELIX DMS — MESSAGE CONTEXT MENU FINAL POLISH
+   ========================================================= */
+
+#dm-view .dm-context-menu {
+    position: fixed !important;
+    z-index: 10050 !important;
+    width: 236px !important;
+    min-width: 236px !important;
+    padding: 7px !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+
+    border: 1px solid rgba(78, 196, 212, .26) !important;
+    border-radius: 14px !important;
+
+    background:
+        radial-gradient(circle at 15% 0%, rgba(0,229,255,.09), transparent 42%),
+        linear-gradient(180deg, rgba(10,23,32,.985), rgba(4,10,17,.99)) !important;
+
+    box-shadow:
+        0 24px 58px rgba(0,0,0,.56),
+        0 10px 24px rgba(0,0,0,.30),
+        inset 0 1px 0 rgba(255,255,255,.025),
+        0 0 30px rgba(0,229,255,.04) !important;
+
+    backdrop-filter: blur(18px) saturate(125%) !important;
+    -webkit-backdrop-filter: blur(18px) saturate(125%) !important;
+
+    transform-origin: top left !important;
+    animation: helixDmContextMenuIn .14s cubic-bezier(.2,.75,.2,1) !important;
+}
+
+#dm-view .dm-context-menu[hidden] {
+    display: none !important;
+}
+
+#dm-view .dm-context-item {
+    position: relative !important;
+    width: 100% !important;
+    height: 40px !important;
+    min-height: 40px !important;
+    margin: 0 !important;
+    padding: 0 11px !important;
+    box-sizing: border-box !important;
+
+    display: grid !important;
+    grid-template-columns: 22px minmax(0, 1fr) !important;
+    align-items: center !important;
+    gap: 10px !important;
+
+    border: 0 !important;
+    border-radius: 9px !important;
+    outline: 0 !important;
+
+    color: #b8cfd4 !important;
+    background: transparent !important;
+
+    font: 600 10px/1 "Segoe UI", Inter, Arial, sans-serif !important;
+    letter-spacing: .01em !important;
+    text-align: left !important;
+    cursor: pointer !important;
+
+    transition:
+        color .13s ease,
+        background .13s ease,
+        transform .13s ease,
+        box-shadow .13s ease !important;
+}
+
+#dm-view .dm-context-item + .dm-context-item {
+    margin-top: 2px !important;
+}
+
+#dm-view .dm-context-item::before {
+    content: "" !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 7px !important;
+    bottom: 7px !important;
+    width: 2px !important;
+    border-radius: 2px !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    transition: background .13s ease, box-shadow .13s ease !important;
+}
+
+#dm-view .dm-context-item .dm-icon {
+    width: 18px !important;
+    height: 18px !important;
+    min-width: 18px !important;
+    min-height: 18px !important;
+    display: block !important;
+
+    color: #63bac5 !important;
+    stroke: currentColor !important;
+    stroke-width: 2.15 !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+    fill: none !important;
+
+    opacity: .97 !important;
+    overflow: visible !important;
+
+    transition:
+        color .13s ease,
+        filter .13s ease,
+        transform .13s ease !important;
+}
+
+#dm-view .dm-context-item > span {
+    min-width: 0 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+}
+
+#dm-view .dm-context-item:hover,
+#dm-view .dm-context-item:focus-visible {
+    color: #e7fcff !important;
+    background:
+        linear-gradient(90deg, rgba(0,229,255,.115), rgba(0,229,255,.045)) !important;
+    transform: translateX(1px) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.018),
+        inset 0 -1px 0 rgba(0,229,255,.025) !important;
+}
+
+#dm-view .dm-context-item:hover::before,
+#dm-view .dm-context-item:focus-visible::before {
+    background: rgba(0,229,255,.72) !important;
+    box-shadow: 0 0 9px rgba(0,229,255,.38) !important;
+}
+
+#dm-view .dm-context-item:hover .dm-icon,
+#dm-view .dm-context-item:focus-visible .dm-icon {
+    color: #9af5fa !important;
+    filter: drop-shadow(0 0 7px rgba(0,229,255,.38)) !important;
+    transform: scale(1.04) !important;
+}
+
+/* There should be no visual destructive/delete section in this menu. */
+#dm-view .dm-context-item.is-danger,
+#dm-view .dm-context-item.is-danger:hover,
+#dm-view .dm-context-item.is-danger:focus-visible {
+    color: #b8cfd4 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+@media (max-width: 650px) {
+    #dm-view .dm-context-menu {
+        width: min(236px, calc(100vw - 16px)) !important;
+        min-width: min(236px, calc(100vw - 16px)) !important;
+        padding: 6px !important;
+        border-radius: 13px !important;
+    }
+
+    #dm-view .dm-context-item {
+        height: 42px !important;
+        min-height: 42px !important;
+    }
+}
+
+@keyframes helixDmContextMenuIn {
+    from {
+        opacity: 0;
+        transform: translateY(-4px) scale(.985);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Private nickname is intentionally text + chevron only. */
+#dm-view .dm-private-nickname-button > svg.dm-private-nickname-edit-icon {
+    display: none !important;
+}
