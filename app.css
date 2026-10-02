@@ -12300,20 +12300,25 @@ body.helix-compact-mode .settings-option-row {
     color: #aaaab0 !important;
 }
 
-/* The reference menu has a highlighted pin row. */
+/* Match the reference's active-row feel: Pin highlights cleanly on hover/focus,
+   rather than looking permanently selected. */
 #dm-view .dm-context-item[data-dm-context-action="toggle-pin"] {
     margin: 0 3px !important;
     width: calc(100% - 6px) !important;
     border-radius: 4px !important;
-    background: #35363d !important;
 }
 
 #dm-view .dm-context-item[data-dm-context-action="toggle-pin"]:hover,
 #dm-view .dm-context-item[data-dm-context-action="toggle-pin"]:focus-visible {
-    background: #3c3d44 !important;
+    background: #35363d !important;
 }
 
 #dm-view .dm-context-item[data-dm-context-action="toggle-pin"] .dm-icon {
+    color: #bdbdc3 !important;
+}
+
+#dm-view .dm-context-item[data-dm-context-action="toggle-pin"]:hover .dm-icon,
+#dm-view .dm-context-item[data-dm-context-action="toggle-pin"]:focus-visible .dm-icon {
     color: #e6e6e9 !important;
 }
 
