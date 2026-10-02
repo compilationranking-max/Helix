@@ -123,7 +123,7 @@
             <div class="helix-reel-media">
                 <video
                     class="reels-stage2-video reels-stage3-video"
-                    preload="${index === 0 || index === 1 ? "auto" : "metadata"}"
+                    preload="metadata"
                     playsinline
                     muted
                     poster="${POSTER_SRC}"
@@ -425,6 +425,9 @@
 
         const nextVideo = getVideo(nextCard);
         if (!nextVideo) return;
+
+        const reelsSection = document.getElementById("reels-view");
+        if (!reelsSection || reelsSection.hidden) return;
 
         nextVideo.preload = "auto";
 
@@ -871,10 +874,14 @@
         const generation = renderGeneration;
         getCards().forEach((card) => bindCard(card, generation));
 
-        setupScrollObserver();
         setupReelsInput();
-        updatePlayback(0, true);
-        preloadNext(0);
+
+        const reelsSection = document.getElementById("reels-view");
+        if (reelsSection && !reelsSection.hidden) {
+            setupScrollObserver();
+            updatePlayback(0, true);
+            preloadNext(0);
+        }
     };
 
     const protectFeedFromLegacyRenderers = () => {
