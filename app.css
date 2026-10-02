@@ -12139,3 +12139,216 @@ body.helix-compact-mode .settings-option-row {
 #dm-view .dm-private-nickname-button > svg.dm-private-nickname-edit-icon {
     display: none !important;
 }
+
+
+/* =========================================================
+   HELIX DMS — CONTEXT MENU / REACTION MENU REFINEMENT
+   Visual reference: compact dark menu with quick reactions,
+   separators, monochrome action icons and a single active row.
+   ========================================================= */
+
+#dm-view .dm-context-menu {
+    width: 218px !important;
+    min-width: 218px !important;
+    padding: 6px 0 !important;
+    border: 1px solid rgba(255,255,255,.075) !important;
+    border-radius: 8px !important;
+    background: #24252a !important;
+    box-shadow:
+        0 18px 42px rgba(0,0,0,.48),
+        0 4px 14px rgba(0,0,0,.30) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    overflow: hidden !important;
+    color: #f1f1f3 !important;
+    animation: helixDmMenuReveal .11s ease-out !important;
+}
+
+#dm-view .dm-context-quick-reactions {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 4px !important;
+    padding: 6px 7px 7px !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+}
+
+#dm-view .dm-context-quick-reaction {
+    width: 100% !important;
+    height: 38px !important;
+    min-height: 38px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: grid !important;
+    place-items: center !important;
+    border: 0 !important;
+    border-radius: 6px !important;
+    background: #303137 !important;
+    color: #fff !important;
+    font-size: 20px !important;
+    line-height: 1 !important;
+    cursor: pointer !important;
+    box-shadow: none !important;
+    outline: 0 !important;
+    transition:
+        background .12s ease,
+        transform .12s ease !important;
+}
+
+#dm-view .dm-context-quick-reaction:hover,
+#dm-view .dm-context-quick-reaction:focus-visible {
+    background: #393a40 !important;
+    transform: translateY(-1px) !important;
+    outline: 0 !important;
+}
+
+#dm-view .dm-context-divider {
+    height: 1px !important;
+    min-height: 1px !important;
+    margin: 3px 0 !important;
+    background: rgba(255,255,255,.065) !important;
+    border: 0 !important;
+}
+
+#dm-view .dm-context-item {
+    width: 100% !important;
+    height: 38px !important;
+    min-height: 38px !important;
+    margin: 0 !important;
+    padding: 0 13px !important;
+
+    display: grid !important;
+    grid-template-columns: 20px minmax(0,1fr) 14px !important;
+    align-items: center !important;
+    gap: 9px !important;
+    box-sizing: border-box !important;
+
+    border: 0 !important;
+    border-radius: 4px !important;
+    background: transparent !important;
+
+    color: #ececef !important;
+    font: 500 13px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+    letter-spacing: 0 !important;
+    text-align: left !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+#dm-view .dm-context-item::before {
+    display: none !important;
+}
+
+#dm-view .dm-context-item .dm-icon {
+    width: 18px !important;
+    height: 18px !important;
+    min-width: 18px !important;
+    min-height: 18px !important;
+    color: #aaaab0 !important;
+    stroke: currentColor !important;
+    stroke-width: 2.1 !important;
+    opacity: 1 !important;
+    filter: none !important;
+    transform: none !important;
+}
+
+#dm-view .dm-context-item-label {
+    min-width: 0 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+}
+
+#dm-view .dm-context-chevron {
+    display: block !important;
+    justify-self: end !important;
+    color: #a9a9af !important;
+    font: 400 22px/1 Arial, sans-serif !important;
+    transform: translateY(-1px) !important;
+}
+
+#dm-view .dm-context-item:hover,
+#dm-view .dm-context-item:focus-visible {
+    background: #35363d !important;
+    color: #fff !important;
+    transform: none !important;
+    box-shadow: none !important;
+    outline: 0 !important;
+}
+
+#dm-view .dm-context-item:hover .dm-icon,
+#dm-view .dm-context-item:focus-visible .dm-icon {
+    color: #c5c5ca !important;
+    filter: none !important;
+    transform: none !important;
+}
+
+#dm-view .dm-context-item:hover .dm-context-chevron,
+#dm-view .dm-context-item:focus-visible .dm-context-chevron {
+    color: #d0d0d4 !important;
+}
+
+#dm-view .dm-context-item.is-danger,
+#dm-view .dm-context-item.is-danger:hover,
+#dm-view .dm-context-item.is-danger:focus-visible {
+    color: #ececef !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+#dm-view .dm-context-item.is-danger .dm-icon {
+    color: #aaaab0 !important;
+}
+
+/* The reference menu has a highlighted pin row. */
+#dm-view .dm-context-item[data-dm-context-action="toggle-pin"] {
+    margin: 0 3px !important;
+    width: calc(100% - 6px) !important;
+    border-radius: 4px !important;
+    background: #35363d !important;
+}
+
+#dm-view .dm-context-item[data-dm-context-action="toggle-pin"]:hover,
+#dm-view .dm-context-item[data-dm-context-action="toggle-pin"]:focus-visible {
+    background: #3c3d44 !important;
+}
+
+#dm-view .dm-context-item[data-dm-context-action="toggle-pin"] .dm-icon {
+    color: #e6e6e9 !important;
+}
+
+#dm-view .dm-private-nickname-button > svg.dm-private-nickname-edit-icon {
+    display: none !important;
+}
+
+@media (max-width: 650px) {
+    #dm-view .dm-context-menu {
+        width: 224px !important;
+        min-width: 224px !important;
+        max-width: calc(100vw - 16px) !important;
+        border-radius: 9px !important;
+    }
+
+    #dm-view .dm-context-item {
+        height: 42px !important;
+        min-height: 42px !important;
+        font-size: 13px !important;
+    }
+
+    #dm-view .dm-context-quick-reaction {
+        height: 40px !important;
+        min-height: 40px !important;
+    }
+}
+
+@keyframes helixDmMenuReveal {
+    from {
+        opacity: 0;
+        transform: scale(.985) translateY(-2px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
