@@ -23,7 +23,8 @@
             comments: "184",
             shares: "76",
             likeCount: 1200,
-            liked: false
+            liked: false,
+            saved: false
         },
         {
             id: "helix-reel-02",
@@ -36,7 +37,8 @@
             comments: "118",
             shares: "42",
             likeCount: 946,
-            liked: false
+            liked: false,
+            saved: false
         },
         {
             id: "helix-reel-03",
@@ -49,15 +51,49 @@
             comments: "301",
             shares: "119",
             likeCount: 2400,
-            liked: false
+            liked: false,
+            saved: false
         }
     ];
+
+    const SAVED_STORAGE_KEY = "helix.reels.saved.v1";
+
+    let savedReelIds = new Set();
+
+    try {
+        const stored = JSON.parse(
+            localStorage.getItem(SAVED_STORAGE_KEY) || "[]"
+        );
+
+        if (Array.isArray(stored)) {
+            savedReelIds = new Set(
+                stored.filter((value) => typeof value === "string")
+            );
+        }
+    } catch {
+        savedReelIds = new Set();
+    }
 
     let observer = null;
     let scrollFrame = 0;
     let wheelLockUntil = 0;
     let activeIndex = -1;
     let renderGeneration = 0;
+
+    REELS.forEach((reel) => {
+        reel.saved = savedReelIds.has(reel.id);
+    });
+
+    const persistSavedReels = () => {
+        try {
+            localStorage.setItem(
+                SAVED_STORAGE_KEY,
+                JSON.stringify(Array.from(savedReelIds))
+            );
+        } catch {
+            // Persistence can fail in restricted browser storage contexts.
+        }
+    };
 
     const formatTime = (seconds) => {
         if (!Number.isFinite(seconds) || seconds < 0) return "0:00";
@@ -177,9 +213,14 @@
                     <span class="helix-action-icon" aria-hidden="true">↗</span>
                     <span class="helix-action-count">${reel.shares}</span>
                 </button>
-                <button class="helix-reel-action" type="button" aria-label="Save Reel">
+                <button
+                    class="helix-reel-action reels-save-button"
+                    type="button"
+                    aria-label="Save Reel"
+                    aria-pressed="false"
+                >
                     <span class="helix-action-icon" aria-hidden="true">⌑</span>
-                    <span class="helix-action-count">Save</span>
+                    <span class="helix-action-count reels-save-label">Save</span>
                 </button>
             </div>
         </article>
@@ -224,6 +265,52 @@
         fill.style.width = percent + "%";
         label.textContent =
             `${formatTime(current)} / ${formatTime(duration)}`;
+    };
+
+    const syncSaveButton = (card) => {
+        const index = Number(card?.dataset.reelIndex);
+        const reel = REELS[index];
+        const button = card?.querySelector(".reels-save-button");
+        const label = card?.querySelector(".reels-save-label");
+
+        if (!reel || !button || !label) return;
+
+        button.classList.toggle("saved", reel.saved);
+        button.setAttribute("aria-pressed", String(reel.saved));
+        button.setAttribute(
+            "aria-label",
+            reel.saved ? "Unsave Reel" : "Save Reel"
+        );
+
+        const icon = button.querySelector(".helix-action-icon");
+        if (icon) icon.textContent = reel.saved ? "⌑" : "⌑";
+
+        label.textContent = reel.saved ? "Saved" : "Save";
+    };
+
+    const setSaveState = (card, saved) => {
+        const index = Number(card?.dataset.reelIndex);
+        const reel = REELS[index];
+        if (!reel || !card) return;
+
+        reel.saved = Boolean(saved);
+
+        if (reel.saved) {
+            savedReelIds.add(reel.id);
+        } else {
+            savedReelIds.delete(reel.id);
+        }
+
+        persistSavedReels();
+        syncSaveButton(card);
+    };
+
+    const toggleSave = (card) => {
+        const index = Number(card?.dataset.reelIndex);
+        const reel = REELS[index];
+        if (!reel) return;
+
+        setSaveState(card, !reel.saved);
     };
 
     const formatLikeCount = (count) => {
@@ -419,10 +506,16 @@
         const loading =
             card.querySelector(".reels-stage3-loading");
         const likeButton = card.querySelector(".reels-like-button");
+        const saveButton = card.querySelector(".reels-save-button");
 
         likeButton?.addEventListener("click", (event) => {
             event.stopPropagation();
             toggleLike(card);
+        });
+
+        saveButton?.addEventListener("click", (event) => {
+            event.stopPropagation();
+            toggleSave(card);
         });
 
         playButton?.addEventListener("click", async (event) => {
@@ -509,6 +602,7 @@
         syncMuteButton(card);
         syncProgress(card);
         syncLikeButton(card);
+        syncSaveButton(card);
     };
 
     const goToReel = (index) => {
