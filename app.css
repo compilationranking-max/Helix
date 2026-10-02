@@ -13759,3 +13759,368 @@ body.helix-compact-mode .settings-option-row {
         padding-left: 12px;
     }
 }
+
+
+/* =========================================================
+   REELS — STAGE 7 / SHARE PANEL
+   Share panel, Helix friends, send state and copy-link UI.
+   ========================================================= */
+
+#reels-view .reels-share-panel-wrap {
+    position: absolute;
+    inset: 0;
+    z-index: 100;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+#reels-view .reels-share-panel-wrap[hidden] {
+    display: none !important;
+}
+
+#reels-view .reels-share-panel-wrap.is-open {
+    pointer-events: auto;
+}
+
+#reels-view .reels-share-backdrop {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    background: rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    cursor: pointer;
+    transition: opacity 220ms ease;
+    backdrop-filter: blur(3px);
+}
+
+#reels-view .reels-share-panel-wrap.is-open .reels-share-backdrop {
+    opacity: 1;
+}
+
+#reels-view .reels-share-panel {
+    position: absolute;
+    top: 0;
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    width: min(420px, 40vw);
+    height: 100%;
+    min-height: 0;
+    border-left: 1px solid rgba(0, 229, 255, 0.13);
+    background:
+        linear-gradient(180deg, rgba(8, 13, 20, 0.99), rgba(5, 9, 15, 0.99));
+    box-shadow:
+        -24px 0 65px rgba(0, 0, 0, 0.44),
+        -1px 0 28px rgba(0, 229, 255, 0.05);
+    transform: translateX(102%);
+    transition: transform 240ms cubic-bezier(.2,.75,.3,1);
+}
+
+#reels-view .reels-share-panel-wrap.is-open .reels-share-panel {
+    transform: translateX(0);
+}
+
+#reels-view .reels-share-header {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 25px 22px 18px;
+    border-bottom: 1px solid rgba(255,255,255,.065);
+    background: linear-gradient(180deg, rgba(10,16,24,.98), rgba(8,13,20,.94));
+}
+
+#reels-view .reels-share-kicker {
+    display: block;
+    color: #6eefff;
+    font: 700 8px/1 "SFMono-Regular", Consolas, monospace;
+    letter-spacing: .14em;
+}
+
+#reels-view #reels-share-title {
+    margin: 8px 0 6px;
+    color: #fff;
+    font-size: 23px;
+    line-height: 1;
+    letter-spacing: -.025em;
+}
+
+#reels-view .reels-share-reel-name {
+    margin: 0;
+    color: #7d8d9d;
+    font: 700 9px/1.4 "SFMono-Regular", Consolas, monospace;
+}
+
+#reels-view .reels-share-close {
+    width: 34px;
+    height: 34px;
+    flex: 0 0 34px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 1px solid rgba(255,255,255,.09);
+    border-radius: 50%;
+    background: rgba(255,255,255,.035);
+    color: #dbeaff;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+#reels-view .reels-share-close:hover {
+    border-color: rgba(0,229,255,.55);
+    background: rgba(0,229,255,.08);
+    color: #00e5ff;
+}
+
+#reels-view .reels-share-body {
+    min-height: 0;
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 19px 18px 22px;
+}
+
+#reels-view .reels-share-section-heading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 11px;
+}
+
+#reels-view .reels-share-section-heading > span {
+    color: #bfeeff;
+    font: 800 9px/1 "SFMono-Regular", Consolas, monospace;
+    letter-spacing: .14em;
+}
+
+#reels-view .reels-share-section-heading > small {
+    color: #617384;
+    font: 700 8px/1 "SFMono-Regular", Consolas, monospace;
+}
+
+#reels-view .reels-share-friend-list {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+#reels-view .reels-share-friend {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    min-height: 58px;
+    padding: 9px 10px;
+    border: 1px solid rgba(255,255,255,.055);
+    border-radius: 13px;
+    background: rgba(8,14,22,.72);
+    color: #fff;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color .18s ease, background .18s ease, transform .18s ease;
+}
+
+#reels-view .reels-share-friend:hover {
+    transform: translateY(-1px);
+    border-color: rgba(0,229,255,.35);
+    background: rgba(0,229,255,.06);
+}
+
+#reels-view .reels-share-friend:disabled {
+    cursor: wait;
+    opacity: .8;
+}
+
+#reels-view .reels-share-friend-avatar {
+    width: 36px;
+    height: 36px;
+    flex: 0 0 36px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(0,229,255,.22);
+    border-radius: 50%;
+    background: linear-gradient(145deg,#122531,#241732);
+    color: #eaffff;
+    font: 800 9px/1 "SFMono-Regular", Consolas, monospace;
+}
+
+#reels-view .reels-share-friend-copy {
+    min-width: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+#reels-view .reels-share-friend-copy strong {
+    color: #f2fbff;
+    font-size: 11px;
+    font-weight: 800;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#reels-view .reels-share-friend-copy small {
+    margin-top: 3px;
+    color: #718392;
+    font: 700 8px/1 "SFMono-Regular", Consolas, monospace;
+}
+
+#reels-view .reels-share-friend-send {
+    width: 28px;
+    height: 28px;
+    flex: 0 0 28px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(0,229,255,.18);
+    border-radius: 9px;
+    color: #6eefff;
+    font-size: 13px;
+}
+
+#reels-view .reels-share-friend.is-sending .reels-share-friend-send {
+    font-size: 0;
+}
+
+#reels-view .reels-share-friend.is-sending .reels-share-friend-send::after {
+    content: "";
+    width: 11px;
+    height: 11px;
+    border: 1px solid rgba(110,239,255,.32);
+    border-top-color: #00e5ff;
+    border-radius: 50%;
+    animation: reels-share-spin .7s linear infinite;
+}
+
+#reels-view .reels-share-friend.is-sent {
+    border-color: rgba(85,255,199,.28);
+    background: rgba(85,255,199,.055);
+}
+
+#reels-view .reels-share-friend.is-sent .reels-share-friend-send {
+    border-color: rgba(85,255,199,.24);
+    color: #6fffc8;
+}
+
+#reels-view .reels-share-empty,
+#reels-view .reels-share-loading {
+    min-height: 150px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    color: #6f8191;
+    text-align: center;
+}
+
+#reels-view .reels-share-empty span {
+    color: #00e5ff;
+    font-size: 27px;
+    opacity: .5;
+}
+
+#reels-view .reels-share-empty strong {
+    color: #dff8ff;
+    font-size: 11px;
+}
+
+#reels-view .reels-share-empty small {
+    color: #67798b;
+    font-size: 8px;
+}
+
+#reels-view .reels-share-spinner {
+    width: 16px;
+    height: 16px;
+    border: 1px solid rgba(110,239,255,.25);
+    border-top-color: #00e5ff;
+    border-radius: 50%;
+    animation: reels-share-spin .7s linear infinite;
+}
+
+#reels-view .reels-share-link-heading {
+    margin-top: 24px;
+}
+
+#reels-view .reels-share-link-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px;
+    border: 1px solid rgba(255,255,255,.075);
+    border-radius: 12px;
+    background: rgba(3,8,14,.8);
+}
+
+#reels-view .reels-share-link-value {
+    min-width: 0;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #8495a6;
+    font: 8px/1.2 "SFMono-Regular", Consolas, monospace;
+}
+
+#reels-view .reels-share-copy {
+    flex: 0 0 auto;
+    height: 34px;
+    padding: 0 11px;
+    border: 1px solid rgba(0,229,255,.3);
+    border-radius: 9px;
+    background: rgba(0,229,255,.07);
+    color: #72efff;
+    font: 700 9px/1 "SFMono-Regular", Consolas, monospace;
+    cursor: pointer;
+}
+
+#reels-view .reels-share-copy:hover {
+    border-color: rgba(0,229,255,.65);
+    background: rgba(0,229,255,.12);
+}
+
+#reels-view .reels-share-status {
+    min-height: 14px;
+    margin: 11px 2px 0;
+    color: #70e7f1;
+    font: 700 8px/1.5 "SFMono-Regular", Consolas, monospace;
+}
+
+#reels-view .reels-share-status.is-error {
+    color: #ff91a9;
+}
+
+@keyframes reels-share-spin {
+    to { transform: rotate(360deg); }
+}
+
+@media (max-width: 700px) {
+    #reels-view .reels-share-panel {
+        top: auto;
+        right: 0;
+        bottom: 0;
+        width: 100%;
+        height: min(78vh, 700px);
+        border-top: 1px solid rgba(0,229,255,.13);
+        border-left: 0;
+        border-radius: 22px 22px 0 0;
+        transform: translateY(102%);
+    }
+
+    #reels-view .reels-share-panel-wrap.is-open .reels-share-panel {
+        transform: translateY(0);
+    }
+
+    #reels-view .reels-share-header {
+        padding: 20px 17px 14px;
+    }
+
+    #reels-view .reels-share-body {
+        padding: 16px 12px 20px;
+    }
+}
