@@ -13124,3 +13124,31 @@ body.helix-compact-mode .settings-option-row {
         left: 14px;
     }
 }
+
+
+/* =========================================================
+   REELS — STAGE 2 MICRO ADJUSTMENT
+   Slimmer top header only.
+   ========================================================= */
+
+#reels-view .reels-toolbar {
+    min-height: 88px;
+    padding-top: 18px;
+    padding-bottom: 13px;
+}
+
+#reels-view .reels-feed {
+    height: calc(100% - 88px);
+}
+
+@media (max-width: 700px) {
+    #reels-view .reels-toolbar {
+        min-height: 82px;
+        padding-top: 15px;
+        padding-bottom: 11px;
+    }
+
+    #reels-view .reels-feed {
+        height: calc(100% - 82px);
+    }
+}
