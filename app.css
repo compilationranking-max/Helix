@@ -13176,3 +13176,31 @@ body.helix-compact-mode .settings-option-row {
         height: calc(100% - 74px);
     }
 }
+
+
+/* REELS — hard-lock the top header height */
+#reels-view .reels-toolbar {
+    height: 78px;
+    min-height: 78px;
+    max-height: 78px;
+    box-sizing: border-box;
+    padding: 10px 38px 9px;
+    overflow: hidden;
+}
+
+#reels-view .reels-feed {
+    height: calc(100% - 78px);
+}
+
+@media (max-width: 700px) {
+    #reels-view .reels-toolbar {
+        height: 72px;
+        min-height: 72px;
+        max-height: 72px;
+        padding: 9px 16px 8px;
+    }
+
+    #reels-view .reels-feed {
+        height: calc(100% - 72px);
+    }
+}
