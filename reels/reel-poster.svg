@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1600" role="img" aria-label="Helix Reel poster">
+  <defs>
+    <radialGradient id="bg" cx="35%" cy="25%" r="90%">
+      <stop offset="0" stop-color="#102d38"/>
+      <stop offset=".48" stop-color="#080d14"/>
+      <stop offset="1" stop-color="#160d20"/>
+    </radialGradient>
+    <radialGradient id="core" cx="50%" cy="45%" r="70%">
+      <stop offset="0" stop-color="#00f2fe" stop-opacity=".24"/>
+      <stop offset=".72" stop-color="#071018" stop-opacity=".96"/>
+      <stop offset="1" stop-color="#071018"/>
+    </radialGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="14" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect width="900" height="1600" fill="url(#bg)"/>
+  <g opacity=".16" stroke="#fff">
+    <path d="M0 160h900M0 320h900M0 480h900M0 640h900M0 800h900M0 960h900M0 1120h900M0 1280h900M0 1440h900"/>
+    <path d="M90 0v1600M180 0v1600M270 0v1600M360 0v1600M450 0v1600M540 0v1600M630 0v1600M720 0v1600M810 0v1600"/>
+  </g>
+  <ellipse cx="450" cy="760" rx="335" ry="175" fill="none" stroke="#00e5ff" stroke-opacity=".35"/>
+  <ellipse cx="450" cy="760" rx="215" ry="420" fill="none" stroke="#a855f7" stroke-opacity=".3" transform="rotate(34 450 760)"/>
+  <circle cx="450" cy="760" r="145" fill="url(#core)" stroke="#00e5ff" stroke-opacity=".65" filter="url(#glow)"/>
+  <text x="450" y="735" fill="#bffaff" font-family="Arial,Helvetica,sans-serif" font-size="27" font-weight="700" text-anchor="middle" letter-spacing="9">HELIX</text>
+  <text x="450" y="790" fill="#fff" font-family="Arial,Helvetica,sans-serif" font-size="40" font-weight="800" text-anchor="middle" letter-spacing="5">REEL / 01</text>
+  <path d="M0 380H900" stroke="#00e5ff" stroke-opacity=".58"/>
+</svg>
