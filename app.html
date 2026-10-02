@@ -687,25 +687,81 @@
                  REELS VIEW
                  ================================== -->
 
-            <section class="reels-view" id="reels-view" data-main-section="reels" hidden>
+            <section class="reels-view" id="reels-view" data-main-section="reels" hidden aria-label="Reels">
 
-                <div class="reels-toolbar">
-                    <div>
-                        <p class="system-label">HELIX / DISCOVER</p>
-                        <h2>Reels</h2>
-                    </div>
+                <div class="reels-stage-shell">
+                    <header class="reels-toolbar" aria-label="Reels header">
+                        <div class="reels-heading">
+                            <p class="system-label">HELIX / DISCOVER</p>
+                            <h2>Reels</h2>
+                        </div>
 
-                    <div class="reels-toolbar-meta">
-                        <span class="status-dot"></span>
-                        <span>LIVE FEED</span>
-                    </div>
-                </div>
+                        <nav class="reels-tabs" aria-label="Reels sections">
+                            <button class="reels-tab active" type="button">For You</button>
+                            <button class="reels-tab" type="button">Following</button>
+                            <button class="reels-tab" type="button">Trending</button>
+                        </nav>
+                    </header>
 
-                <div class="reels-feed" id="reels-feed">
-                    <div class="reels-empty-state">
-                        <div class="reels-empty-icon" aria-hidden="true">◇</div>
-                        <strong>No Reels yet</strong>
-                        <p>Reels will appear here when real creators post them.</p>
+                    <button class="reels-create-button" type="button" aria-label="Create">
+                        <span class="reels-create-plus" aria-hidden="true">+</span>
+                        <span>Create</span>
+                    </button>
+
+                    <div class="reels-feed" id="reels-feed">
+                        <article class="helix-reel-card reels-static-card" aria-label="Sample Reel preview">
+                            <div class="helix-reel-media">
+                                <div class="reels-static-visual" aria-hidden="true">
+                                    <div class="reels-visual-grid"></div>
+                                    <div class="reels-visual-orbit reels-orbit-a"></div>
+                                    <div class="reels-visual-orbit reels-orbit-b"></div>
+                                    <div class="reels-visual-core">
+                                        <span>HELIX</span>
+                                        <strong>REEL / 01</strong>
+                                    </div>
+                                    <div class="reels-visual-scanline"></div>
+                                </div>
+
+                                <div class="reels-static-topline">
+                                    <span class="reels-live-marker"></span>
+                                    <span>DISCOVER SIGNAL</span>
+                                </div>
+                            </div>
+
+                            <div class="helix-reel-bottom reels-static-overlay">
+                                <div class="reels-creator">
+                                    <span class="helix-reel-avatar reels-creator-avatar">NS</span>
+                                    <div class="helix-reel-author-info">
+                                        <strong>nova.signal</strong>
+                                        <span>@nova.signal</span>
+                                    </div>
+                                </div>
+
+                                <p class="helix-reel-caption">
+                                    Build the future in public. Small signals become big systems.
+                                    <span class="reels-hashtags">#HELIX #BUILD #FUTURE</span>
+                                </p>
+                            </div>
+
+                            <div class="helix-reel-actions reels-static-actions" aria-label="Reel actions">
+                                <button class="helix-reel-action" type="button" aria-label="Like Reel">
+                                    <span class="helix-action-icon" aria-hidden="true">♡</span>
+                                    <span class="helix-action-count">1.2K</span>
+                                </button>
+                                <button class="helix-reel-action" type="button" aria-label="Comment on Reel">
+                                    <span class="helix-action-icon" aria-hidden="true">◌</span>
+                                    <span class="helix-action-count">184</span>
+                                </button>
+                                <button class="helix-reel-action" type="button" aria-label="Share Reel">
+                                    <span class="helix-action-icon" aria-hidden="true">↗</span>
+                                    <span class="helix-action-count">76</span>
+                                </button>
+                                <button class="helix-reel-action" type="button" aria-label="Save Reel">
+                                    <span class="helix-action-icon" aria-hidden="true">⌑</span>
+                                    <span class="helix-action-count">Save</span>
+                                </button>
+                            </div>
+                        </article>
                     </div>
                 </div>
 
