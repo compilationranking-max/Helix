@@ -13369,3 +13369,393 @@ body.helix-compact-mode .settings-option-row {
         transform: translate(-50%, -72%) scale(1.32) rotate(3deg);
     }
 }
+
+
+/* =========================================================
+   REELS — STAGE 6 / COMMENTS DRAWER
+   Drawer, comments, replies and comment likes.
+   ========================================================= */
+
+#reels-view .reels-comments-drawer {
+    position: absolute;
+    inset: 0;
+    z-index: 90;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+#reels-view .reels-comments-drawer[hidden] {
+    display: none !important;
+}
+
+#reels-view .reels-comments-drawer.is-open {
+    pointer-events: auto;
+}
+
+#reels-view .reels-comments-backdrop {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    background: rgba(0, 0, 0, 0.48);
+    opacity: 0;
+    cursor: pointer;
+    transition: opacity 220ms ease;
+    backdrop-filter: blur(3px);
+}
+
+#reels-view .reels-comments-drawer.is-open .reels-comments-backdrop {
+    opacity: 1;
+}
+
+#reels-view .reels-comments-panel {
+    position: absolute;
+    top: 0;
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    width: min(410px, 40vw);
+    height: 100%;
+    min-height: 0;
+    border-left: 1px solid rgba(0, 229, 255, 0.12);
+    background:
+        linear-gradient(180deg, rgba(8, 13, 20, 0.99), rgba(5, 9, 15, 0.99));
+    box-shadow:
+        -22px 0 60px rgba(0, 0, 0, 0.42),
+        -1px 0 24px rgba(0, 229, 255, 0.04);
+    transform: translateX(102%);
+    transition: transform 240ms cubic-bezier(.2,.75,.3,1);
+}
+
+#reels-view .reels-comments-drawer.is-open .reels-comments-panel {
+    transform: translateX(0);
+}
+
+#reels-view .reels-comments-header {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 25px 22px 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.065);
+    background: linear-gradient(180deg, rgba(10, 16, 24, 0.98), rgba(8, 13, 20, 0.94));
+}
+
+#reels-view .reels-comments-kicker {
+    display: block;
+    color: #6eefff;
+    font: 700 8px/1 "SFMono-Regular", Consolas, monospace;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+}
+
+#reels-view .reels-comments-header h2 {
+    margin: 8px 0 6px;
+    color: #fff;
+    font-size: 22px;
+    line-height: 1.05;
+    letter-spacing: -.02em;
+}
+
+#reels-view .reels-comments-count {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: #7f8d9c;
+    font: 700 9px/1 "SFMono-Regular", Consolas, monospace;
+    letter-spacing: .06em;
+}
+
+#reels-view .reels-comments-count span:first-child {
+    color: #d9faff;
+}
+
+#reels-view .reels-comments-close {
+    width: 34px;
+    height: 34px;
+    flex: 0 0 34px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.035);
+    color: #dbeaff;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+    transition: border-color .18s ease, color .18s ease, background .18s ease;
+}
+
+#reels-view .reels-comments-close:hover {
+    border-color: rgba(0, 229, 255, 0.52);
+    background: rgba(0, 229, 255, 0.08);
+    color: #00e5ff;
+}
+
+#reels-view .reels-comments-list {
+    min-height: 0;
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 18px 18px 20px;
+    scrollbar-width: thin;
+}
+
+#reels-view .reels-comment-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 11px;
+    padding: 13px 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.045);
+}
+
+#reels-view .reels-comment-item.is-reply {
+    margin: 10px 0 0 42px;
+    padding: 9px 0 0;
+    border-bottom: 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.035);
+}
+
+#reels-view .reels-comment-avatar,
+#reels-view .reels-comment-composer-avatar {
+    width: 34px;
+    height: 34px;
+    flex: 0 0 34px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(0, 229, 255, 0.2);
+    border-radius: 50%;
+    background:
+        radial-gradient(circle at 30% 25%, rgba(0, 229, 255, .24), transparent 25%),
+        linear-gradient(145deg, #132432, #22152f);
+    color: #e9fbff;
+    font: 800 9px/1 "SFMono-Regular", Consolas, monospace;
+}
+
+#reels-view .reels-comment-item.is-reply .reels-comment-avatar {
+    width: 28px;
+    height: 28px;
+    flex-basis: 28px;
+    font-size: 8px;
+}
+
+#reels-view .reels-comment-body {
+    min-width: 0;
+    flex: 1;
+}
+
+#reels-view .reels-comment-topline strong {
+    color: #f2fbff;
+    font-size: 11px;
+    font-weight: 800;
+}
+
+#reels-view .reels-comment-body > p {
+    margin: 5px 0 0;
+    color: #b6c3cf;
+    font-size: 11px;
+    line-height: 1.52;
+    overflow-wrap: anywhere;
+}
+
+#reels-view .reels-comment-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+#reels-view .reels-comment-like,
+#reels-view .reels-comment-reply,
+#reels-view .reels-comment-view-replies {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #718393;
+    font: 700 9px/1.2 "SFMono-Regular", Consolas, monospace;
+    cursor: pointer;
+}
+
+#reels-view .reels-comment-like {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+#reels-view .reels-comment-like:hover,
+#reels-view .reels-comment-reply:hover,
+#reels-view .reels-comment-view-replies:hover {
+    color: #dffcff;
+}
+
+#reels-view .reels-comment-like.liked {
+    color: #ff709f;
+}
+
+#reels-view .reels-comment-like span:first-child {
+    font-size: 13px;
+}
+
+#reels-view .reels-comment-replies {
+    margin-top: 7px;
+}
+
+#reels-view .reels-comment-replies.is-collapsed {
+    display: none;
+}
+
+#reels-view .reels-reply-form {
+    display: flex;
+    gap: 7px;
+    margin-top: 10px;
+}
+
+#reels-view .reels-reply-form[hidden] {
+    display: none !important;
+}
+
+#reels-view .reels-reply-input {
+    min-width: 0;
+    flex: 1;
+    height: 34px;
+    padding: 0 10px;
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 9px;
+    outline: 0;
+    color: #eaf8ff;
+    background: rgba(3, 8, 14, 0.76);
+    font: 10px "SFMono-Regular", Consolas, monospace;
+}
+
+#reels-view .reels-reply-input:focus {
+    border-color: rgba(0, 229, 255, 0.46);
+    box-shadow: 0 0 16px rgba(0, 229, 255, 0.07);
+}
+
+#reels-view .reels-reply-form button {
+    height: 34px;
+    padding: 0 11px;
+    border: 1px solid rgba(0, 229, 255, 0.28);
+    border-radius: 9px;
+    background: rgba(0, 229, 255, 0.07);
+    color: #7ef3ff;
+    font: 700 9px "SFMono-Regular", Consolas, monospace;
+    cursor: pointer;
+}
+
+#reels-view .reels-reply-form button:hover {
+    border-color: rgba(0, 229, 255, 0.6);
+    background: rgba(0, 229, 255, 0.12);
+}
+
+#reels-view .reels-comments-empty {
+    min-height: 260px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    color: #718293;
+    text-align: center;
+}
+
+#reels-view .reels-comments-empty span {
+    font-size: 30px;
+    color: #00e5ff;
+    opacity: .45;
+}
+
+#reels-view .reels-comments-empty strong {
+    color: #dff8ff;
+    font-size: 12px;
+}
+
+#reels-view .reels-comments-empty small {
+    color: #6d7d8e;
+    font-size: 9px;
+}
+
+#reels-view .reels-comment-composer {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 14px 18px 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+    background: rgba(5, 10, 16, 0.97);
+}
+
+#reels-view .reels-comment-composer-avatar {
+    width: 32px;
+    height: 32px;
+    flex-basis: 32px;
+}
+
+#reels-view #reels-comment-input {
+    min-width: 0;
+    flex: 1;
+    height: 40px;
+    padding: 0 12px;
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-radius: 12px;
+    outline: 0;
+    color: #ecfbff;
+    background: rgba(4, 9, 15, 0.9);
+    font: 10px "SFMono-Regular", Consolas, monospace;
+}
+
+#reels-view #reels-comment-input:focus {
+    border-color: rgba(0, 229, 255, 0.5);
+    box-shadow: 0 0 18px rgba(0, 229, 255, 0.07);
+}
+
+#reels-view .reels-comment-composer > button {
+    width: 40px;
+    height: 40px;
+    flex: 0 0 40px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(0, 229, 255, 0.38);
+    border-radius: 12px;
+    background: rgba(0, 229, 255, 0.09);
+    color: #00e5ff;
+    font-size: 17px;
+    cursor: pointer;
+    transition: transform .18s ease, background .18s ease, box-shadow .18s ease;
+}
+
+#reels-view .reels-comment-composer > button:hover {
+    transform: translateY(-1px);
+    background: rgba(0, 229, 255, 0.15);
+    box-shadow: 0 0 18px rgba(0, 229, 255, 0.12);
+}
+
+@media (max-width: 700px) {
+    #reels-view .reels-comments-panel {
+        top: auto;
+        right: 0;
+        bottom: 0;
+        width: 100%;
+        height: min(78vh, 700px);
+        border-top: 1px solid rgba(0, 229, 255, 0.12);
+        border-left: 0;
+        border-radius: 22px 22px 0 0;
+        transform: translateY(102%);
+    }
+
+    #reels-view .reels-comments-drawer.is-open .reels-comments-panel {
+        transform: translateY(0);
+    }
+
+    #reels-view .reels-comments-header {
+        padding: 20px 17px 14px;
+    }
+
+    #reels-view .reels-comments-list {
+        padding-right: 12px;
+        padding-left: 12px;
+    }
+}
