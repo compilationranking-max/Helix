@@ -2431,8 +2431,7 @@
     }
 
     function renderContextMenu() {
-        const menu =
-            get("dm-context-menu");
+        const menu = get("dm-context-menu");
 
         if (!menu) return;
 
@@ -2443,65 +2442,103 @@
             return;
         }
 
-        const message =
-            findMessage(
-                state.contextMenu.messageId
-            );
+        const message = findMessage(state.contextMenu.messageId);
 
         if (!message) {
             menu.hidden = true;
             return;
         }
 
-        function addAction(
-            label,
-            icon,
-            action,
-            options = {}
-        ) {
+        function addAction(label, icon, action, options = {}) {
             const item = iconButton(
                 "dm-context-item" +
-                    (options.danger
-                        ? " is-danger"
-                        : ""),
+                    (options.danger ? " is-danger" : ""),
                 icon,
                 label
             );
 
-            item.dataset.dmContextAction =
-                action;
-            item.dataset.messageId =
-                message.id;
+            item.dataset.dmContextAction = action;
+            item.dataset.messageId = message.id;
             item.setAttribute("role", "menuitem");
 
-            const text =
-                make(
-                    "span",
-                    "",
-                    label
-                );
+            item.appendChild(
+                make("span", "dm-context-item-label", label)
+            );
 
-            item.appendChild(text);
+            if (options.chevron) {
+                const chevron = make(
+                    "span",
+                    "dm-context-chevron",
+                    "›"
+                );
+                chevron.setAttribute("aria-hidden", "true");
+                item.appendChild(chevron);
+            }
+
             menu.appendChild(item);
         }
 
+        const quick = make(
+            "div",
+            "dm-context-quick-reactions"
+        );
+        quick.setAttribute("role", "group");
+        quick.setAttribute(
+            "aria-label",
+            "Quick reactions"
+        );
+
+        ["😂", "👍", "🤣", "😐"].forEach((emoji) => {
+            const button = make(
+                "button",
+                "dm-context-quick-reaction"
+            );
+            button.type = "button";
+            button.dataset.dmContextAction = "quick-react";
+            button.dataset.messageId = message.id;
+            button.dataset.emoji = emoji;
+            button.textContent = emoji;
+            button.setAttribute("role", "menuitem");
+            button.setAttribute(
+                "aria-label",
+                "React with " + emoji
+            );
+            button.title = "React with " + emoji;
+            quick.appendChild(button);
+        });
+
+        menu.appendChild(quick);
+
+        const dividerOne = make(
+            "div",
+            "dm-context-divider"
+        );
+        dividerOne.setAttribute("role", "separator");
+        menu.appendChild(dividerOne);
+
         if (!message.isDeleted) {
+            addAction(
+                "Add Reaction",
+                "reaction",
+                "react",
+                { chevron: true }
+            );
+
+            if (
+                message.sender === currentUsername() &&
+                !message.mediaUrl
+            ) {
+                addAction(
+                    "Edit Message",
+                    "edit",
+                    "edit-message"
+                );
+            }
+
             addAction(
                 "Reply",
                 "reply",
                 "reply"
-            );
-
-            addAction(
-                "React",
-                "reaction",
-                "react"
-            );
-
-            addAction(
-                "Copy message",
-                "copy",
-                "copy-message"
             );
 
             addAction(
@@ -2510,27 +2547,29 @@
                 "forward-message"
             );
 
+            const dividerTwo = make(
+                "div",
+                "dm-context-divider"
+            );
+            dividerTwo.setAttribute("role", "separator");
+            menu.appendChild(dividerTwo);
+
+            addAction(
+                "Copy Text",
+                "copy",
+                "copy-message"
+            );
+
             addAction(
                 message.isPinned
-                    ? "Unpin message"
-                    : "Pin message",
+                    ? "Unpin Message"
+                    : "Pin Message",
                 "pin",
                 "toggle-pin"
             );
-
-            if (
-                message.sender === currentUsername() &&
-                !message.mediaUrl
-            ) {
-                addAction(
-                    "Edit message",
-                    "edit",
-                    "edit-message"
-                );
-            }
         } else {
             addAction(
-                "Copy message",
+                "Copy Text",
                 "copy",
                 "copy-message"
             );
@@ -2538,7 +2577,7 @@
 
         menu.hidden = false;
 
-        const width = menu.offsetWidth || 210;
+        const width = menu.offsetWidth || 220;
         const height = menu.offsetHeight || 300;
         const gap = 8;
 
@@ -2560,10 +2599,13 @@
 
         menu.style.left = left + "px";
         menu.style.top = top + "px";
+
         if (state.contextMenu.open) {
             window.setTimeout(() => {
                 if (!state.contextMenu.open) return;
-                menu.querySelector(".dm-context-item")?.focus();
+                menu.querySelector(
+                    ".dm-context-item, .dm-context-quick-reaction"
+                )?.focus();
             }, 0);
         }
     }
