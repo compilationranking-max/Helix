@@ -1197,7 +1197,7 @@
         render.renderContextMenu();
     }
 
-    async function contextAction(action, messageId) {
+    async function contextAction(action, messageId, emoji = null) {
         const message = currentMessage(messageId);
         if (!message) return;
 
@@ -1211,6 +1211,8 @@
             await deleteMessage(message.id);
         } else if (action === "react") {
             openEmojiPicker(message.id);
+        } else if (action === "quick-react") {
+            await toggleReaction(message.id, emoji);
         } else if (action === "copy-message") {
             await copyMessage(message.id);
         } else if (action === "forward-message") {
@@ -1906,9 +1908,14 @@
 
                 if (!action) return;
 
+                // Keep the document-level outside-click handler from immediately
+                // closing the reaction picker opened by this menu.
+                event.stopPropagation();
+
                 await contextAction(
                     action.dataset.dmContextAction,
-                    action.dataset.messageId
+                    action.dataset.messageId,
+                    action.dataset.emoji || null
                 );
             }
         );
