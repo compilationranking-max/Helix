@@ -444,14 +444,18 @@
 
         cards.forEach((card) => observer.observe(card));
 
-        feed.addEventListener("scroll", () => {
-            if (scrollFrame) return;
+        if (feed.dataset.stage3ScrollBound !== "true") {
+            feed.addEventListener("scroll", () => {
+                if (scrollFrame) return;
 
-            scrollFrame = requestAnimationFrame(() => {
-                scrollFrame = 0;
-                chooseActiveCard();
-            });
-        }, { passive: true });
+                scrollFrame = requestAnimationFrame(() => {
+                    scrollFrame = 0;
+                    chooseActiveCard();
+                });
+            }, { passive: true });
+
+            feed.dataset.stage3ScrollBound = "true";
+        }
 
         chooseActiveCard();
     };
