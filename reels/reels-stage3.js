@@ -179,13 +179,30 @@
 
             <div class="helix-reel-bottom reels-static-overlay">
                 <div class="reels-creator">
-                    <span class="helix-reel-avatar reels-creator-avatar">
-                        ${reel.initials}
-                    </span>
-                    <div class="helix-reel-author-info">
-                        <strong>${reel.username}</strong>
-                        <span>${reel.handle}</span>
-                    </div>
+                    <button
+                        class="reels-creator-profile-button"
+                        type="button"
+                        data-creator-profile
+                        aria-label="Open creator profile for ${reel.username}"
+                    >
+                        <span class="helix-reel-avatar reels-creator-avatar">
+                            ${reel.initials}
+                        </span>
+                        <span class="helix-reel-author-info">
+                            <strong>${reel.username}</strong>
+                            <span>${reel.handle}</span>
+                        </span>
+                    </button>
+
+                    <button
+                        class="reels-follow-button"
+                        type="button"
+                        data-creator-follow
+                        aria-pressed="false"
+                        aria-label="Follow ${reel.username}"
+                    >
+                        Follow
+                    </button>
                 </div>
 
                 <p class="helix-reel-caption">
