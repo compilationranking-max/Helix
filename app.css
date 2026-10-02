@@ -12357,3 +12357,114 @@ body.helix-compact-mode .settings-option-row {
         transform: scale(1) translateY(0);
     }
 }
+
+
+/* =========================================================
+   HELIX DMS — CONTEXT ICONS: EXPLICIT INLINE SVGs
+   ========================================================= */
+
+#dm-view .dm-context-item {
+    grid-template-columns: 22px minmax(0,1fr) 15px !important;
+}
+
+#dm-view .dm-context-item > .dm-context-icon {
+    display: block !important;
+    width: 19px !important;
+    height: 19px !important;
+    min-width: 19px !important;
+    min-height: 19px !important;
+    max-width: 19px !important;
+    max-height: 19px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
+    overflow: visible !important;
+
+    color: #aaaab1 !important;
+    stroke: currentColor !important;
+    stroke-width: 1.9 !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+    fill: none !important;
+
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: none !important;
+    filter: none !important;
+}
+
+#dm-view .dm-context-item:hover > .dm-context-icon,
+#dm-view .dm-context-item:focus-visible > .dm-context-icon {
+    display: block !important;
+    color: #e0e0e4 !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+#dm-view .dm-context-item > .dm-context-icon circle,
+#dm-view .dm-context-item > .dm-context-icon path,
+#dm-view .dm-context-item > .dm-context-icon rect {
+    display: inline !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    stroke: currentColor !important;
+    stroke-width: 1.9 !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+    fill: none !important;
+}
+
+/* Reaction chooser opened from "Add Reaction". */
+#dm-view .dm-emoji-picker.is-message-reaction-picker {
+    position: fixed !important;
+    left: auto;
+    right: auto;
+    bottom: auto;
+    top: auto;
+    z-index: 10070 !important;
+    width: 340px !important;
+    max-width: calc(100vw - 16px) !important;
+    height: min(430px, calc(100vh - 16px)) !important;
+    max-height: min(430px, calc(100vh - 16px)) !important;
+    padding: 8px !important;
+    border-radius: 10px !important;
+    background: #24252a !important;
+    border: 1px solid rgba(255,255,255,.075) !important;
+    box-shadow:
+        0 20px 48px rgba(0,0,0,.52),
+        0 4px 16px rgba(0,0,0,.30) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+#dm-view .dm-emoji-picker.is-message-reaction-picker .dm-emoji-picker-header {
+    min-height: 36px !important;
+    height: 36px !important;
+}
+
+#dm-view .dm-emoji-picker.is-message-reaction-picker .dm-emoji-picker-title strong {
+    font-size: 12px !important;
+}
+
+#dm-view .dm-emoji-picker.is-message-reaction-picker .dm-emoji-category-tabs {
+    padding-bottom: 5px !important;
+}
+
+#dm-view .dm-emoji-picker.is-message-reaction-picker .dm-emoji-grid {
+    grid-template-columns: repeat(8, minmax(0,1fr)) !important;
+}
+
+#dm-view .dm-emoji-picker.is-message-reaction-picker .dm-emoji-option {
+    font-size: 23px !important;
+}
+
+@media (max-width: 650px) {
+    #dm-view .dm-emoji-picker.is-message-reaction-picker {
+        left: 8px !important;
+        right: 8px !important;
+        top: auto !important;
+        bottom: 72px !important;
+        width: auto !important;
+        max-width: none !important;
+    }
+}
