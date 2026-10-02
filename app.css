@@ -11850,3 +11850,110 @@ body.helix-compact-mode .settings-option-row {
         0 0 18px rgba(0,229,255,.12) !important;
     outline: none !important;
 }
+
+
+/* =========================================================
+   HELIX DMS — PINNED / NICKNAME FINAL CLEANUP
+   ========================================================= */
+
+/* The private nickname action uses the same pencil/edit glyph as message Edit.
+   Keep the SVG visibly rendered even if older generic DM icon rules apply. */
+#dm-view .dm-private-nickname-button > svg.dm-private-nickname-edit-icon {
+    display: inline-block !important;
+    flex: 0 0 18px !important;
+    width: 18px !important;
+    height: 18px !important;
+    min-width: 18px !important;
+    min-height: 18px !important;
+    max-width: 18px !important;
+    max-height: 18px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    color: #67e8f0 !important;
+    stroke: #67e8f0 !important;
+    stroke-width: 2.5 !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+    fill: none !important;
+    overflow: visible !important;
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    filter: drop-shadow(0 0 6px rgba(0,229,255,.34)) !important;
+}
+
+#dm-view .dm-private-nickname-button > svg.dm-private-nickname-edit-icon path {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    stroke: currentColor !important;
+    stroke-width: 2.5 !important;
+    fill: none !important;
+}
+
+#dm-view .dm-private-nickname-button:hover > svg.dm-private-nickname-edit-icon,
+#dm-view .dm-private-nickname-button:focus-visible > svg.dm-private-nickname-edit-icon {
+    color: #a0f8fc !important;
+    stroke: #a0f8fc !important;
+    filter: drop-shadow(0 0 9px rgba(0,229,255,.55)) !important;
+}
+
+/* Pinned entries show the sender, message and time, plus a single text-only
+   Unpin action. No crossed-pin logo, no extra icon column. */
+#dm-view .dm-pinned-unpin {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 58px !important;
+    width: auto !important;
+    height: 34px !important;
+    min-height: 34px !important;
+    padding: 0 11px !important;
+    box-sizing: border-box !important;
+    gap: 0 !important;
+    border: 1px solid rgba(90,133,146,.30) !important;
+    border-radius: 9px !important;
+    color: #91b6be !important;
+    background: linear-gradient(145deg, rgba(12,26,35,.90), rgba(5,12,18,.98)) !important;
+}
+
+#dm-view .dm-pinned-unpin > svg,
+#dm-view .dm-pinned-unpin .dm-icon,
+#dm-view .dm-pinned-unpin-label {
+    display: none !important;
+}
+
+#dm-view .dm-pinned-unpin:hover,
+#dm-view .dm-pinned-unpin:focus-visible {
+    color: #9af6fb !important;
+    border-color: rgba(0,229,255,.58) !important;
+    background: linear-gradient(145deg, rgba(8,38,48,.97), rgba(5,15,22,.99)) !important;
+    box-shadow:
+        0 0 0 3px rgba(0,229,255,.03),
+        0 0 18px rgba(0,229,255,.12) !important;
+    outline: none !important;
+}
+
+/* Empty pinned state is literally one line of text — no pin icon,
+   no explanatory copy, no decorative card. */
+#dm-view .dm-pinned-empty-state {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-height: 48px !important;
+    margin: 6px 2px !important;
+    padding: 18px 8px !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+#dm-view .dm-pinned-empty-state > strong {
+    margin: 0 !important;
+    color: #7899a2 !important;
+    font: 600 10px/1.3 "Segoe UI", Inter, Arial, sans-serif !important;
+    letter-spacing: .01em !important;
+    text-align: center !important;
+}
